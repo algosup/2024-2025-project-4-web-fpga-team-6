@@ -1,0 +1,43 @@
+<div class="auth-container">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Login as {{ userType | titlecase }}</mat-card-title>
+      </mat-card-header>
+  
+      <mat-card-content>
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <mat-form-field appearance="fill">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email">
+            <mat-error *ngIf="loginForm.get('email')?.hasError('required')">
+              Email is required
+            </mat-error>
+            <mat-error *ngIf="loginForm.get('email')?.hasError('email')">
+              Please enter a valid email
+            </mat-error>
+          </mat-form-field>
+  
+          <mat-form-field appearance="fill">
+            <mat-label>Password</mat-label>
+            <input matInput type="password" formControlName="password">
+            <mat-error *ngIf="loginForm.get('password')?.hasError('required')">
+              Password is required
+            </mat-error>
+            <mat-error *ngIf="loginForm.get('password')?.hasError('minlength')">
+              Password must be at least 6 characters
+            </mat-error>
+          </mat-form-field>
+  
+          <div class="user-type-toggle">
+            <mat-slide-toggle (change)="toggleUserType()">
+              Login as {{ userType === 'student' ? 'teacher' : 'student' }}
+            </mat-slide-toggle>
+          </div>
+  
+          <button mat-raised-button color="primary" type="submit" [disabled]="!loginForm.valid">
+            Login
+          </button>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
