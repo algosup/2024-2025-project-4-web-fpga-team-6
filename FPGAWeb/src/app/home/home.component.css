@@ -1,0 +1,195 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Roboto', sans-serif;
+  color: var(--cnes-dark-gray);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(11, 61, 145, 0.2);
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.cnes-logo {
+  margin-right: 1.5rem;
+}
+
+.cnes-logo-img {
+  height: 80px;
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+}
+
+.cnes-logo-small-img {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+}
+
+header h1 {
+  font-size: 2.5rem;
+  color: var(--cnes-blue);
+  margin: 0;
+  font-weight: 600;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: var(--cnes-dark-gray);
+  margin-top: 0.5rem;
+}
+
+.main-content {
+  flex-grow: 1;
+}
+
+.intro-text {
+  max-width: 800px;
+  margin: 0 auto 3rem;
+  text-align: center;
+  line-height: 1.6;
+  font-size: 1.1rem;
+}
+
+.role-selection {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.role-card {
+  flex: 1;
+  min-width: 300px;
+  max-width: 500px;
+  background-color: var(--cnes-white);
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-top: 4px solid var(--cnes-light-blue);
+}
+
+.role-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.icon-placeholder {
+  margin-right: 1rem;
+}
+
+.icon-circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: var(--cnes-light-blue);
+}
+
+.role-card h2 {
+  font-size: 1.8rem;
+  margin: 0;
+  color: var(--cnes-blue);
+}
+
+.role-card p {
+  margin-bottom: 1.5rem;
+  color: var(--cnes-dark-gray);
+  line-height: 1.6;
+}
+
+.role-card ul {
+  margin-bottom: 2rem;
+  padding-left: 1.5rem;
+}
+
+.role-card li {
+  margin-bottom: 0.8rem;
+  color: var(--cnes-dark-gray);
+  position: relative;
+}
+
+.role-card li::before {
+  content: "";
+  position: absolute;
+  left: -1.2rem;
+  top: 0.5rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--cnes-light-blue);
+}
+
+.student {
+  border-top-color: var(--cnes-blue);
+}
+
+.student .icon-circle {
+  background-color: var(--cnes-blue);
+}
+
+.teacher {
+  border-top-color: var(--cnes-accent);
+}
+
+.teacher .icon-circle {
+  background-color: var(--cnes-accent);
+}
+
+footer {
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(11, 61, 145, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--cnes-dark-gray);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .role-selection {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .role-card {
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+
+  .logo-container {
+    flex-direction: column;
+  }
+
+  .cnes-logo {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+
+  footer {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+}

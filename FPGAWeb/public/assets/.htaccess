@@ -1,0 +1,19 @@
+# Properly handle image MIME types
+<IfModule mod_mime.c>
+  AddType image/jpeg .jpg .jpeg
+  AddType image/png .png
+  AddType image/svg+xml .svg
+</IfModule>
+
+# Allow access to these files from any origin
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+</IfModule>
+
+# Cache images for better performance
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+</IfModule> 

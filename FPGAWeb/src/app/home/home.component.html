@@ -1,0 +1,65 @@
+<div class="container">
+  <header>
+    <div class="logo-container">
+      <!-- CNES logo -->
+      <div class="cnes-logo">
+        <img src="/assets/P41908_HD.jpg" alt="CNES Logo" class="cnes-logo-img">
+      </div>
+      <h1>{{ title }}</h1>
+    </div>
+    <p class="subtitle">Welcome to the FPGA Visualization Platform</p>
+  </header>
+
+  <div class="main-content">
+    <div class="intro-text">
+      <p>This platform provides an interactive environment for visualizing and understanding FPGA (Field-Programmable Gate Array) operations. It is designed for educational purposes to help students learn about digital design and FPGA programming.</p>
+    </div>
+
+    <div class="role-selection">
+      <div class="role-card student">
+        <div class="card-header">
+          <div class="icon-placeholder">
+            <!-- Placeholder for student icon -->
+            <div class="icon-circle"></div>
+          </div>
+          <h2>Student Interface</h2>
+        </div>
+        <p>View and interact with FPGA applications, visualize signal propagation, and learn how FPGAs work.</p>
+        <ul>
+          <li>2D visualization of BELs inside the FPGA</li>
+          <li>View routes used by each signal</li>
+          <li>Navigate (zoom, move) inside the 2D view</li>
+          <li>Run simulations at different speeds</li>
+          <li>Step-by-step execution</li>
+        </ul>
+        <a [routerLink]="['/fpga-visualization']" class="cnes-button">Enter Student Interface</a>
+      </div>
+
+      <div class="role-card teacher">
+        <div class="card-header">
+          <div class="icon-placeholder">
+            <!-- Placeholder for teacher icon -->
+            <div class="icon-circle"></div>
+          </div>
+          <h2>Teacher Interface</h2>
+        </div>
+        <p>Upload Verilog applications and testbenches to create visualization resources for students.</p>
+        <ul>
+          <li>Upload Verilog applications</li>
+          <li>Provide testbenches</li>
+          <li>Generate visualization data</li>
+          <li>Manage preloaded applications</li>
+        </ul>
+        <a [routerLink]="['/teacher']" class="cnes-button accent">Enter Teacher Interface</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© CNES, 2024 - FPGA Visualization Platform</p>
+    <div class="logo-small">
+      <!-- Small CNES logo -->
+      <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img">
+    </div>
+  </footer>
+</div>

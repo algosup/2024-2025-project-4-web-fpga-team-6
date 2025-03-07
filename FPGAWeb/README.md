@@ -1,59 +1,74 @@
-# FPGAWeb
+# FPGA Visualization Platform
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.8.
+A web-based platform for visualizing FPGA (Field-Programmable Gate Array) applications, designed for educational purposes. This application provides interfaces for both students and teachers.
 
-## Development server
+## Features
 
-To start a local development server, run:
+### Student Interface
+- 2D visualization of BELs (Basic Element Logics) inside the FPGA
+- View routes used by each signal
+- Navigate (zoom, move) inside the 2D view
+- Run simulations at different speeds (x1, x2, x4, x8)
+- Step-by-step execution
+- Pause and resume functionality
 
+### Teacher Interface
+- Upload Verilog applications
+- Provide testbenches
+- Generate visualization data
+- Manage preloaded applications
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v14 or later)
+- npm (v6 or later)
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone https://github.com/your-username/fpga-visualization.git
+cd fpga-visualization
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Start the development server
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+4. Open your browser and navigate to `http://localhost:4200`
 
-## Code scaffolding
+## Usage
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Student Interface
+1. From the home page, select "Student Interface"
+2. Choose an example application from the sidebar
+3. Use the control buttons to play, pause, step, or adjust the simulation speed
+4. Navigate the FPGA visualization using mouse controls
 
-```bash
-ng generate component component-name
-```
+### Teacher Interface
+1. From the home page, select "Teacher Interface"
+2. Upload new Verilog applications and testbenches using the form
+3. Manage existing applications
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Development
 
-```bash
-ng generate --help
-```
+This project was generated with [Angular CLI](https://github.com/angular/angular-cli).
 
-## Building
+### Development server
 
-To build the project run:
+Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
-```bash
-ng build
-```
+### Build
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-## Running unit tests
+## License
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This project is licensed under the MIT License - see the LICENSE file for details.

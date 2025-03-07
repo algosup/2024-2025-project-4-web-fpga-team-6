@@ -1,4 +1,80 @@
 /* You can add global styles to this file, and also import other style files */
+:root {
+  /* CNES color palette */
+  --cnes-blue: #0b3d91; /* Deep blue from CNES */
+  --cnes-light-blue: #1e5bc6;
+  --cnes-dark-blue: #0a2a63;
+  --cnes-gray: #f2f2f2;
+  --cnes-dark-gray: #333333;
+  --cnes-black: #000000;
+  --cnes-white: #ffffff;
+  --cnes-accent: #ff9e16; /* Orange accent */
+}
 
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--cnes-gray);
+  font-family: 'Roboto', sans-serif;
+  color: var(--cnes-dark-gray);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* CNES typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  color: var(--cnes-blue);
+}
+
+a {
+  color: var(--cnes-light-blue);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--cnes-accent);
+}
+
+/* CNES button styles */
+.cnes-button {
+  display: inline-block;
+  background-color: var(--cnes-blue);
+  color: var(--cnes-white);
+  border: none;
+  border-radius: 4px;
+  padding: 0.8rem 1.5rem;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.cnes-button:hover {
+  background-color: var(--cnes-light-blue);
+}
+
+.cnes-button.secondary {
+  background-color: var(--cnes-white);
+  color: var(--cnes-blue);
+  border: 2px solid var(--cnes-blue);
+}
+
+.cnes-button.secondary:hover {
+  background-color: var(--cnes-gray);
+}
+
+.cnes-button.accent {
+  background-color: var(--cnes-accent);
+}
+
+.cnes-button.accent:hover {
+  background-color: #e88c00;
+}

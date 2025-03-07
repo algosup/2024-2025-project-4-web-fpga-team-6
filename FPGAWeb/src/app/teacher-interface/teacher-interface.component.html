@@ -1,0 +1,125 @@
+<div class="teacher-container">
+  <header>
+    <div class="header-left">
+      <!-- CNES logo -->
+      <div class="cnes-logo-small">
+        <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img">
+      </div>
+      <h1>{{ title }}</h1>
+    </div>
+    <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+  </header>
+
+  <div class="main-content">
+    <div class="upload-section">
+      <div class="section-header">
+        <div class="section-icon">
+          <div class="icon-circle upload"></div>
+        </div>
+        <h2>Upload New Application</h2>
+      </div>
+      
+      <div class="upload-form">
+        <div class="form-group">
+          <label for="appName">Application Name*</label>
+          <input 
+            type="text" 
+            id="appName" 
+            [(ngModel)]="newApplicationName" 
+            placeholder="Enter application name"
+            required
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="appDescription">Description</label>
+          <textarea 
+            id="appDescription" 
+            [(ngModel)]="newApplicationDescription" 
+            placeholder="Enter application description"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="verilogFile">Verilog File (.v)*</label>
+          <div class="file-input-container">
+            <input 
+              type="file" 
+              id="verilogFile" 
+              accept=".v" 
+              (change)="onVerilogFileSelected($event)"
+              required
+            >
+            <div class="file-input-info">
+              <span *ngIf="!selectedVerilogFile">No file selected</span>
+              <span *ngIf="selectedVerilogFile">{{ selectedVerilogFile.name }}</span>
+            </div>
+          </div>
+          <small>Upload your Verilog implementation file</small>
+        </div>
+
+        <div class="form-group">
+          <label for="testbenchFile">Testbench File (.v)*</label>
+          <div class="file-input-container">
+            <input 
+              type="file" 
+              id="testbenchFile" 
+              accept=".v" 
+              (change)="onTestbenchFileSelected($event)"
+              required
+            >
+            <div class="file-input-info">
+              <span *ngIf="!selectedTestbenchFile">No file selected</span>
+              <span *ngIf="selectedTestbenchFile">{{ selectedTestbenchFile.name }}</span>
+            </div>
+          </div>
+          <small>Upload your Verilog testbench file</small>
+        </div>
+
+        <div class="form-actions">
+          <button class="cnes-button upload-button" (click)="uploadApplication()">Upload Application</button>
+          <button class="cnes-button secondary reset-button" (click)="resetForm()">Reset Form</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="applications-section">
+      <div class="section-header">
+        <div class="section-icon">
+          <div class="icon-circle manage"></div>
+        </div>
+        <h2>Manage Applications</h2>
+      </div>
+      
+      <div class="applications-list">
+        <div *ngFor="let app of applications" class="application-card">
+          <div class="app-header">
+            <h3>{{ app.name }}</h3>
+            <button class="delete-button" (click)="deleteApplication(app.id)">
+              <span class="delete-icon">×</span>
+              Delete
+            </button>
+          </div>
+          
+          <p class="app-description">{{ app.description }}</p>
+          
+          <div class="app-files">
+            <h4>Files:</h4>
+            <ul>
+              <li *ngFor="let file of app.files">{{ file }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© CNES, 2024 - FPGA Visualization Platform</p>
+    <div class="logo-small">
+      <!-- Small CNES logo -->
+      <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img">
+    </div>
+  </footer>
+</div>
