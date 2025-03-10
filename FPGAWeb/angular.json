@@ -78,10 +78,7 @@
           },
           "defaultConfiguration": "development",
           "options": {
-            "buildTarget": "FPGAWeb:build:development",
-            "verbose": true,
-            "port": 4200,
-            "baseHref": "/"
+            "buildTarget": "FPGAWeb:build:development"
           }
         },
         "extract-i18n": {
