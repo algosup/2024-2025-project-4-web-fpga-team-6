@@ -29,20 +29,33 @@ A web-based platform for visualizing FPGA (Field-Programmable Gate Array) applic
 1. Clone the repository
 ```bash
 git clone https://github.com/your-username/fpga-visualization.git
-cd fpga-visualization
+```
+2. Go to the project directory
+```bash
+cd FPGAWeb
 ```
 
-2. Install dependencies
+3. Install dependencies
 ```bash
 npm install
 ```
 
-3. Start the development server
+4. Start the development server
 ```bash
+npm start
+# or
 ng serve
 ```
 
-4. Open your browser and navigate to `http://localhost:4200`
+5. Access the interface  
+
+Open your browser and navigate to `http://localhost:4200`
+
+6. Parse post-synthesis data
+```bash
+npm run parse
+```
+A JSON file is generated from the .sdf and the .v file in the `public/` directory.
 
 ## Usage
 
