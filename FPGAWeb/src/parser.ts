@@ -59,6 +59,7 @@ const VERILOG_COMPONENTS = {
     cells: {
         DFF: {
             pattern: /DFF\s+#\(\s*\.INITIAL_VALUE\([^)]+\)\s*\)\s*\\(\w+)\s*\(\s*\.D\(\\([^)]+)\s*\),\s*\.Q\(\\([^)]+)\s*\),\s*\.clock\(\\([^)]+)\s*\)\s*\);/g,
+            timing_pattern: /\(CELL\s*\(CELLTYPE\s*"DFF"\).*?\(DELAY.*?\(IOPATH.*?Q\s*\((\d+):.*?\)\s*\).*?\(SETUP\s*D.*?\((-?\d+):/s,
             ports: ["D", "Q", "clock"],
             parameters: ["INITIAL_VALUE"],
             timing: {
@@ -69,7 +70,7 @@ const VERILOG_COMPONENTS = {
     },
     interconnects: {
         pattern: /fpga_interconnect\s*\\([^)]+)\s*\(\s*\.datain\(\\([^)]+)\s*\),\s*\.dataout\(\\([^)]+)\s*\)\s*\);/g,
-        timing_pattern: /\(CELL\s*\(CELLTYPE\s*"fpga_interconnect"\)\s*\(INSTANCE\s*([^)]+)\).*?\(IOPATH.*?\((\d+\.?\d*):.*?\)\s*\)/s
+        timing_pattern: /\(CELL\s*\(CELLTYPE\s*"fpga_interconnect"\)\s*\(INSTANCE\s*([^)]+)\).*?\(IOPATH.*?\((\d+\.?\d*):.*?\)\s*\)/s,
     },
     wires: {
         pattern: /wire\s+\\([^;]+);/g
@@ -169,7 +170,7 @@ class VerilogParser {
 
     private parseTiming(): void {
         // Extract DFF timing
-        const dffPattern = /\(CELL\s*\(CELLTYPE\s*"DFF"\).*?\(DELAY.*?\(IOPATH.*?Q\s*\((\d+):.*?\)\s*\).*?\(SETUP\s*D.*?\((-?\d+):/s;
+        const dffPattern = VERILOG_COMPONENTS.cells.DFF.timing_pattern;
         const dffMatch = this.sdfContent.match(dffPattern);
 
         if (dffMatch) {
@@ -178,10 +179,11 @@ class VerilogParser {
         }
 
         // Extract interconnect delays
+        const interconnectPattern = new RegExp(VERILOG_COMPONENTS.interconnects.timing_pattern.source, 'gs');
         let interconnectMatch;
-        const interconnectPattern = new RegExp(VERILOG_COMPONENTS.interconnects.timing_pattern.source, 'g');
+        
         while ((interconnectMatch = interconnectPattern.exec(this.sdfContent)) !== null) {
-            const routeName = interconnectMatch[1];
+            const routeName = interconnectMatch[1].trim();
             const delay = interconnectMatch[2];
             this.delays[this.cleanWireName(routeName)] = delay;
         }
@@ -236,13 +238,16 @@ class VerilogParser {
             const sourceMapped = this.wireMap[source] || source;
             const destMapped = this.wireMap[dest] || dest;
 
+            // Get the delay from the parsed SDF timing data
+            const delay = this.delays[routeName] || '0';
+
             this.interconnects.push({
                 name: `route_${sourceMapped}_TO_${destMapped}`,
                 connections: {
                     input: sourceMapped,
                     output: destMapped
                 },
-                propagation_delay: this.delays[routeName] || '0'
+                propagation_delay: delay
             });
         }
     }
