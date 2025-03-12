@@ -6,24 +6,16 @@ This project involves developing a web-based FPGA Simulator interface designed f
 
 ## Scope
 
-### In Scope
 
 | In Scope |
 | -------- |
-|          |
-|          |
-|          |
+|  Development of a web-based FPGA visualization tool |
+|  Interactive signal propagation simulation |
+|  Backend for file management |
 |          |
 
-### Out of Scope
 
-| Out of Scope |
-| ------------ |
-|              |
-|              |
-|              |
 
----
 
 ## Stakeholders
 
@@ -56,7 +48,7 @@ This project involves developing a web-based FPGA Simulator interface designed f
 
 | Date | Milestones                   |
 | ---- | ---------------------------- |
-| TBD  | Project kick-off meeting     |
+| 02/26/25  | Project kick-off meeting     |
 | TBD  | Functional specification     |
 | TBD  | Technical specification      |
 | TBD  | Test plan documentation      |
@@ -92,5 +84,7 @@ The main deliverables of the project are the interface and its source code. In a
 
 | Type                                     | Description                                                                                                                | Likelihood | Impact                  | Mitigation                                                     |
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------- | -------------------------------------------------------------- |
-| New requirements                         | The client might request some changes at any time, forcing us to change our specifications and potentially creating delays | Low     | Varies from low to high | Adapt ourselves                                                      |
+| New requirements                         | The client might request some changes at any time, forcing us to change our specifications and potentially creating delays | Low     | Varies from low to high | Adaptation                                                      |
 | Wrong interpretation of the requirements | We might forget a key point in our solution or misinterpret a requirement                                                  | Medium     | High                    | Communication with the client |
+|Team Availability & Commitment Issues | Some members may be unavailable due to external commitments, exams, or unexpected situations. |Medium|Medium | Maintain a task-tracking system.|
+
