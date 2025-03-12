@@ -10,20 +10,3 @@ module FF1_norst(D,clk,Q);
         end
 
 endmodule
-
-
-
-// Latch module not in the project
-module latch(D,Q,En);
-    input D;
-    input En;
-    output reg Q;
-
-    always @(*)
-    begin
-        if (En)
-        begin
-            Q <= D;
-        end
-    end
-endmodule
