@@ -1,0 +1,39 @@
+name: "📖 Documentation Update"
+description: "Report missing, unclear, or incorrect documentation."
+title: "[Docs]: Short description of the documentation issue"
+labels: ["documentation"]
+assignees: ''
+
+body:
+  - type: textarea
+    id: issue_description
+    attributes:
+      label: "Describe the Issue"
+      description: "What is missing, incorrect, or unclear in the documentation?"
+      placeholder: "Explain the issue in detail."
+
+  - type: textarea
+    id: affected_pages
+    attributes:
+      label: "Affected Documentation Pages"
+      description: "Which pages or sections are affected?"
+      placeholder: "Provide links or titles."
+
+  - type: textarea
+    id: suggestions
+    attributes:
+      label: "Suggested Fix"
+      description: "How can this be improved?"
+      placeholder: "Provide your suggested correction."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "I have searched for similar documentation issues."
+          required: true
+        - label: "I have specified which documentation pages are affected."
+          required: true
+        - label: "I have provided a suggested fix."
+          required: false

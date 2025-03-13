@@ -1,0 +1,28 @@
+name: "💡 General Issue"
+description: "Report anything that doesn't fit into the other categories."
+title: "[General]: Short description"
+labels: ["question", "discussion"]
+assignees: ''
+
+body:
+  - type: textarea
+    id: issue_description
+    attributes:
+      label: "Describe the Issue"
+      description: "Provide a detailed description of your issue."
+      placeholder: "Explain the problem or question."
+
+  - type: textarea
+    id: relevant_details
+    attributes:
+      label: "Additional Context"
+      description: "Provide any relevant details, screenshots, or related discussions."
+      placeholder: "Include links or references if applicable."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "I have searched for similar issues."
+          required: true
