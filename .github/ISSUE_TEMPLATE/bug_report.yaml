@@ -2,7 +2,7 @@ name: "🐛 Bug Report"
 description: "Report a reproducible bug in the FPGA Simulation Web Application."
 title: "[Bug]: Short description of the bug"
 labels: ["bug"]
-assignees: ''
+assignees: []
 
 body:
   - type: textarea

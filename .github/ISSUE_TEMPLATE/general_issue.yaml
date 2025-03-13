@@ -2,7 +2,7 @@ name: "💡 General Issue"
 description: "Report anything that doesn't fit into the other categories."
 title: "[General]: Short description"
 labels: ["question", "discussion"]
-assignees: ''
+assignees: []
 
 body:
   - type: textarea
