@@ -1,7 +1,6 @@
 .visualization-container {
   max-width: 1500px;
   margin: 0 auto;
-  padding: 1rem;
   font-family: 'Roboto', sans-serif;
   color: var(--cnes-dark-gray);
   min-height: 100vh;
@@ -15,7 +14,8 @@ header {
   align-items: center;
   margin-bottom: 2rem;
   border-bottom: 1px solid rgba(11, 61, 145, 0.2);
-  padding-bottom: 1rem;
+  padding: 1rem;
+  background-color: white;
 }
 
 .header-left {
@@ -48,6 +48,7 @@ header h1 {
   display: flex;
   gap: 2rem;
   flex-grow: 1;
+  padding: 1rem;
 }
 
 .sidebar {
