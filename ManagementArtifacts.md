@@ -1,6 +1,13 @@
-## - Management Artifacts
+# Management Artifacts
 
-## Tasks & schedule
+This document is used to centralize all the management artifacts as listed below:
+
+- [Management Artifacts](#management-artifacts)
+    - [RACI Matrix](#raci-matrix)
+    - [Risks \& Mitigations](#risks--mitigations)
+    - [Key Performance Indicators](#key-performance-indicators)
+    - [Weekly Reports](#weekly-reports)
+
 
 ## RACI Matrix
 
@@ -40,20 +47,37 @@ Legend:
 
 ## Key Performance Indicators
 
-### Definition of our KPIs
+### KPIs Definition
 
-#### Documents
+This section tracks the progress of essential categories such as:
 
-#### Design
+#### Document
 
-#### Mood
+- Project charter
+- Functional specifications
+- Technical specifications
+- Test plan
+- User manual
 
-### Link to the project's KPIs
+#### Development
+
+- Frontend UI Implementation
+- Backend & File Handling
+- Signal Propagation Simulation
+
+#### Human Resources
+
+- Overtime (in hours)
+- Absence (in days)
+
+
+
+[Link to the project's KPIs](TBD)
+
 
 ## Weekly reports
 
-<!-- ## Post Mortem Analysis -->
 
-## Addendum
 
-### Differences Between Gantt Chart and Actual Schedule
+
+

@@ -1,11 +1,23 @@
-Weekly Report - Week
+# Weekly Report - Week X
 
-Overview
+## Overview
 
-Accomplishments
+This week focused on 
 
-Challenges
+## Accomplishments
 
-Plan for Next Week
+- [Key achievement 1]
+- [Key achievement 2]
+- [Key achievement 3]
 
-Conclusion
+## Challenges
+
+- [Challenge 1 - Describe issue]
+- [Challenge 2 - Describe issue]
+
+## Plan for Next Week
+
+
+
+## Conclusion
+
