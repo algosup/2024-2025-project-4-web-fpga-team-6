@@ -22,7 +22,6 @@ This document is used to centralize all the management artifacts as listed below
 | Testing planification    | A               | /               | C                | C                 | R/A               | I                | /      | /            |
 | Usage instructions       | A               | C               | C                | C                 | I                 | R/A              | I      | I            |
 
-Legend:
 
 | Letter | Full name   | Description                                     |
 | ------ | ----------- | ----------------------------------------------- |
@@ -32,7 +31,6 @@ Legend:
 | I      | Informed    | Kept updated on progress and decisions          |
 | /      | /           | No interaction with this role for this task     |
 
-## Risks & Assumptions
 
 ## Risks & Mitigations
 
@@ -72,12 +70,14 @@ This section tracks the progress of essential categories such as:
 
 
 
-[Link to the project's KPIs](TBD)
+[Link to the project's KPIs](https://docs.google.com/spreadsheets/d/1lKQXDnr6URSxp91wiu2Fs49hylzF8wXtzzzS_iBUTE4/edit?usp=sharing)
 
 
 ## Weekly reports
 
 
+Each week will be resumed in weekly documents listed [here](TBD), or by following a precise week using the following links:
 
+- [Weekly Report 1](WeeklyReport1.md)
 
 

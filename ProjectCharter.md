@@ -77,4 +77,6 @@ The main deliverables of the project are the interface and its source code. In a
 | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------- | -------------------------------- |
 | New requirements                         | The client might request some changes at any time, forcing us to change our specifications and potentially creating delays | Low        | Varies from low to high | Adaptation                       |
 | Wrong interpretation of the requirements | We might forget a key point in our solution or misinterpret a requirement                                                  | Medium     | High                    | Communication with the client    |
-| Team Availability & Commitment Issues    | Some members may be unavailable due to external commitments or unexpected situations.                              | Medium     | Medium                  | Maintain a task-tracking system. |
+| Team Availability Issues    | Some members may be unavailable due to external commitments or unexpected situations.                              | Medium     | Medium                  | Maintain a task-tracking system. |
+
+One team member will be working remotely due to medical reasons. While he will contribute as usual, we will adjust communication and task management to ensure smooth collaboration.
