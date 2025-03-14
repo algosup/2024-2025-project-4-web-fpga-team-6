@@ -6,14 +6,11 @@ This project involves developing a web-based FPGA Simulator interface designed f
 
 ## Scope
 
-
-| In Scope |
-| -------- |
-|  Development of a web-based FPGA visualization tool |
-|  Interactive signal propagation simulation |
-|  Backend for file management |
-|          |
-
+| In Scope                                           |
+| -------------------------------------------------- |
+| Development of a web-based FPGA visualization tool |
+| Interactive signal propagation simulation          |
+| Backend for file management                        |
 
 
 
@@ -40,21 +37,17 @@ This project involves developing a web-based FPGA Simulator interface designed f
 
 ---
 
-## Project Plan
-
----
-
 ## Milestones
 
-| Date | Milestones                   |
-| ---- | ---------------------------- |
-| 02/26/25  | Project kick-off meeting     |
-| TBD  | Functional specification     |
-| TBD  | Technical specification      |
-| TBD  | Test plan documentation      |
-| TBD  | TBD                          |
-| TBD  | Quality Assurance review     |
-| TBD  | Project closure and handover |
+| Date     | Milestones                   |
+| -------- | ---------------------------- |
+| 02/26/25 | Project kick-off meeting     |
+| 03/13/25 | Functional specification     |
+| 03/25/25 | Technical specification      |
+| 03/25/25 | Test plan documentation      |
+| 03/25/25 | Quality Assurance reviews    |
+| 04/01/25 | Project closure and handover |
+| 04/04/25 | Oral presentation            |
 
 ---
 
@@ -62,7 +55,7 @@ This project involves developing a web-based FPGA Simulator interface designed f
 
 The main deliverables of the project are the interface and its source code. In addition, the following documents will be provided:
 
-- Functional specifications (to link)
+- [Functional Specifications](./Documents/FunctionalSpecifications.md)
 - Technical specifications (to link)
 - Test plan (to link)
 - User manual (to link)
@@ -78,13 +71,10 @@ The main deliverables of the project are the interface and its source code. In a
 
 ---
 
-
-
 ## Risk Management
 
-| Type                                     | Description                                                                                                                | Likelihood | Impact                  | Mitigation                                                     |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------- | -------------------------------------------------------------- |
-| New requirements                         | The client might request some changes at any time, forcing us to change our specifications and potentially creating delays | Low     | Varies from low to high | Adaptation                                                      |
-| Wrong interpretation of the requirements | We might forget a key point in our solution or misinterpret a requirement                                                  | Medium     | High                    | Communication with the client |
-|Team Availability & Commitment Issues | Some members may be unavailable due to external commitments, exams, or unexpected situations. |Medium|Medium | Maintain a task-tracking system.|
-
+| Type                                     | Description                                                                                                                | Likelihood | Impact                  | Mitigation                       |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------- | -------------------------------- |
+| New requirements                         | The client might request some changes at any time, forcing us to change our specifications and potentially creating delays | Low        | Varies from low to high | Adaptation                       |
+| Wrong interpretation of the requirements | We might forget a key point in our solution or misinterpret a requirement                                                  | Medium     | High                    | Communication with the client    |
+| Team Availability & Commitment Issues    | Some members may be unavailable due to external commitments or unexpected situations.                              | Medium     | Medium                  | Maintain a task-tracking system. |
