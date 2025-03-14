@@ -91,6 +91,20 @@ A JSON file is generated from the .sdf and the .v file in the `public/` director
     - `verilog_post_synthesis_examples/`: Example Verilog files
     - `schematics/`: Generated JSON schematics
 
+## Team 6 involves few coworkers, handling different roles:
+
+| Role              | Name            | Picture                                                                                                              |
+| ----------------- | --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Project Manager   | Manech LAGUENS  | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJQY4YNT-b9fc406d8169-50">](https://github.com/Manech-Laguens)   |
+| Program Manager   | Elon DELLILE    | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJR05FL7-464fe5ab420c-50">](https://github.com/HiNett)           |
+| Technical Leader  | Axel DAVID      | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U07D74Y2FN3-c49f70489f3b-50">](https://github.com/Fus1onAxel)       |
+| Software Engineer | Thomas PLANCHAD | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U02EY24GTT8-d1e0d5d26fcb-50">](https://github.com/thomas-planchard) |
+| Software Engineer | Evan UHRING     | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SZB90074-d12b12264117-50">](https://github.com/Evan-UHRING)      |
+| Quality Assurance | Rémy Charles    | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U0338M4B32R-c0f60ab9ca33-50">](https://github.com/RemyCHARLES)      |
+| Technical Writer  | Benoît de Keyn  | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SZ8EGZLK-4aa6205b5986-50">](https://github.com/benoitdekeyn)     |
+
+[Here](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/graphs/contributors) are their contributions to the project!
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
