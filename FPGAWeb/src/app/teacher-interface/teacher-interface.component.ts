@@ -30,6 +30,9 @@ export class TeacherInterfaceComponent implements OnInit {
   // Add new properties
   parsedContent: string | null = null;
   generatedFilename: string | null = null;
+  verilogContent: string | null = null;
+  sdfContent: string | null = null;
+  isDragging = false;
 
   constructor(
     private fileProcessingService: FileProcessingService,
@@ -71,17 +74,21 @@ export class TeacherInterfaceComponent implements OnInit {
 
     this.isProcessing = true;
     try {
+      // Read file contents
+      const verilogContent = await this.selectedVerilogFile!.text();
+      const sdfContent = await this.selectedSdfFile!.text();
+      
       // Process the files and generate JSON
       const jsonContent = await this.fileProcessingService.processFiles(
-        this.selectedVerilogFile,
-        this.selectedSdfFile
+        this.selectedVerilogFile!,
+        this.selectedSdfFile!
       );
 
-      // Generate filename based on application name
-      this.generatedFilename = `${this.newDesignName.toLowerCase().replace(/\s+/g, '_')}_schematics.json`;
-      
-      // Store parsed content instead of downloading directly
+      // Store all contents
+      this.verilogContent = verilogContent;
+      this.sdfContent = sdfContent;
       this.parsedContent = jsonContent;
+      this.generatedFilename = `${this.newDesignName.toLowerCase().replace(/\s+/g, '_')}_schematics.json`;
 
     } catch (error) {
       console.error('Error processing files:', error);
@@ -102,7 +109,13 @@ export class TeacherInterfaceComponent implements OnInit {
           this.selectedSdfFile!.name,
           this.generatedFilename
         ],
-        jsonContent: this.parsedContent
+        jsonContent: this.parsedContent,
+        // Fix type mismatches by providing undefined instead of null
+        verilogContent: this.verilogContent ?? undefined,
+        sdfContent: this.sdfContent ?? undefined,
+        visualizationState: {
+          clockFrequency: 1000000 // Default 1MHz
+        }
       };
 
       this.designService.addDesign(newDesign);
@@ -130,9 +143,89 @@ export class TeacherInterfaceComponent implements OnInit {
 
     this.parsedContent = null;
     this.generatedFilename = null;
+    this.verilogContent = null;
+    this.sdfContent = null;
   }
 
   deleteDesign(id: string): void {
     this.designService.deleteDesign(id);
+  }
+
+  // Add public export method
+  exportDesign(id: string): void {
+    this.designService.exportDesign(id);
+  }
+
+  triggerImport(): void {
+    document.getElementById('importFile')?.click();
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+  }
+
+  async onDrop(event: DragEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const zipFiles = Array.from(files).filter(file => file.type === 'application/zip');
+      if (zipFiles.length > 0) {
+        await this.importMultipleDesigns(zipFiles);
+      } else {
+        alert('Please drop ZIP files only');
+      }
+    }
+  }
+
+  async onImportFile(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const zipFiles = Array.from(input.files).filter(file => file.type === 'application/zip');
+      if (zipFiles.length > 0) {
+        await this.importMultipleDesigns(zipFiles);
+      }
+      input.value = ''; // Reset input
+    }
+  }
+
+  private async importDesign(zipFile: File): Promise<void> {
+    try {
+      await this.designService.importDesign(zipFile);
+      // Success case - no alert, just successfully imported
+    } catch (error) {
+      console.error('Error importing design:', error);
+      alert('Failed to import design. Please ensure the ZIP file contains valid design files.');
+    }
+  }
+
+  private async importMultipleDesigns(zipFiles: File[]): Promise<void> {
+    const importPromises = zipFiles.map(async (zipFile) => {
+      try {
+        await this.designService.importDesign(zipFile);
+        return { file: zipFile.name, success: true };
+      } catch (error) {
+        console.error(`Error importing ${zipFile.name}:`, error);
+        return { file: zipFile.name, success: false };
+      }
+    });
+
+    const results = await Promise.all(importPromises);
+    const failures = results.filter(r => !r.success);
+    
+    if (failures.length > 0) {
+      const failedFiles = failures.map(f => f.file).join(', ');
+      alert(`Failed to import the following designs: ${failedFiles}`);
+    }
   }
 }

@@ -186,18 +186,18 @@ header h1 {
   cursor: not-allowed;
 }
 
-.applications-section {
+.designs-section {
   flex: 1;
 }
 
-.applications-section h2 {
+.designs-section h2 {
   font-size: 1.4rem;
   margin: 0;
   color: var(--cnes-blue);
   font-weight: 500;
 }
 
-.applications-list {
+.designs-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -290,23 +290,20 @@ header h1 {
   border-radius: 50%;
 }
 
+/* Update designs section to include import zone */
 .designs-section {
   flex: 1;
   padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
-.designs-section h2 {
-  font-size: 1.4rem;
-  margin: 0;
-  color: var(--cnes-blue);
-  font-weight: 500;
-}
-
+/* Adjust designs list margin */
 .designs-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;  /* Consistent spacing after import section */
 }
 
 .design-card {
@@ -370,6 +367,17 @@ header h1 {
   height: 5px;
   background-color: var(--cnes-blue);
   border-radius: 50%;
+}
+
+.design-actions {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.export-button {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.9rem;
 }
 
 footer {
@@ -470,4 +478,55 @@ footer {
   flex: 1;
   padding: 0.8rem 1.5rem;
   font-weight: 500;
+}
+
+/* Remove standalone import section styles */
+.import-section {
+  margin-bottom: 1.5rem;  /* Reduced top margin */
+}
+
+.import-zone {
+  background-color: var(--cnes-white);
+  border: 2px dashed var(--cnes-blue);
+  border-radius: 6px;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.import-zone.drag-over {
+  background-color: rgba(11, 61, 145, 0.05);
+  border-color: var(--cnes-accent);
+}
+
+.import-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.import-content p {
+  margin: 0;
+  color: var(--cnes-dark-gray);
+}
+
+.import-content small {
+  color: var(--cnes-dark-gray);
+  opacity: 0.8;
+}
+
+.cnes-button-link {
+  background: none;
+  border: none;
+  color: var(--cnes-blue);
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.cnes-button-link:hover {
+  color: var(--cnes-accent);
 }

@@ -68,7 +68,7 @@
         </div>
 
         <div class="form-group">
-          <label for="designDescription">Description</label>
+          <label for="designDescription">Description (optional)</label>
           <textarea 
             id="designDescription" 
             [(ngModel)]="newDesignDescription" 
@@ -133,14 +133,49 @@
         <h2>Manage Designs</h2>
       </div>
       
+      <!-- Import zone moved here -->
+      <div class="import-section" 
+           (dragover)="onDragOver($event)"
+           (dragleave)="onDragLeave($event)"
+           (drop)="onDrop($event)">
+        <div class="import-zone" [class.drag-over]="isDragging">
+          <input 
+            type="file"
+            id="importFile"
+            accept=".zip"
+            multiple
+            (change)="onImportFile($event)"
+            hidden
+          >
+          <div class="import-content">
+            <p>Drag and drop design packages or <button 
+              class="cnes-button-link"
+              (click)="triggerImport()"
+            >choose files</button></p>
+            <small>Only .zip files are supported</small>
+          </div>
+        </div>
+      </div>
+      
       <div class="designs-list">
         <div *ngFor="let design of designs" class="design-card">
           <div class="design-header">
             <h3>{{ design.name }}</h3>
-            <button class="delete-button" (click)="deleteDesign(design.id)">
-              <span class="delete-icon">×</span>
-              Delete
-            </button>
+            <div class="design-actions">
+              <button 
+                class="cnes-button secondary export-button" 
+                (click)="exportDesign(design.id)"
+              >
+                Export
+              </button>
+              <button 
+                class="delete-button" 
+                (click)="deleteDesign(design.id)"
+              >
+                <span class="delete-icon">×</span>
+                Delete
+              </button>
+            </div>
           </div>
           
           <p class="design-description">{{ design.description }}</p>
