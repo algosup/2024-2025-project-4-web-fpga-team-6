@@ -25,7 +25,16 @@ const CONFIG = {
     directories: {
         public: 'public',
         schematics: 'schematics',
-        examples: 'verilog_post_synthesis_examples'
+        examples_folder: 'verilog_post_synthesis_examples',
+        examples: [
+            '1ff_no_rst_VTR',
+            '1ff_VTR',
+            '2ffs_no_rst_VTR',
+            '2ffs_VTR',
+            '5ffs_VTR',
+            'FULLLUT_VTR',
+            'LUT_VTR'
+        ]
     },
     regexFlags: {
         global: 'g',
@@ -418,14 +427,11 @@ function main(): void {
     const scriptDir = __dirname;
     const srcDir = scriptDir.includes('dist') ? path.join(scriptDir, '../../src') : scriptDir;
     
-    const examples = [
-        '1ff_no_rst_VTR',
-        '1ff_VTR',
-        '2ffs_no_rst_VTR'
-    ];
-    
-    examples.forEach(example => {
-        processDirectory(srcDir, path.join(CONFIG.directories.examples, example));
+    CONFIG.directories.examples.forEach(example => {
+        processDirectory(
+            srcDir, 
+            path.join(CONFIG.directories.examples_folder, example)
+        );
     });
 }
 
