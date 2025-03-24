@@ -7,7 +7,9 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:FPGAWeb": "node dist/fpgaweb/server/server.mjs"
+    "serve:ssr:FPGAWeb": "node dist/fpgaweb/server/server.mjs",
+    "build:parser": "tsc -p tsconfig.parser.json",
+    "parse": "npm run build:parser && node dist/parser/parser.js > parse.log 2>&1"
   },
   "private": true,
   "dependencies": {
@@ -43,5 +45,10 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.7.2"
-  }
+  },
+  "description": "A web-based platform for visualizing FPGA (Field-Programmable Gate Array) applications, designed for educational purposes. This application provides interfaces for both students and teachers.",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
