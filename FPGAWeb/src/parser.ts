@@ -56,6 +56,7 @@ interface Cell {
     type: string;
     name: string;
     connections: CellConnection;
+    initial_state?: string;  // Add this line
     D_stability_delay?: string;
     Q_update_delay?: string;
     K?: number;
@@ -97,8 +98,8 @@ const VERILOG_COMPONENTS = {
     },
     cells: {
         DFF: {
-            // Updated pattern to handle special characters in instance names and improve whitespace handling
-            pattern: /DFF\s+#\(\s*\.INITIAL_VALUE\([^)]+\)\s*\)\s*\\([^( \t\n\r]+)\s*\(\s*\.D\(\\([^)]+)\),\s*\.Q\(\\([^)]+)\),\s*\.clock\(\\([^)]+)\)\s*\);/g,
+            // Updated pattern to capture INITIAL_VALUE
+            pattern: /DFF\s+#\(\s*\.INITIAL_VALUE\(1'b([01])\)\s*\)\s*\\([^( \t\n\r]+)\s*\(\s*\.D\(\\([^)]+)\),\s*\.Q\(\\([^)]+)\),\s*\.clock\(\\([^)]+)\)\s*\);/g,
             // Make sure the pattern has 'g' flag and handles whitespace variations
             timing_pattern: /\(CELL\s*\(CELLTYPE\s*"DFF"\).*?\(DELAY.*?\(IOPATH.*?Q\s*\((\d+):.*?\)\s*\).*?\(SETUP\s*D.*?\((-?\d+):/s,
             ports: ["D", "Q", "clock"],
@@ -234,12 +235,13 @@ class VerilogParser {
                 let match: RegExpExecArray | null;
                 
                 while ((match = pattern.exec(this.content)) !== null) {
-                    const instanceName = match[1];
+                    const initialState = match[1];        // Get initial state from match
+                    const instanceName = match[2];        // Shifted index due to new capture group
                     const cellName = this.cellNamer.getName(cellType, instanceName);
                     
                     const ports: { [key: string]: string } = {};
                     (cellInfo as any).ports.forEach((portName: string, index: number) => {
-                        const wireName = match![index + 2].trim();
+                        const wireName = match![index + 3].trim();  // Shifted index due to new capture group
                         const mappedName = `${cellName}${VERILOG_COMPONENTS.naming.component_separator}${portName}`;
                         ports[portName] = mappedName;
                         this.wireMap[wireName] = mappedName;
@@ -249,6 +251,7 @@ class VerilogParser {
                         type: cellType,
                         name: cellName,
                         connections: ports,
+                        initial_state: initialState,      // Use captured initial state
                         D_stability_delay: this.delays['d_stability_delay'] || VERILOG_COMPONENTS.naming.default_value,
                         Q_update_delay: this.delays['q_update_delay'] || VERILOG_COMPONENTS.naming.default_value
                     };
