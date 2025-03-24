@@ -13,6 +13,26 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Add configuration object at the top
+const CONFIG = {
+    encoding: 'utf8' as BufferEncoding,
+    fileExtensions: {
+        verilog: '.v',
+        sdf: '.sdf',
+        postSynthesis: '_post_synthesis',
+        schematics: '_schematics.json'
+    },
+    directories: {
+        public: 'public',
+        schematics: 'schematics',
+        examples: 'verilog_post_synthesis_examples'
+    },
+    regexFlags: {
+        global: 'g',
+        globalMultiline: 'gs'
+    }
+};
+
 // Define interfaces for our data structures
 interface ExternalWire {
     name: string;
@@ -68,7 +88,9 @@ const VERILOG_COMPONENTS = {
     },
     cells: {
         DFF: {
-            pattern: /DFF\s+#\(\s*\.INITIAL_VALUE\([^)]+\)\s*\)\s*\\(\w+)\s*\(\s*\.D\(\\([^)]+)\s*\),\s*\.Q\(\\([^)]+)\s*\),\s*\.clock\(\\([^)]+)\s*\)\s*\);/g,
+            // Updated pattern to handle special characters in instance names and improve whitespace handling
+            pattern: /DFF\s+#\(\s*\.INITIAL_VALUE\([^)]+\)\s*\)\s*\\([^( \t\n\r]+)\s*\(\s*\.D\(\\([^)]+)\),\s*\.Q\(\\([^)]+)\),\s*\.clock\(\\([^)]+)\)\s*\);/g,
+            // Make sure the pattern has 'g' flag and handles whitespace variations
             timing_pattern: /\(CELL\s*\(CELLTYPE\s*"DFF"\).*?\(DELAY.*?\(IOPATH.*?Q\s*\((\d+):.*?\)\s*\).*?\(SETUP\s*D.*?\((-?\d+):/s,
             ports: ["D", "Q", "clock"],
             parameters: ["INITIAL_VALUE"],
@@ -137,8 +159,8 @@ class VerilogParser {
     }
 
     private readFiles(): void {
-        this.content = fs.readFileSync(this.verilogPath, 'utf8');
-        this.sdfContent = fs.readFileSync(this.sdfPath, 'utf8');
+        this.content = fs.readFileSync(this.verilogPath, { encoding: CONFIG.encoding as BufferEncoding });
+        this.sdfContent = fs.readFileSync(this.sdfPath, { encoding: CONFIG.encoding as BufferEncoding });
     }
 
     private parseModule(): void {
@@ -193,29 +215,25 @@ class VerilogParser {
     }
 
     private cleanWireName(name: string): string {
-        return name.trim();
+        return name.replace(/\\/g, '').trim();
     }
 
     private parseCells(): void {
         for (const [cellType, cellInfo] of Object.entries(VERILOG_COMPONENTS.cells)) {
-            let cellMatch: RegExpExecArray | null;
-            const pattern = new RegExp((cellInfo as any).pattern.source, 'g');
-            
-            while ((cellMatch = pattern.exec(this.content)) !== null) {
-                const match = cellMatch as RegExpExecArray;
+            const pattern = new RegExp((cellInfo as any).pattern.source, CONFIG.regexFlags.global);
+            if (cellType === 'DFF') {
+                let match: RegExpExecArray | null;
                 
-                if (cellType === 'DFF') {
+                while ((match = pattern.exec(this.content)) !== null) {
                     const instanceName = match[1];
                     const cellName = this.cellNamer.getName(cellType, instanceName);
-
+                    
                     const ports: { [key: string]: string } = {};
                     (cellInfo as any).ports.forEach((portName: string, index: number) => {
-                        if (index + 2 < match.length) {
-                            const wireName = match[index + 2].trim();
-                            const mappedName = `${cellName}${VERILOG_COMPONENTS.naming.component_separator}${portName}`;
-                            ports[portName] = mappedName;
-                            this.wireMap[wireName] = mappedName;
-                        }
+                        const wireName = match![index + 2].trim();
+                        const mappedName = `${cellName}${VERILOG_COMPONENTS.naming.component_separator}${portName}`;
+                        ports[portName] = mappedName;
+                        this.wireMap[wireName] = mappedName;
                     });
 
                     const component: Cell = {
@@ -225,73 +243,67 @@ class VerilogParser {
                         D_stability_delay: this.delays['d_stability_delay'] || VERILOG_COMPONENTS.naming.default_value,
                         Q_update_delay: this.delays['q_update_delay'] || VERILOG_COMPONENTS.naming.default_value
                     };
-
+                    
                     this.cells.push(component);
-                } else if (cellType === 'LUT_K') {
+                }
+            } else if (cellType === 'LUT_K') {
+                let match: RegExpExecArray | null;
+                
+                while ((match = pattern.exec(this.content)) !== null) {
+                    const inputs = match[4].split(',').map(input => input.trim());
+                    const outputWire = match[5].trim();
+                    
                     const k = parseInt(match[1]);
                     const mask = match[2];
                     const instanceName = match[3];
-                    const inputs = match[4].split(',').map(input => input.trim());
-                    const output = match[5];
-                    
                     const cellName = this.cellNamer.getName(cellType, instanceName);
+                    
+                    // Create connections
                     const connections: { [key: string]: string } = {};
-                    const lutInfo = cellInfo as typeof VERILOG_COMPONENTS.cells.LUT_K;
                     
-                    for (let i = 0; i < k; i++) {
-                        connections[`${lutInfo.ports.input_prefix}${VERILOG_COMPONENTS.naming.component_separator}${i}`] = VERILOG_COMPONENTS.naming.default_value;
-                    }
-                    
+                    // Map inputs in reverse order to match the model
                     inputs.forEach((input, index) => {
-                        if (input !== '1\'b0') {
-                            const cleanInput = input.replace(/\\/g, '').trim();
-                            const inputMatch = cleanInput.match(/input_0_(\d+)/);
-                            if (inputMatch) {
-                                const inputNum = inputMatch[1];
-                                const portName = `${lutInfo.ports.input_prefix}${VERILOG_COMPONENTS.naming.component_separator}${inputNum}`;
-                                connections[portName] = `${cellName}${VERILOG_COMPONENTS.naming.component_separator}${portName}`;
-                                this.wireMap[cleanInput] = connections[portName];
-                            }
+                        const reverseIndex = k - 1 - index; // Reverse the index order
+                        if (input === '1\'b0') {
+                            connections[`in_${reverseIndex}`] = '0';
+                        } else if (input === '1\'b1') {
+                            connections[`in_${reverseIndex}`] = '1';
+                        } else {
+                            const mappedName = `${cellName}${VERILOG_COMPONENTS.naming.component_separator}in_${reverseIndex}`;
+                            connections[`in_${reverseIndex}`] = mappedName;
+                            this.wireMap[input.replace(/\\/g, '')] = mappedName;
                         }
                     });
+
+                    // Add output connection
+                    const outputMappedName = `${cellName}${VERILOG_COMPONENTS.naming.component_separator}out`;
+                    connections['out'] = outputMappedName;
+                    this.wireMap[outputWire] = outputMappedName;
+
+                    // Get delays from SDF
+                    const in_out_delays: { [key: string]: string } = {};
+                    const lutTimingPattern = new RegExp((cellInfo as any).timing_pattern.source, 'g');
+                    const lutTimingMatch = lutTimingPattern.exec(this.sdfContent);
                     
-                    connections[lutInfo.ports.output] = `${cellName}${VERILOG_COMPONENTS.naming.component_separator}${lutInfo.ports.output}`;
-                    this.wireMap[output.trim()] = connections[lutInfo.ports.output];
+                    if (lutTimingMatch) {
+                        let iopathMatch;
+                        const iopathPattern = new RegExp((cellInfo as any).iopath_pattern.source, 'g');
+                        while ((iopathMatch = iopathPattern.exec(lutTimingMatch[2])) !== null) {
+                            const inputIndex = iopathMatch[1];
+                            const delay = iopathMatch[2];
+                            in_out_delays[`in_${inputIndex}`] = delay;
+                        }
+                    }
 
                     const component: Cell = {
                         type: cellType,
                         name: cellName,
                         K: k,
                         mask: mask,
-                        connections,
-                        in_out_delays: {}
+                        connections: connections,
+                        in_out_delays: in_out_delays
                     };
-
-                    const lutTimingPattern = new RegExp((cellInfo as any).timing_pattern.source, 'gs');
-                    const lutTimingMatch = lutTimingPattern.exec(this.sdfContent);
                     
-                    if (lutTimingMatch) {
-                        const cellContent = lutTimingMatch[2];
-                        const delayMap = new Map<string, string>();
-                        const matches = [...cellContent.matchAll(VERILOG_COMPONENTS.cells.LUT_K.iopath_pattern)];
-                        
-                        for (const match of matches) {
-                            const [, inputIndex, delay] = match;
-                            if (inputIndex && delay) {
-                                const portName = `${lutInfo.ports.input_prefix}${VERILOG_COMPONENTS.naming.component_separator}${inputIndex}`;
-                                delayMap.set(portName, delay);
-                            }
-                        }
-
-                        const inOutDelays: { [key: string]: string } = {};
-                        for (const [portName, delay] of delayMap.entries()) {
-                            if (connections[portName] !== VERILOG_COMPONENTS.naming.default_value) {
-                                inOutDelays[portName] = delay;
-                            }
-                        }
-                        component.in_out_delays = inOutDelays;
-                    }
-
                     this.cells.push(component);
                 }
             }
@@ -299,18 +311,23 @@ class VerilogParser {
     }
 
     private parseInterconnects(): void {
+        const timingPattern = new RegExp(
+            VERILOG_COMPONENTS.interconnects.timing_pattern.source, 
+            CONFIG.regexFlags.globalMultiline
+        );
+        let timingMatch;
         const delayMap = new Map<string, string>();
-        const interconnectPattern = new RegExp(VERILOG_COMPONENTS.interconnects.timing_pattern.source, 'gs');
-        let interconnectTimingMatch;
         
-        while ((interconnectTimingMatch = interconnectPattern.exec(this.sdfContent)) !== null) {
-            const routeName = interconnectTimingMatch[1].trim().replace(/\\/g, '');
-            const delay = interconnectTimingMatch[2];
+        while ((timingMatch = timingPattern.exec(this.sdfContent)) !== null) {
+            const routeName = timingMatch[1].trim().replace(/\\/g, '');
+            const delay = timingMatch[2];
             delayMap.set(routeName, delay);
         }
 
+        const interconnectPattern = new RegExp(VERILOG_COMPONENTS.interconnects.pattern.source, 'g');
         let interconnectMatch;
-        while ((interconnectMatch = VERILOG_COMPONENTS.interconnects.pattern.exec(this.content)) !== null) {
+        
+        while ((interconnectMatch = interconnectPattern.exec(this.content)) !== null) {
             const routeName = this.cleanWireName(interconnectMatch[1]);
             const source = this.cleanWireName(interconnectMatch[2]);
             const dest = this.cleanWireName(interconnectMatch[3]);
@@ -319,14 +336,16 @@ class VerilogParser {
             const destMapped = this.wireMap[dest] || dest;
             const delay = delayMap.get(routeName.replace(/\\/g, '')) || VERILOG_COMPONENTS.naming.default_value;
             
-            this.interconnects.push({
+            const interconnect = {
                 name: `${VERILOG_COMPONENTS.naming.route_prefix}${VERILOG_COMPONENTS.naming.component_separator}${sourceMapped}${VERILOG_COMPONENTS.naming.route_separator}${destMapped}`,
                 connections: {
                     input: sourceMapped,
                     output: destMapped
                 },
                 propagation_delay: delay
-            });
+            };
+            
+            this.interconnects.push(interconnect);
         }
     }
 
@@ -348,7 +367,7 @@ class VerilogParser {
 }
 
 function processDirectory(rootDir: string, directory: string): void {
-    const publicDir = path.join(rootDir, '..', 'public');
+    const publicDir = path.join(rootDir, '..', CONFIG.directories.public);
     const inputDir = path.join(publicDir, directory);
     const files = fs.readdirSync(inputDir);
 
@@ -356,12 +375,12 @@ function processDirectory(rootDir: string, directory: string): void {
     let sdfFile: string | null = null;
 
     for (const file of files) {
-        if (file.endsWith('.v')) {
-            if (verilogFile && !file.endsWith('_post_synthesis.v')) {
+        if (file.endsWith(CONFIG.fileExtensions.verilog)) {
+            if (verilogFile && !file.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.verilog)) {
                 continue;
             }
             verilogFile = file;
-        } else if (file.endsWith('.sdf')) {
+        } else if (file.endsWith(CONFIG.fileExtensions.sdf)) {
             sdfFile = file;
         }
     }
@@ -371,17 +390,17 @@ function processDirectory(rootDir: string, directory: string): void {
     }
 
     let baseName;
-    if (verilogFile.endsWith('_post_synthesis.v')) {
-        baseName = sdfFile.replace('_post_synthesis.sdf', '');
-    } else if (sdfFile.endsWith('_post_synthesis.sdf')) {
-        baseName = sdfFile.replace('.sdf', '');
+    if (verilogFile.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.verilog)) {
+        baseName = sdfFile.replace(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.sdf, '');
+    } else if (sdfFile.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.sdf)) {
+        baseName = sdfFile.replace(CONFIG.fileExtensions.sdf, '');
     } else {
-        baseName = verilogFile.replace('.v', '');
+        baseName = verilogFile.replace(CONFIG.fileExtensions.verilog, '');
     }
 
     const verilogPath = path.join(inputDir, verilogFile);
     const sdfPath = path.join(inputDir, sdfFile);
-    const schematicsDir = path.join(publicDir, 'schematics');
+    const schematicsDir = path.join(publicDir, CONFIG.directories.schematics);
     
     if (!fs.existsSync(schematicsDir)) {
         fs.mkdirSync(schematicsDir, { recursive: true });
@@ -391,14 +410,23 @@ function processDirectory(rootDir: string, directory: string): void {
     const parser = new VerilogParser(verilogPath, sdfPath);
     const schematic = parser.parse();
     fs.writeFileSync(outputFile, JSON.stringify(schematic, null, 4));
+    console.log(`Generated schematic: ${outputFile}`);
 }
 
+// Update main function to use configuration
 function main(): void {
     const scriptDir = __dirname;
     const srcDir = scriptDir.includes('dist') ? path.join(scriptDir, '../../src') : scriptDir;
     
-    processDirectory(srcDir, 'verilog_post_synthesis_examples/1ff_no_rst_VTR');
-    processDirectory(srcDir, 'verilog_post_synthesis_examples/1ff_VTR');
+    const examples = [
+        '1ff_no_rst_VTR',
+        '1ff_VTR',
+        '2ffs_no_rst_VTR'
+    ];
+    
+    examples.forEach(example => {
+        processDirectory(srcDir, path.join(CONFIG.directories.examples, example));
+    });
 }
 
 if (require.main === module) {

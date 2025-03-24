@@ -9,7 +9,7 @@
     "test": "ng test",
     "serve:ssr:FPGAWeb": "node dist/fpgaweb/server/server.mjs",
     "build:parser": "tsc -p tsconfig.parser.json",
-    "parse": "npm run build:parser && node dist/parser/parser.js"
+    "parse": "npm run build:parser && node dist/parser/parser.js > parse.log 2>&1"
   },
   "private": true,
   "dependencies": {
