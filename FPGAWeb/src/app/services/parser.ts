@@ -10,8 +10,9 @@
  * - Like cell delays, interconnect delays, setup/hold times
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+// Remove fs and path imports since we're not using file system in browser
+// import * as fs from 'fs';
+// import * as path from 'path';
 
 // Add configuration object at the top
 const CONFIG = {
@@ -153,7 +154,7 @@ class CellNameGenerator {
     }
 }
 
-class VerilogParser {
+export class VerilogParser {
     private content: string = '';
     private sdfContent: string = '';
     private moduleName: string = '';
@@ -164,13 +165,13 @@ class VerilogParser {
     private delays: { [key: string]: string } = {};
     private cellNamer: CellNameGenerator;
 
-    constructor(private verilogPath: string, private sdfPath: string) {
+    constructor() {
         this.cellNamer = new CellNameGenerator();
     }
 
-    private readFiles(): void {
-        this.content = fs.readFileSync(this.verilogPath, { encoding: CONFIG.encoding as BufferEncoding });
-        this.sdfContent = fs.readFileSync(this.sdfPath, { encoding: CONFIG.encoding as BufferEncoding });
+    loadContent(verilogContent: string, sdfContent: string): void {
+        this.content = verilogContent;
+        this.sdfContent = sdfContent;
     }
 
     private parseModule(): void {
@@ -362,7 +363,6 @@ class VerilogParser {
     }
 
     parse(): SchematicOutput {
-        this.readFiles();
         this.parseModule();
         this.parseTiming();
         this.parseCells();
@@ -378,68 +378,20 @@ class VerilogParser {
     }
 }
 
+// Remove or comment out Node.js specific functions since they won't be used in browser
+/*
 function processDirectory(rootDir: string, directory: string): void {
-    const publicDir = path.join(rootDir, '..', CONFIG.directories.public);
-    const inputDir = path.join(publicDir, directory);
-    const files = fs.readdirSync(inputDir);
-
-    let verilogFile: string | null = null;
-    let sdfFile: string | null = null;
-
-    for (const file of files) {
-        if (file.endsWith(CONFIG.fileExtensions.verilog)) {
-            if (verilogFile && !file.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.verilog)) {
-                continue;
-            }
-            verilogFile = file;
-        } else if (file.endsWith(CONFIG.fileExtensions.sdf)) {
-            sdfFile = file;
-        }
-    }
-
-    if (!verilogFile || !sdfFile) {
-        return;
-    }
-
-    let baseName;
-    if (verilogFile.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.verilog)) {
-        baseName = sdfFile.replace(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.sdf, '');
-    } else if (sdfFile.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.sdf)) {
-        baseName = sdfFile.replace(CONFIG.fileExtensions.sdf, '');
-    } else {
-        baseName = verilogFile.replace(CONFIG.fileExtensions.verilog, '');
-    }
-
-    const verilogPath = path.join(inputDir, verilogFile);
-    const sdfPath = path.join(inputDir, sdfFile);
-    const schematicsDir = path.join(publicDir, CONFIG.directories.schematics);
-    
-    if (!fs.existsSync(schematicsDir)) {
-        fs.mkdirSync(schematicsDir, { recursive: true });
-    }
-    
-    const outputFile = path.join(schematicsDir, `${baseName}_schematics.json`);
-    const parser = new VerilogParser(verilogPath, sdfPath);
-    const schematic = parser.parse();
-    fs.writeFileSync(outputFile, JSON.stringify(schematic, null, 4));
-    console.log(`Generated schematic: ${outputFile}`);
+    // ...
 }
 
-// Update main function to use configuration
 function main(): void {
-    const scriptDir = __dirname;
-    const srcDir = scriptDir.includes('dist') ? path.join(scriptDir, '../../src') : scriptDir;
-    
-    CONFIG.directories.examples.forEach(example => {
-        processDirectory(
-            srcDir, 
-            path.join(CONFIG.directories.examples_folder, example)
-        );
-    });
+    // ...
 }
 
 if (require.main === module) {
     main();
 }
+*/
 
-export { VerilogParser, processDirectory };
+// Remove duplicate exports at the bottom
+// export { VerilogParser, processDirectory };

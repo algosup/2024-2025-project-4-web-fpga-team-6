@@ -21,28 +21,7 @@
       
       <div class="upload-form">
         <div class="form-group">
-          <label for="appName">Application Name*</label>
-          <input 
-            type="text" 
-            id="appName" 
-            [(ngModel)]="newApplicationName" 
-            placeholder="Enter application name"
-            required
-          >
-        </div>
-
-        <div class="form-group">
-          <label for="appDescription">Description</label>
-          <textarea 
-            id="appDescription" 
-            [(ngModel)]="newApplicationDescription" 
-            placeholder="Enter application description"
-            rows="3"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label for="verilogFile">Verilog File (.v)*</label>
+          <label for="verilogFile">Post-Synthesis Verilog File (.v)*</label>
           <div class="file-input-container">
             <input 
               type="file" 
@@ -56,30 +35,92 @@
               <span *ngIf="selectedVerilogFile">{{ selectedVerilogFile.name }}</span>
             </div>
           </div>
-          <small>Upload your Verilog implementation file</small>
+          <small>Upload your post-synthesis Verilog implementation file</small>
         </div>
 
         <div class="form-group">
-          <label for="testbenchFile">Testbench File (.v)*</label>
+          <label for="sdfFile">SDF Timing File (.sdf)*</label>
           <div class="file-input-container">
             <input 
               type="file" 
-              id="testbenchFile" 
-              accept=".v" 
-              (change)="onTestbenchFileSelected($event)"
+              id="sdfFile" 
+              accept=".sdf" 
+              (change)="onSdfFileSelected($event)"
               required
             >
             <div class="file-input-info">
-              <span *ngIf="!selectedTestbenchFile">No file selected</span>
-              <span *ngIf="selectedTestbenchFile">{{ selectedTestbenchFile.name }}</span>
+              <span *ngIf="!selectedSdfFile">No file selected</span>
+              <span *ngIf="selectedSdfFile">{{ selectedSdfFile.name }}</span>
             </div>
           </div>
-          <small>Upload your Verilog testbench file</small>
+          <small>Upload your Standard Delay Format timing file</small>
+        </div>
+
+        <div class="form-group">
+          <label for="applicationName">Application Name (optional)</label>
+          <input 
+            type="text" 
+            id="applicationName"
+            [(ngModel)]="newApplicationName"
+            placeholder="Leave empty to use Verilog file name"
+          >
+          <small>If left empty, the name will be taken from the Verilog file</small>
+        </div>
+
+        <div class="form-group">
+          <label for="appDescription">Description</label>
+          <textarea 
+            id="appDescription" 
+            [(ngModel)]="newApplicationDescription" 
+            placeholder="Enter application description"
+            rows="3"
+          ></textarea>
         </div>
 
         <div class="form-actions">
-          <button class="cnes-button upload-button" (click)="uploadApplication()">Upload Application</button>
-          <button class="cnes-button secondary reset-button" (click)="resetForm()">Reset Form</button>
+          <button 
+            class="cnes-button upload-button" 
+            (click)="uploadApplication()" 
+            [disabled]="isProcessing"
+          >
+            <span *ngIf="!isProcessing">Parse Files</span>
+            <span *ngIf="isProcessing">Processing...</span>
+          </button>
+          <button 
+            class="cnes-button secondary reset-button" 
+            (click)="resetForm()" 
+            [disabled]="isProcessing"
+          >
+            Reset Form
+          </button>
+        </div>
+
+        <!-- Add preview section -->
+        <div class="preview-section" *ngIf="parsedContent">
+          <div class="section-header">
+            <h3>Parsing Result</h3>
+          </div>
+          <div class="preview-content">
+            <div class="json-viewer">
+              <pre [innerHTML]="parsedContent | prettyJson"></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save and Download buttons -->
+        <div class="action-buttons" *ngIf="parsedContent">
+          <button 
+            class="cnes-button accent save-button" 
+            (click)="saveApplication()"
+          >
+            Save Application
+          </button>
+          <button 
+            class="cnes-button secondary download-button" 
+            (click)="downloadJson()"
+          >
+            Download JSON
+          </button>
         </div>
       </div>
     </div>
