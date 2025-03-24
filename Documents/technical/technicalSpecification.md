@@ -134,6 +134,8 @@ To streamline the simulation process, the backend performs several automated tas
 - **Schematic Generation:** The system parses Verilog and SDF files to extract circuit details and timing information, converting them into JSON schematics that are used for visualization.
 - **Seamless Integration:** This automated processing ensures that once files are uploaded, the necessary simulation data is immediately available to the frontend for display.
 
+more information about functional Specification in the [functional specification](../Functional/functionalSpecification.md).
+
 ---
 
 ## 4. Frontend Design and Implementation
@@ -212,6 +214,8 @@ A comprehensive testing and debugging strategy is in place to ensure system reli
 - **Integration Testing:** End-to-end testing is performed to validate the complete flow from user action on the frontend to simulation processing on the backend.
 - **SSR and Routing Tests:** Special attention is given to ensure that server-side rendering and lazy loading of routes function correctly across different environments.
 - **Logging and Monitoring:** Both the frontend and backend incorporate logging mechanisms to capture errors and performance metrics, enabling rapid debugging and continuous improvement.
+
+more information about tests in the [test plan](../TestPlan/testPlan.md).
 
 ---
 
