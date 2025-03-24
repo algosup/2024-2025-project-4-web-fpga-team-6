@@ -1,10 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FileProcessingService } from '../services/file-processing.service';
 import { PrettyJsonPipe } from '../pipes/pretty-json.pipe';
-
+import { DesignService, Design } from '../services/design.service';
 
 @Component({
   selector: 'app-teacher-interface',
@@ -14,40 +14,15 @@ import { PrettyJsonPipe } from '../pipes/pretty-json.pipe';
   styleUrl: './teacher-interface.component.css'
 })
 
-export class TeacherInterfaceComponent {
+export class TeacherInterfaceComponent implements OnInit {
   title = 'Teacher Interface';
   
   // Mock data for existing applications
-  applications = [
-    { 
-      id: 'example1', 
-      name: 'Basic Counter', 
-      description: 'A simple counter implementation',
-      files: ['counter.v', 'counter_tb.v']
-    },
-    { 
-      id: 'example2', 
-      name: 'LED Blinker', 
-      description: 'Control LEDs with different patterns',
-      files: ['blinker.v', 'blinker_tb.v']
-    },
-    { 
-      id: 'example3', 
-      name: 'State Machine', 
-      description: 'A simple FSM implementation',
-      files: ['state_machine.v', 'state_machine_tb.v']
-    },
-    { 
-      id: 'example4', 
-      name: 'ALU Implementation', 
-      description: 'Arithmetic Logic Unit with multiple operations',
-      files: ['alu.v', 'alu_tb.v']
-    }
-  ];
+  designs: Design[] = [];
 
   // Variables for form
-  newApplicationName = '';
-  newApplicationDescription = '';
+  newDesignName = '';
+  newDesignDescription = '';
   selectedVerilogFile: File | null = null;
   selectedSdfFile: File | null = null;
   isProcessing = false;
@@ -56,7 +31,17 @@ export class TeacherInterfaceComponent {
   parsedContent: string | null = null;
   generatedFilename: string | null = null;
 
-  constructor(private fileProcessingService: FileProcessingService) {}
+  constructor(
+    private fileProcessingService: FileProcessingService,
+    private designService: DesignService
+  ) {}
+
+  ngOnInit() {
+    // Subscribe to designs updates
+    this.designService.getDesigns().subscribe(designs => {
+      this.designs = designs;
+    });
+  }
 
   // Methods for file handling
   onVerilogFileSelected(event: Event): void {
@@ -73,15 +58,15 @@ export class TeacherInterfaceComponent {
     }
   }
 
-  async uploadApplication(): Promise<void> {
+  async uploadDesign(): Promise<void> {
     if (!this.selectedVerilogFile || !this.selectedSdfFile) {
       alert('Please select both Verilog and SDF files');
       return;
     }
 
     // If no name is provided, use the Verilog file name without extension
-    if (!this.newApplicationName.trim()) {
-      this.newApplicationName = this.selectedVerilogFile.name.replace(/\.v$/, '');
+    if (!this.newDesignName.trim()) {
+      this.newDesignName = this.selectedVerilogFile.name.replace(/\.v$/, '');
     }
 
     this.isProcessing = true;
@@ -93,7 +78,7 @@ export class TeacherInterfaceComponent {
       );
 
       // Generate filename based on application name
-      this.generatedFilename = `${this.newApplicationName.toLowerCase().replace(/\s+/g, '_')}_schematics.json`;
+      this.generatedFilename = `${this.newDesignName.toLowerCase().replace(/\s+/g, '_')}_schematics.json`;
       
       // Store parsed content instead of downloading directly
       this.parsedContent = jsonContent;
@@ -106,21 +91,21 @@ export class TeacherInterfaceComponent {
     }
   }
 
-  saveApplication(): void {
+  saveDesign(): void {
     if (this.parsedContent && this.generatedFilename) {
-      // Add to applications list
-      this.applications.push({
-        id: `app_${Date.now()}`,
-        name: this.newApplicationName,
-        description: this.newApplicationDescription,
+      const newDesign: Design = {
+        id: `design_${Date.now()}`,
+        name: this.newDesignName,
+        description: this.newDesignDescription,
         files: [
           this.selectedVerilogFile!.name,
           this.selectedSdfFile!.name,
           this.generatedFilename
-        ]
-      });
+        ],
+        jsonContent: this.parsedContent
+      };
 
-      // Reset form
+      this.designService.addDesign(newDesign);
       this.resetForm();
     }
   }
@@ -132,8 +117,8 @@ export class TeacherInterfaceComponent {
   }
 
   resetForm(): void {
-    this.newApplicationName = '';
-    this.newApplicationDescription = '';
+    this.newDesignName = '';
+    this.newDesignDescription = '';
     this.selectedVerilogFile = null;
     this.selectedSdfFile = null;
 
@@ -147,10 +132,7 @@ export class TeacherInterfaceComponent {
     this.generatedFilename = null;
   }
 
-  deleteApplication(id: string): void {
-    // In a real application, this would delete the application
-    console.log('Deleting application:', id);
-    // Mock successful deletion
-    this.applications = this.applications.filter(app => app.id !== id);
+  deleteDesign(id: string): void {
+    this.designService.deleteDesign(id);
   }
 }

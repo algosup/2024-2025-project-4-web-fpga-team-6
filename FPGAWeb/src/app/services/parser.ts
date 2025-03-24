@@ -1,18 +1,3 @@
-/**
- * This script converts the Verilog & SDF files into a JSON file containing in a convenient way:
- * - the schematic representation of the circuit.
- * - the timing information of the circuit.
- * 
- * A Verilog file (.v) contains the structural description of the circuit
- * - Like module definition, ports, wires, and cell instances (DFF, AND, OR, etc.)
- * 
- * A SDF file (.sdf) contains timing information for the circuit
- * - Like cell delays, interconnect delays, setup/hold times
- */
-
-// Remove fs and path imports since we're not using file system in browser
-// import * as fs from 'fs';
-// import * as path from 'path';
 
 // Add configuration object at the top
 const CONFIG = {
@@ -378,20 +363,3 @@ export class VerilogParser {
     }
 }
 
-// Remove or comment out Node.js specific functions since they won't be used in browser
-/*
-function processDirectory(rootDir: string, directory: string): void {
-    // ...
-}
-
-function main(): void {
-    // ...
-}
-
-if (require.main === module) {
-    main();
-}
-*/
-
-// Remove duplicate exports at the bottom
-// export { VerilogParser, processDirectory };

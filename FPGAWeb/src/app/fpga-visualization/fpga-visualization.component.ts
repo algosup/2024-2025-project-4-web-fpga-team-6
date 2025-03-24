@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { DesignService, Design } from '../services/design.service';
 
 @Component({
   selector: 'app-fpga-visualization',
@@ -15,6 +16,8 @@ export class FpgaVisualizationComponent implements OnInit {
   isPaused = false;
   speed = 1;
   currentExample = '';
+  designs: Design[] = [];
+  selectedDesign: Design | null = null;
   
   // Mock data - in a real app, this would come from a service
   examples = [
@@ -24,17 +27,32 @@ export class FpgaVisualizationComponent implements OnInit {
     { id: 'example4', name: 'ALU Implementation' }
   ];
 
-  constructor() { }
+  constructor(private designService: DesignService) {}
 
   ngOnInit(): void {
+    // Subscribe to designs updates
+    this.designService.getDesigns().subscribe(designs => {
+      this.designs = designs;
+      this.examples = designs.map(design => ({
+        id: design.id,
+        name: design.name
+      }));
+    });
   }
 
-  selectExample(exampleId: string): void {
-    this.currentExample = exampleId;
-    this.isRunning = false;
-    this.isPaused = false;
-    // In a real app, this would load the example data
-    console.log(`Selected example: ${exampleId}`);
+  selectExample(designId: string): void {
+    const design = this.designService.getDesignById(designId);
+    if (design) {
+      this.selectedDesign = design;
+      this.currentExample = designId;
+      this.isRunning = false;
+      this.isPaused = false;
+      // Load the design's JSON content for visualization
+      if (design.jsonContent) {
+        // Initialize visualization with the JSON content
+        console.log('Loading design:', design.name);
+      }
+    }
   }
 
   playSimulation(): void {

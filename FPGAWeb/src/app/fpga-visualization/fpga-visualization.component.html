@@ -13,15 +13,16 @@
   <div class="main-content">
     <div class="sidebar">
       <div class="example-selection">
-        <h2>Example Applications</h2>
+        <h2>Available Designs</h2>
         <div class="example-list">
           <div 
-            *ngFor="let example of examples" 
+            *ngFor="let design of designs" 
             class="example-item" 
-            [class.selected]="currentExample === example.id"
-            (click)="selectExample(example.id)"
+            [class.selected]="currentExample === design.id"
+            (click)="selectExample(design.id)"
           >
-            {{ example.name }}
+            {{ design.name }}
+            <small>{{ design.description }}</small>
           </div>
         </div>
       </div>

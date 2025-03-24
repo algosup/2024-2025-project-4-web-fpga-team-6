@@ -52,9 +52,6 @@ header h1 {
 
 .upload-section {
   flex: 1;
-  background-color: var(--cnes-white);
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   padding: 1.5rem;
   height: fit-content;
 }
@@ -108,9 +105,14 @@ header h1 {
 }
 
 .upload-form {
+  background-color: var(--cnes-white);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.2rem;
+  margin-top: 1rem;
 }
 
 .form-group {
@@ -278,6 +280,88 @@ header h1 {
 }
 
 .app-files li::before {
+  content: "";
+  position: absolute;
+  left: -1rem;
+  top: 0.5rem;
+  width: 5px;
+  height: 5px;
+  background-color: var(--cnes-blue);
+  border-radius: 50%;
+}
+
+.designs-section {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.designs-section h2 {
+  font-size: 1.4rem;
+  margin: 0;
+  color: var(--cnes-blue);
+  font-weight: 500;
+}
+
+.designs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.design-card {
+  background-color: var(--cnes-white);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-left: 3px solid var(--cnes-blue);
+}
+
+.design-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.design-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.8rem;
+}
+
+.design-header h3 {
+  margin: 0;
+  color: var(--cnes-blue);
+  font-size: 1.2rem;
+}
+
+.design-description {
+  color: var(--cnes-dark-gray);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.design-files h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  color: var(--cnes-dark-gray);
+  font-weight: 500;
+}
+
+.design-files ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.design-files li {
+  color: var(--cnes-dark-gray);
+  margin-bottom: 0.3rem;
+  position: relative;
+}
+
+.design-files li::before {
   content: "";
   position: absolute;
   left: -1rem;

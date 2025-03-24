@@ -16,7 +16,7 @@
         <div class="section-icon">
           <div class="icon-circle upload"></div>
         </div>
-        <h2>Upload New Application</h2>
+        <h2>Add a new Design</h2>
       </div>
       
       <div class="upload-form">
@@ -57,22 +57,22 @@
         </div>
 
         <div class="form-group">
-          <label for="applicationName">Application Name (optional)</label>
+          <label for="designName">Design Name (optional)</label>
           <input 
             type="text" 
-            id="applicationName"
-            [(ngModel)]="newApplicationName"
+            id="designName"
+            [(ngModel)]="newDesignName"
             placeholder="Leave empty to use Verilog file name"
           >
           <small>If left empty, the name will be taken from the Verilog file</small>
         </div>
 
         <div class="form-group">
-          <label for="appDescription">Description</label>
+          <label for="designDescription">Description</label>
           <textarea 
-            id="appDescription" 
-            [(ngModel)]="newApplicationDescription" 
-            placeholder="Enter application description"
+            id="designDescription" 
+            [(ngModel)]="newDesignDescription" 
+            placeholder="Enter design description"
             rows="3"
           ></textarea>
         </div>
@@ -80,7 +80,7 @@
         <div class="form-actions">
           <button 
             class="cnes-button upload-button" 
-            (click)="uploadApplication()" 
+            (click)="uploadDesign()" 
             [disabled]="isProcessing"
           >
             <span *ngIf="!isProcessing">Parse Files</span>
@@ -95,7 +95,23 @@
           </button>
         </div>
 
-        <!-- Add preview section -->
+        <!-- Save and Download buttons -->
+        <div class="action-buttons" *ngIf="parsedContent">
+          <button 
+            class="cnes-button accent save-button" 
+            (click)="saveDesign()"
+          >
+            Save Design
+          </button>
+          <button 
+            class="cnes-button secondary download-button" 
+            (click)="downloadJson()"
+          >
+            Download JSON
+          </button>
+        </div>
+
+        <!-- Preview section -->
         <div class="preview-section" *ngIf="parsedContent">
           <div class="section-header">
             <h3>Parsing Result</h3>
@@ -106,49 +122,33 @@
             </div>
           </div>
         </div>
-
-        <!-- Save and Download buttons -->
-        <div class="action-buttons" *ngIf="parsedContent">
-          <button 
-            class="cnes-button accent save-button" 
-            (click)="saveApplication()"
-          >
-            Save Application
-          </button>
-          <button 
-            class="cnes-button secondary download-button" 
-            (click)="downloadJson()"
-          >
-            Download JSON
-          </button>
-        </div>
       </div>
     </div>
 
-    <div class="applications-section">
+    <div class="designs-section">
       <div class="section-header">
         <div class="section-icon">
           <div class="icon-circle manage"></div>
         </div>
-        <h2>Manage Applications</h2>
+        <h2>Manage Designs</h2>
       </div>
       
-      <div class="applications-list">
-        <div *ngFor="let app of applications" class="application-card">
-          <div class="app-header">
-            <h3>{{ app.name }}</h3>
-            <button class="delete-button" (click)="deleteApplication(app.id)">
+      <div class="designs-list">
+        <div *ngFor="let design of designs" class="design-card">
+          <div class="design-header">
+            <h3>{{ design.name }}</h3>
+            <button class="delete-button" (click)="deleteDesign(design.id)">
               <span class="delete-icon">×</span>
               Delete
             </button>
           </div>
           
-          <p class="app-description">{{ app.description }}</p>
+          <p class="design-description">{{ design.description }}</p>
           
-          <div class="app-files">
+          <div class="design-files">
             <h4>Files:</h4>
             <ul>
-              <li *ngFor="let file of app.files">{{ file }}</li>
+              <li *ngFor="let file of design.files">{{ file }}</li>
             </ul>
           </div>
         </div>
