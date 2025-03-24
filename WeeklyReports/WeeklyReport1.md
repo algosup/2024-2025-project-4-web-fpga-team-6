@@ -22,7 +22,7 @@ This week marked the official launch of our project. Our primary focus was the p
 
 ## Plan for Next Week
 
-Ensure that the documentation is started, especially on managament side and the functional specification.
+Ensure that the documentation is started, especially on managament side and the functional specification, since they are the first deadlines.
 
 ## Conclusion
 
