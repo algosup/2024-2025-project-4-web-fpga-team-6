@@ -7,7 +7,10 @@
       </div>
       <h1>{{ title }}</h1>
     </div>
-    <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+    <div class="header-actions">
+      <a [routerLink]="['/student']" class="cnes-button accent student-button">Student Interface</a>
+      <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+    </div>
   </header>
 
   <div class="main-content">
