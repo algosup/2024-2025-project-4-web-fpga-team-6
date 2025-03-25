@@ -50,6 +50,9 @@ export class TeacherInterfaceComponent implements OnInit {
 
   private markdown = marked;
 
+  isDraggingVerilog = false;
+  isDraggingSdf = false;
+
   constructor(
     private fileProcessingService: FileProcessingService,
     private designService: DesignService,
@@ -199,16 +202,17 @@ export class TeacherInterfaceComponent implements OnInit {
   }
 
   resetForm(): void {
-    this.newDesignName = '';
-    this.newDesignDescription = '';
     this.selectedVerilogFile = null;
     this.selectedSdfFile = null;
+    this.newDesignName = '';
+    this.newDesignDescription = '';
+    this.markdownPreview = '';
 
     // Reset file input elements
     const verilogInput = document.getElementById('verilogFile') as HTMLInputElement;
     const sdfInput = document.getElementById('sdfFile') as HTMLInputElement;
     if (verilogInput) verilogInput.value = '';
-    if (sdfInput) sdfInput.value = '';
+    if (sdfInput) verilogInput.value = '';
 
     this.parsedContent = null;
     this.generatedFilename = null;
@@ -267,30 +271,51 @@ export class TeacherInterfaceComponent implements OnInit {
     document.getElementById('importFile')?.click();
   }
 
-  onDragOver(event: DragEvent): void {
+  onDragOver(event: DragEvent, type: 'verilog' | 'sdf' | 'import'): void {
     event.preventDefault();
     event.stopPropagation();
-    this.isDragging = true;
+    if (type === 'verilog') {
+      this.isDraggingVerilog = true;
+    } else if (type === 'sdf') {
+      this.isDraggingSdf = true;
+    } else if (type === 'import') {
+      this.isDragging = true;
+    }
   }
 
-  onDragLeave(event: DragEvent): void {
+  onDragLeave(event: DragEvent, type: 'verilog' | 'sdf' | 'import'): void {
     event.preventDefault();
     event.stopPropagation();
-    this.isDragging = false;
+    if (type === 'verilog') {
+      this.isDraggingVerilog = false;
+    } else if (type === 'sdf') {
+      this.isDraggingSdf = false;
+    } else if (type === 'import') {
+      this.isDragging = false;
+    }
   }
 
-  async onDrop(event: DragEvent): Promise<void> {
+  async onDrop(event: DragEvent, type: 'verilog' | 'sdf' | 'import'): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
+    this.isDraggingVerilog = false;
+    this.isDraggingSdf = false;
     this.isDragging = false;
 
     const files = event.dataTransfer?.files;
-    if (files && files.length > 0) {
+    if (!files?.length) return;
+
+    if (type === 'import') {
       const zipFiles = Array.from(files).filter(file => file.type === 'application/zip');
       if (zipFiles.length > 0) {
         await this.importMultipleDesigns(zipFiles);
-      } else {
-        alert('Please drop ZIP files only');
+      }
+    } else {
+      const file = files[0];
+      if (type === 'verilog' && file.name.endsWith('.v')) {
+        this.selectedVerilogFile = file;
+      } else if (type === 'sdf' && file.name.endsWith('.sdf')) {
+        this.selectedSdfFile = file;
       }
     }
   }
@@ -341,6 +366,18 @@ export class TeacherInterfaceComponent implements OnInit {
       this.markdownPreview = String(marked.parse(this.newDesignDescription, { async: false }));
     } else {
       this.markdownPreview = null;
+    }
+  }
+
+  onFileSelected(event: Event, type: 'verilog' | 'sdf'): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+    if (type === 'verilog') {
+      this.selectedVerilogFile = file;
+    } else {
+      this.selectedSdfFile = file;
     }
   }
 }

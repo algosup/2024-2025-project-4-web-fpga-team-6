@@ -1,12 +1,21 @@
+/* Base styles and variables */
+:root {
+  --transition-speed: 0.3s;
+  --hover-lift: translateY(-3px);
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
 .teacher-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 2rem;
   font-family: 'Roboto', sans-serif;
   color: var(--cnes-dark-gray);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  gap: 2rem;
 }
 
 header {
@@ -79,7 +88,20 @@ header h1 {
 }
 
 .section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--cnes-blue);
   margin-right: 1rem;
+}
+
+.section-icon .icon {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1); /* Make icon white */
 }
 
 /* Add specific styles for headers that need space-between */
@@ -100,9 +122,9 @@ header h1 {
   font-size: 0.9rem;
 }
 
-.visualize-icon {
-  font-size: 1.1rem;
-  line-height: 1;
+.visualize-button .icon {
+  width: 18px;
+  height: 18px;
 }
 
 .icon-circle {
@@ -120,20 +142,8 @@ header h1 {
   background-color: var(--cnes-blue);
 }
 
-.icon-circle.upload::before {
-  content: "↑";
-  font-size: 1.2rem;
-  font-weight: bold;
-}
-
 .icon-circle.manage {
   background-color: var(--cnes-accent);
-}
-
-.icon-circle.manage::before {
-  content: "≡";
-  font-size: 1.5rem;
-  font-weight: bold;
 }
 
 .upload-section h2 {
@@ -287,9 +297,8 @@ header h1 {
   gap: 0.3rem;
 }
 
-.delete-icon {
-  font-size: 1.2rem;
-  font-weight: bold;
+.delete-button .icon {
+  filter: brightness(0) invert(1); /* Make icon white */
 }
 
 .delete-button:hover {
@@ -349,17 +358,36 @@ header h1 {
 }
 
 .design-card {
-  background-color: var(--cnes-white);
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 1.2rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: var(--cnes-white);
+  border-radius: 8px;
+  padding: 1.5rem;
   border-left: 3px solid var(--cnes-blue);
+  box-shadow: var(--card-shadow);
+  transition: all var(--transition-speed);
+  position: relative;
+  overflow: hidden;
 }
 
 .design-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: var(--hover-lift);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.design-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--cnes-blue), var(--cnes-accent));
+  transform: scaleX(0);
+  transition: transform var(--transition-speed);
+  transform-origin: left;
+}
+
+.design-card:hover::before {
+  transform: scaleX(1);
 }
 
 .design-header {
@@ -417,6 +445,11 @@ header h1 {
   align-items: center;
 }
 
+.design-actions .icon {
+  width: 16px;
+  height: 16px;
+}
+
 .export-button {
   padding: 0.4rem 0.8rem;
   font-size: 0.9rem;
@@ -436,6 +469,7 @@ footer {
 @media (max-width: 992px) {
   .main-content {
     flex-direction: column;
+    gap: 2rem;
   }
 
   .upload-section {
@@ -747,11 +781,289 @@ footer {
 }
 
 .design-files {
-  margin-top: 0.5rem;
+  margin-top: 1rem;
 }
 
 .file-entry {
   font-family: monospace;
   color: var(--cnes-blue);
-  padding: 0.2rem 0;
+  padding: 0.3rem 0.5rem;
+  background: rgba(11, 61, 145, 0.05);
+  border-radius: 4px;
+  margin: 0.2rem 0;
+  transition: all var(--transition-speed);
+}
+
+.file-entry:hover {
+  background: rgba(11, 61, 145, 0.1);
+  transform: translateX(5px);
+}
+
+/* Modern file upload zone */
+.file-upload-zone {
+  border: 2px dashed var(--cnes-blue);
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  transition: all var(--transition-speed);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-upload-zone:hover,
+.file-upload-zone.dragging {
+  border-color: var(--cnes-accent);
+  background: rgba(11, 61, 145, 0.05);
+  transform: var(--hover-lift);
+}
+
+.file-upload-zone input[type="file"] {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.selected-files {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(11, 61, 145, 0.05);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.selected-file.verilog {
+  border-left: 3px solid var (--cnes-blue);
+}
+
+.selected-file.sdf {
+  border-left: 3px solid var(--cnes-accent);
+}
+
+/* Animated buttons */
+.cnes-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all var(--transition-speed);
+  position: relative;
+  overflow: hidden;
+}
+
+.cnes-button::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-100%);
+}
+
+.cnes-button:hover::after {
+  transform: translateX(0);
+  transition: transform var(--transition-speed);
+}
+
+/* Hover effects for buttons with icons */
+.cnes-button:hover .icon {
+  transform: scale(1.1);
+  transition: transform var(--transition-speed);
+}
+
+/* Loading animation */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--cnes-blue);
+}
+
+.loading-indicator::after {
+  content: '...';
+  animation: loading 1.5s infinite;
+  margin-left: 0.5rem;
+}
+
+@keyframes loading {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 1; }
+}
+
+.file-upload-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.file-upload-zone {
+  flex: 1;
+  border: 2px dashed var(--cnes-blue);
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all var(--transition-speed);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.file-upload-zone.verilog {
+  border-color: var(--cnes-blue);
+}
+
+.file-upload-zone.sdf {
+  border-color: var(--cnes-accent);
+}
+
+.file-upload-zone:hover,
+.file-upload-zone.dragging {
+  background: rgba(11, 61, 145, 0.05);
+  transform: var(--hover-lift);
+}
+
+.file-upload-zone.verilog:hover,
+.file-upload-zone.verilog.dragging {
+  border-color: var(--cnes-blue);
+  background: rgba(11, 61, 145, 0.05);
+}
+
+.file-upload-zone.sdf:hover,
+.file-upload-zone.sdf.dragging {
+  border-color: var(--cnes-accent);
+  background: rgba(11, 61, 145, 0.05);
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upload-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.upload-content h3 {
+  font-size: 1rem;
+  margin: 0;
+  color: var(--cnes-dark-gray);
+}
+
+.upload-content p {
+  font-size: 0.85rem;
+  margin: 0;
+  color: var (--cnes-dark-gray);
+  opacity: 0.8;
+}
+
+/* Icon styles */
+.icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Adjust button styles to accommodate icons */
+.cnes-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Section icon adjustments */
+.section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--cnes-blue);
+  margin-right: 1rem;
+}
+
+.section-icon .icon {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) invert(1); /* Make icon white */
+}
+
+/* Design actions icons */
+.design-actions .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.delete-button .icon {
+  filter: brightness(0) invert(1); /* Make icon white */
+}
+
+/* Upload zone icon */
+.upload-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+/* Visualize button icon */
+.visualize-button .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Hover effects for buttons with icons */
+.cnes-button:hover .icon {
+  transform: scale(1.1);
+  transition: transform var(--transition-speed);
+}
+
+/* Import zone styled like file upload zones */
+.file-upload-zone.import {
+  border-color: var(--cnes-blue);
+}
+
+.file-upload-zone.import:hover,
+.file-upload-zone.import.dragging {
+  border-color: var(--cnes-accent);
+  background: rgba(11, 61, 145, 0.05);
+}
+
+.upload-content h3 {
+  font-size: 1rem;
+  margin: 0;
+  color: var(--cnes-dark-gray);
+}
+
+.upload-content p {
+  font-size: 0.85rem;
+  margin: 0;
+  color: var(--cnes-dark-gray);
+  opacity: 0.8;
+}
+
+.upload-icon {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
 }

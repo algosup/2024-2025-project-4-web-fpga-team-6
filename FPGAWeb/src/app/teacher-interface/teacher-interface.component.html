@@ -16,47 +16,59 @@
   <div class="main-content">
     <div class="upload-section">
       <div class="section-header">
-        <div class="section-icon">
-          <div class="icon-circle upload"></div>
+        <div class="section-left">
+          <div class="section-icon">
+            <img src="assets/upload.svg" alt="Upload" class="icon">
+          </div>
+          <h2>Add a new Design</h2>
         </div>
-        <h2>Add a new Design</h2>
       </div>
       
       <div class="upload-form">
-        <div class="form-group">
-          <label for="verilogFile">Post-Synthesis Verilog File (.v)*</label>
-          <div class="file-input-container">
-            <input 
-              type="file" 
-              id="verilogFile" 
-              accept=".v" 
-              (change)="onVerilogFileSelected($event)"
-              required
-            >
-            <div class="file-input-info">
-              <span *ngIf="!selectedVerilogFile">No file selected</span>
-              <span *ngIf="selectedVerilogFile">{{ selectedVerilogFile.name }}</span>
+        <div class="file-upload-container">
+          <!-- Verilog Upload Zone -->
+          <div class="file-upload-zone verilog" 
+               [class.dragging]="isDraggingVerilog"
+               (dragover)="onDragOver($event, 'verilog')"
+               (dragleave)="onDragLeave($event, 'verilog')"
+               (drop)="onDrop($event, 'verilog')">
+            <div class="upload-content">
+              <img src="assets/upload.svg" alt="Upload" class="upload-icon">
+              <h3>Verilog File (.v)</h3>
+              <p>Drop or click to upload</p>
             </div>
+            <input type="file"
+                   accept=".v"
+                   (change)="onFileSelected($event, 'verilog')">
           </div>
-          <small>Upload your post-synthesis Verilog implementation file</small>
+
+          <!-- SDF Upload Zone -->
+          <div class="file-upload-zone sdf"
+               [class.dragging]="isDraggingSdf"
+               (dragover)="onDragOver($event, 'sdf')"
+               (dragleave)="onDragLeave($event, 'sdf')"
+               (drop)="onDrop($event, 'sdf')">
+            <div class="upload-content">
+              <img src="assets/upload.svg" alt="Upload" class="upload-icon">
+              <h3>SDF File (.sdf)</h3>
+              <p>Drop or click to upload</p>
+            </div>
+            <input type="file"
+                   accept=".sdf"
+                   (change)="onFileSelected($event, 'sdf')">
+          </div>
         </div>
 
-        <div class="form-group">
-          <label for="sdfFile">SDF Timing File (.sdf)*</label>
-          <div class="file-input-container">
-            <input 
-              type="file" 
-              id="sdfFile" 
-              accept=".sdf" 
-              (change)="onSdfFileSelected($event)"
-              required
-            >
-            <div class="file-input-info">
-              <span *ngIf="!selectedSdfFile">No file selected</span>
-              <span *ngIf="selectedSdfFile">{{ selectedSdfFile.name }}</span>
-            </div>
+        <!-- Selected Files Display -->
+        <div class="selected-files" *ngIf="selectedVerilogFile || selectedSdfFile">
+          <div class="selected-file verilog" *ngIf="selectedVerilogFile">
+            <span class="file-icon">V</span>
+            <span class="file-name">{{ selectedVerilogFile.name }}</span>
           </div>
-          <small>Upload your Standard Delay Format timing file</small>
+          <div class="selected-file sdf" *ngIf="selectedSdfFile">
+            <span class="file-icon">S</span>
+            <span class="file-name">{{ selectedSdfFile.name }}</span>
+          </div>
         </div>
 
         <div class="form-group">
@@ -98,6 +110,7 @@
             (click)="saveDesign()" 
             [disabled]="isProcessing || !selectedVerilogFile || !selectedSdfFile"
           >
+            <img src="assets/save.svg" alt="Save" class="icon">
             <span *ngIf="!isProcessing">Save Design</span>
             <span *ngIf="isProcessing">Processing...</span>
           </button>
@@ -106,6 +119,7 @@
             (click)="resetForm()" 
             [disabled]="isProcessing"
           >
+            <img src="assets/erase.svg" alt="Reset" class="icon">
             Reset Form
           </button>
         </div>
@@ -116,13 +130,13 @@
       <div class="section-header">
         <div class="section-left">
           <div class="section-icon">
-            <div class="icon-circle manage"></div>
+            <img src="assets/menu.svg" alt="Manage" class="icon">
           </div>
           <h2>Manage Designs</h2>
         </div>
         <a [routerLink]="['/fpga-visualization']" class="cnes-button accent visualize-button">
-          Visualize Designs
-          <span class="visualize-icon">➟</span>
+          <span>Visualize Designs</span>
+          <img src="assets/simulate.svg" alt="Simulate" class="icon">
         </a>
       </div>
       
@@ -131,27 +145,22 @@
         Loading examples...
       </div>
       
-      <!-- Import zone moved here -->
-      <div class="import-section" 
-           (dragover)="onDragOver($event)"
-           (dragleave)="onDragLeave($event)"
-           (drop)="onDrop($event)">
-        <div class="import-zone" [class.drag-over]="isDragging">
-          <input 
-            type="file"
-            id="importFile"
-            accept=".zip"
-            multiple
-            (change)="onImportFile($event)"
-            hidden
-          >
-          <div class="import-content">
-            <p>Drag and drop design packages or <button 
-              class="cnes-button-link"
-              (click)="triggerImport()"
-            >choose files</button></p>
-            <small>Only .zip files are supported</small>
+      <div class="import-section">
+        <div class="file-upload-zone import"
+             [class.dragging]="isDragging"
+             (dragover)="onDragOver($event, 'import')"
+             (dragleave)="onDragLeave($event, 'import')"
+             (drop)="onDrop($event, 'import')">
+          <div class="upload-content">
+            <img src="assets/upload.svg" alt="Upload" class="upload-icon">
+            <h3>Import Design Package</h3>
+            <p>Drag and drop .zip files here or click to upload</p>
           </div>
+          <input type="file"
+                 id="importFile"
+                 accept=".zip"
+                 multiple
+                 (change)="onImportFile($event)">
         </div>
       </div>
       
@@ -164,13 +173,14 @@
                 class="cnes-button secondary export-button" 
                 (click)="exportDesign(design.id)"
               >
+                <img src="assets/export.svg" alt="Export" class="icon">
                 Export
               </button>
               <button 
                 class="delete-button" 
                 (click)="deleteDesign(design.id)"
               >
-                <span class="delete-icon">×</span>
+                <img src="assets/delete.svg" alt="Delete" class="icon">
                 Delete
               </button>
             </div>
