@@ -73,8 +73,36 @@ header h1 {
   margin-bottom: 1.5rem;
 }
 
+.section-left {
+  display: flex;
+  align-items: center;
+}
+
 .section-icon {
   margin-right: 1rem;
+}
+
+/* Add specific styles for headers that need space-between */
+.designs-section .section-header {
+  justify-content: space-between;
+}
+
+/* Other headers default to left alignment */
+.upload-section .section-header {
+  justify-content: flex-start;
+}
+
+.visualize-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.visualize-icon {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .icon-circle {
@@ -199,6 +227,9 @@ header h1 {
 
 .designs-section {
   flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .designs-section h2 {
@@ -212,7 +243,7 @@ header h1 {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;  /* Consistent spacing after import section */
 }
 
 .application-card {
@@ -540,4 +571,187 @@ footer {
 
 .cnes-button-link:hover {
   color: var(--cnes-accent);
+}
+
+:host ::ng-deep {
+  /* Style markdown-generated content */
+  p {
+    margin: 1em 0;
+  }
+  
+  pre {
+    background-color: #f5f5f5;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+  }
+  
+  code {
+    font-family: monospace;
+    background-color: #f5f5f5;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  
+  ul, ol {
+    margin: 1em 0;
+    padding-left: 2em;
+  }
+  
+  blockquote {
+    border-left: 4px solid #ddd;
+    padding-left: 1em;
+    margin: 1em 0;
+    color: #666;
+  }
+}
+
+.markdown-editor {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-editor textarea {
+  flex: 1;
+  min-height: 150px;
+  padding: 0.8rem;
+  border: 1px solid rgba(11, 61, 145, 0.2);
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+
+.markdown-preview {
+  flex: 1;
+  padding: 0.8rem;
+  border: 1px solid rgba(11, 61, 145, 0.2);
+  border-radius: 4px;
+  background-color: #f8f9fa;
+}
+
+.markdown-preview h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--cnes-blue);
+  font-size: 0.9rem;
+}
+
+/* Markdown preview styles */
+.markdown-preview :deep(h1) { font-size: 1.5em; margin: 0.5em 0; }
+.markdown-preview :deep(h2) { font-size: 1.3em; margin: 0.5em 0; }
+.markdown-preview :deep(h3) { font-size: 1.1em; margin: 0.5em 0; }
+.markdown-preview :deep(p) { margin: 0.5em 0; }
+.markdown-preview :deep(ul), 
+.markdown-preview :deep(ol) { margin: 0.5em 0; padding-left: 1.5em; }
+.markdown-preview :deep(code) {
+  background-color: #f0f0f0;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+}
+.markdown-preview :deep(pre) {
+  background-color: #f0f0f0;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.markdown-preview :deep(blockquote) {
+  border-left: 3px solid var(--cnes-blue);
+  margin: 0.5em 0;
+  padding-left: 1em;
+  color: #666;
+}
+
+.markdown-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;  /* Reduced from 1.5rem */
+  margin-bottom: 1rem;
+}
+
+.markdown-editor {
+  width: 100%;
+  min-height: 120px;  /* Reduced from 200px */
+  padding: 0.8rem;
+  border: 1px solid rgba(11, 61, 145, 0.2);
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.preview-label {
+  color: var(--cnes-blue);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.preview-content {
+  padding: 0.8rem 0;
+  min-height: 150px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.preview-header {
+  padding: 0.5rem 0.8rem;
+  background-color: rgba(11, 61, 145, 0.05);
+  border-bottom: 1px solid rgba(11, 61, 145, 0.1);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--cnes-blue);
+}
+
+.preview-content {
+  padding: 0.8rem;
+  min-height: 150px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Markdown preview content styles */
+.preview-content :deep(h1) { font-size: 1.5em; margin: 0.5em 0; }
+.preview-content :deep(h2) { font-size: 1.3em; margin: 0.5em 0; }
+.preview-content :deep(h3) { font-size: 1.1em; margin: 0.5em 0; }
+.preview-content :deep(p) { margin: 0.5em 0; }
+.preview-content :deep(ul),
+.preview-content :deep(ol) { margin: 0.5em 0; padding-left: 1.5em; }
+.preview-content :deep(code) {
+  background-color: #f0f0f0;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+}
+.preview-content :deep(pre) {
+  background-color: #f0f0f0;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+.preview-content :deep(blockquote) {
+  border-left: 3px solid var(--cnes-blue);
+  margin: 0.5em 0;
+  padding-left: 1em;
+  color: #666;
+}
+
+.markdown-help {
+  display: block;
+  margin-top: 0.5rem;
+  color: #666;
+}
+
+.design-files {
+  margin-top: 0.5rem;
+}
+
+.file-entry {
+  font-family: monospace;
+  color: var(--cnes-blue);
+  padding: 0.2rem 0;
 }

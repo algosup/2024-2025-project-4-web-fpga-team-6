@@ -18,14 +18,7 @@ export class FpgaVisualizationComponent implements OnInit {
   currentExample = '';
   designs: Design[] = [];
   selectedDesign: Design | null = null;
-  
-  // Mock data - in a real app, this would come from a service
-  examples = [
-    { id: 'example1', name: 'Basic Counter' },
-    { id: 'example2', name: 'LED Blinker' },
-    { id: 'example3', name: 'State Machine' },
-    { id: 'example4', name: 'ALU Implementation' }
-  ];
+  expandedDesignId: string | null = null;
 
   constructor(private designService: DesignService) {}
 
@@ -33,23 +26,18 @@ export class FpgaVisualizationComponent implements OnInit {
     // Subscribe to designs updates
     this.designService.getDesigns().subscribe(designs => {
       this.designs = designs;
-      this.examples = designs.map(design => ({
-        id: design.id,
-        name: design.name
-      }));
+      // Remove the mapping to examples as we'll use designs directly
     });
   }
 
   selectExample(designId: string): void {
-    const design = this.designService.getDesignById(designId);
+    const design = this.designs.find(d => d.id === designId);
     if (design) {
       this.selectedDesign = design;
       this.currentExample = designId;
       this.isRunning = false;
       this.isPaused = false;
-      // Load the design's JSON content for visualization
       if (design.jsonContent) {
-        // Initialize visualization with the JSON content
         console.log('Loading design:', design.name);
       }
     }
@@ -108,8 +96,13 @@ export class FpgaVisualizationComponent implements OnInit {
   }
 
   // Helper method to get example name
-  getExampleName(exampleId: string): string {
-    const example = this.examples.find(e => e.id === exampleId);
-    return example ? example.name : '';
+  getExampleName(designId: string): string {
+    const design = this.designs.find(d => d.id === designId);
+    return design ? design.name : '';
+  }
+
+  toggleDescription(designId: string, event: Event): void {
+    event.stopPropagation(); // Prevent triggering selectExample
+    this.expandedDesignId = this.expandedDesignId === designId ? null : designId;
   }
 }

@@ -21,26 +21,19 @@
             ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
+              "src/favicon.ico",
+              "src/assets",
               {
                 "glob": "**/*",
-                "input": "public"
-              },
-              {
-                "glob": "**/*",
-                "input": "src/assets",
-                "output": "assets"
+                "input": "public",
+                "output": "/public"
               }
             ],
             "styles": [
               "@angular/material/prebuilt-themes/azure-blue.css",
               "src/styles.css"
             ],
-            "scripts": [],
-            "server": "src/main.server.ts",
-            "outputMode": "server",
-            "ssr": {
-              "entry": "src/server.ts"
-            }
+            "scripts": []
           },
           "configurations": {
             "production": {
@@ -76,10 +69,7 @@
               "buildTarget": "FPGAWeb:build:development"
             }
           },
-          "defaultConfiguration": "development",
-          "options": {
-            "buildTarget": "FPGAWeb:build:development"
-          }
+          "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n"
@@ -93,9 +83,12 @@
             ],
             "tsConfig": "tsconfig.spec.json",
             "assets": [
+              "src/favicon.ico",
+              "src/assets",
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "output": "/public"
               }
             ],
             "styles": [

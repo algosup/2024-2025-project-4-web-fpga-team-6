@@ -7,22 +7,35 @@
       </div>
       <h1>{{ title }}</h1>
     </div>
-    <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+    <div class="header-actions">
+      <a [routerLink]="['/teacher']" class="cnes-button accent teacher-button">Teacher Interface</a>
+      <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+    </div>
   </header>
 
   <div class="main-content">
     <div class="sidebar">
       <div class="example-selection">
-        <h2>Available Designs</h2>
+        <div class="section-header">
+          <h2>Available Designs</h2>
+          <a [routerLink]="['/teacher']" class="add-design">+</a>
+        </div>
         <div class="example-list">
-          <div 
-            *ngFor="let design of designs" 
-            class="example-item" 
-            [class.selected]="currentExample === design.id"
-            (click)="selectExample(design.id)"
-          >
-            {{ design.name }}
-            <small>{{ design.description }}</small>
+          <div *ngFor="let design of designs" 
+               class="example-item" 
+               [class.selected]="currentExample === design.id">
+            <div class="example-header" (click)="selectExample(design.id)">
+              <span class="example-name">{{ design.name }}</span>
+              <button class="expand-button" 
+                      [class.expanded]="expandedDesignId === design.id"
+                      (click)="toggleDescription(design.id, $event)">
+                ▼
+              </button>
+            </div>
+            <div class="example-description" 
+                 *ngIf="expandedDesignId === design.id"
+                 [innerHTML]="design.description">
+            </div>
           </div>
         </div>
       </div>

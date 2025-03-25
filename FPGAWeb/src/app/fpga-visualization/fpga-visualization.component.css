@@ -39,7 +39,18 @@ header h1 {
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .back-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.teacher-button {
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
 }
@@ -79,12 +90,70 @@ header h1 {
 }
 
 .example-item {
-  padding: 0.8rem 1rem;
+  padding: 0;
   border: 1px solid rgba(11, 61, 145, 0.1);
   border-radius: 4px;
-  cursor: pointer;
   transition: all 0.2s;
+}
+
+.example-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+
+.example-name {
   font-size: 0.95rem;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  color: var(--cnes-blue);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.expand-button.expanded {
+  transform: rotate(180deg);
+}
+
+.example-description {
+  padding: 1rem;
+  border-top: 1px solid rgba(11, 61, 145, 0.1);
+  background-color: rgba(11, 61, 145, 0.02);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Style for HTML content in description */
+.example-description :deep(p) {
+  margin: 0.5em 0;
+}
+
+.example-description :deep(ul),
+.example-description :deep(ol) {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.example-description :deep(code) {
+  background-color: rgba(11, 61, 145, 0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.example-description :deep(pre) {
+  background-color: rgba(11, 61, 145, 0.05);
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.5em 0;
 }
 
 .example-item:hover {
@@ -334,6 +403,45 @@ header h1 {
   text-align: center;
   font-size: 0.8rem;
   color: var(--cnes-dark-gray);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h2 {
+  font-size: 1.3rem;
+  margin: 0;
+  color: var(--cnes-blue);
+  font-weight: 500;
+}
+
+.add-design {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background-color: var(--cnes-accent);
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.add-design:hover {
+  transform: translateY(-1px);
+  filter: brightness(110%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-design:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 992px) {

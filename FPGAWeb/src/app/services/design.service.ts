@@ -29,9 +29,21 @@ export class DesignService {
     return this.designsSubject.asObservable();
   }
 
-  addDesign(design: Design): void {
-    this.designs.push(design);
-    this.designsSubject.next(this.designs);
+  addDesign(design: Design, addToStart: boolean = true): void {
+    // Check if design with same ID already exists
+    const existingIndex = this.designs.findIndex(d => d.id === design.id);
+    if (existingIndex !== -1) {
+      // Update existing design
+      this.designs[existingIndex] = design;
+    } else {
+      // Add new design either at start or end
+      if (addToStart) {
+        this.designs.unshift(design);  // Add to beginning
+      } else {
+        this.designs.push(design);     // Add to end
+      }
+    }
+    this.designsSubject.next([...this.designs]);
   }
 
   deleteDesign(id: string): void {

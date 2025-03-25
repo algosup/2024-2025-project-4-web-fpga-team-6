@@ -8,7 +8,7 @@
       <h1>{{ title }}</h1>
     </div>
     <div class="header-actions">
-      <a [routerLink]="['/student']" class="cnes-button accent student-button">Student Interface</a>
+      <a [routerLink]="['/fpga-visualization']" class="cnes-button accent student-button">Student Interface</a>
       <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
     </div>
   </header>
@@ -71,22 +71,34 @@
         </div>
 
         <div class="form-group">
-          <label for="designDescription">Description (optional)</label>
-          <textarea 
-            id="designDescription" 
-            [(ngModel)]="newDesignDescription" 
-            placeholder="Enter design description"
-            rows="3"
-          ></textarea>
+          <label for="designDescription">Description (Markdown supported)</label>
+          <div class="markdown-container">
+            <textarea 
+              id="designDescription" 
+              [(ngModel)]="newDesignDescription" 
+              (ngModelChange)="updateMarkdownPreview()"
+              placeholder="Enter design description using Markdown"
+              rows="2"
+              class="markdown-editor"
+            ></textarea>
+            
+            <div *ngIf="markdownPreview">
+              <div class="preview-label">Preview</div>
+              <div class="preview-content" [innerHTML]="markdownPreview"></div>
+            </div>
+          </div>
+          <small class="markdown-help">
+            Supported Markdown: **bold**, *italic*, # headers, - lists, `code`, etc.
+          </small>
         </div>
 
         <div class="form-actions">
           <button 
-            class="cnes-button upload-button" 
-            (click)="uploadDesign()" 
-            [disabled]="isProcessing"
+            class="cnes-button accent save-button" 
+            (click)="saveDesign()" 
+            [disabled]="isProcessing || !selectedVerilogFile || !selectedSdfFile"
           >
-            <span *ngIf="!isProcessing">Parse Files</span>
+            <span *ngIf="!isProcessing">Save Design</span>
             <span *ngIf="isProcessing">Processing...</span>
           </button>
           <button 
@@ -97,43 +109,26 @@
             Reset Form
           </button>
         </div>
-
-        <!-- Save and Download buttons -->
-        <div class="action-buttons" *ngIf="parsedContent">
-          <button 
-            class="cnes-button accent save-button" 
-            (click)="saveDesign()"
-          >
-            Save Design
-          </button>
-          <button 
-            class="cnes-button secondary download-button" 
-            (click)="downloadJson()"
-          >
-            Download JSON
-          </button>
-        </div>
-
-        <!-- Preview section -->
-        <div class="preview-section" *ngIf="parsedContent">
-          <div class="section-header">
-            <h3>Parsing Result</h3>
-          </div>
-          <div class="preview-content">
-            <div class="json-viewer">
-              <pre [innerHTML]="parsedContent | prettyJson"></pre>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
     <div class="designs-section">
       <div class="section-header">
-        <div class="section-icon">
-          <div class="icon-circle manage"></div>
+        <div class="section-left">
+          <div class="section-icon">
+            <div class="icon-circle manage"></div>
+          </div>
+          <h2>Manage Designs</h2>
         </div>
-        <h2>Manage Designs</h2>
+        <a [routerLink]="['/fpga-visualization']" class="cnes-button accent visualize-button">
+          Visualize Designs
+          <span class="visualize-icon">➟</span>
+        </a>
+      </div>
+      
+      <!-- Add loading indicator -->
+      <div *ngIf="isLoading" class="loading-indicator">
+        Loading examples...
       </div>
       
       <!-- Import zone moved here -->
@@ -181,13 +176,14 @@
             </div>
           </div>
           
-          <p class="design-description">{{ design.description }}</p>
+          <!-- Display HTML description -->
+          <div class="design-description" [innerHTML]="design.description"></div>
           
+          <!-- Display only Verilog and SDF files with arrows -->
           <div class="design-files">
-            <h4>Files:</h4>
-            <ul>
-              <li *ngFor="let file of design.files">{{ file }}</li>
-            </ul>
+            <div class="file-entry" *ngFor="let file of design.files | slice:0:2">
+              → {{ file }}
+            </div>
           </div>
         </div>
       </div>

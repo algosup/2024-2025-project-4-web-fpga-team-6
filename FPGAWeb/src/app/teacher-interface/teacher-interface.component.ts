@@ -2,14 +2,26 @@ import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
 import { FileProcessingService } from '../services/file-processing.service';
-import { PrettyJsonPipe } from '../pipes/pretty-json.pipe';
-import { DesignService, Design } from '../services/design.service';
+import { DesignService } from '../services/design.service';
+import { ExamplesLoaderService } from '../services/examples-loader.service';
+import { AppInitializerService } from '../services/app-initializer.service';
+import { Design } from '../models/design.model';
+import { VerilogParser } from '../services/parser'; // Add this import
+import JSZip from 'jszip';
+import { marked } from 'marked';
+import { distinctUntilChanged, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-teacher-interface',
   standalone: true,
-  imports: [RouterLink, CommonModule, FormsModule, PrettyJsonPipe],
+  imports: [
+    RouterLink, 
+    CommonModule, 
+    FormsModule,
+    HttpClientModule
+  ],
   templateUrl: './teacher-interface.component.html',
   styleUrl: './teacher-interface.component.css'
 })
@@ -33,15 +45,45 @@ export class TeacherInterfaceComponent implements OnInit {
   verilogContent: string | null = null;
   sdfContent: string | null = null;
   isDragging = false;
+  isLoading = false;
+  markdownPreview: string | null = null;
+
+  private markdown = marked;
 
   constructor(
     private fileProcessingService: FileProcessingService,
-    private designService: DesignService
-  ) {}
+    private designService: DesignService,
+    private examplesLoader: ExamplesLoaderService,
+    private appInitializer: AppInitializerService
+  ) {
+    // Configure marked options
+    this.markdown.setOptions({
+      breaks: true,
+      gfm: true
+    });
+  }
 
   ngOnInit() {
-    // Subscribe to designs updates
-    this.designService.getDesigns().subscribe(designs => {
+    this.appInitializer.isLoading$.subscribe(
+      (loading: boolean) => this.isLoading = loading
+    );
+    
+    this.designService.getDesigns().pipe(
+      distinctUntilChanged((prev, curr) => 
+        JSON.stringify(prev) === JSON.stringify(curr)
+      ),
+      map(designs => designs.map(design => ({
+        ...design,
+        verilogContent: design.verilogContent || '',
+        sdfContent: design.sdfContent || '',
+        jsonContent: design.jsonContent || {},
+        description: design.description || '',
+        files: design.files || [],
+        visualizationState: design.visualizationState || {
+          clockFrequency: 1000000
+        }
+      })))
+    ).subscribe(designs => {
       this.designs = designs;
     });
   }
@@ -98,28 +140,55 @@ export class TeacherInterfaceComponent implements OnInit {
     }
   }
 
-  saveDesign(): void {
-    if (this.parsedContent && this.generatedFilename) {
+  async saveDesign(): Promise<void> {
+    if (!this.selectedVerilogFile || !this.selectedSdfFile) {
+      return;
+    }
+  
+    try {
+      this.isProcessing = true;
+  
+      // Process files using FileProcessingService
+      const parsedContent = await this.fileProcessingService.processFiles(
+        this.selectedVerilogFile,
+        this.selectedSdfFile
+      );
+  
+      const verilogContent = await this.selectedVerilogFile.text();
+      const sdfContent = await this.selectedSdfFile.text();
+      
+      // Generate filename for JSON
+      const designName = this.newDesignName || this.selectedVerilogFile.name.replace('.v', '');
+      const generatedFilename = `${designName.toLowerCase().replace(/\s+/g, '_')}_schematics.json`;
+  
+      // Create and save the design
       const newDesign: Design = {
         id: `design_${Date.now()}`,
-        name: this.newDesignName,
-        description: this.newDesignDescription,
+        name: designName,
+        description: this.newDesignDescription ? 
+          String(marked.parse(this.newDesignDescription, { async: false })) : '',
         files: [
-          this.selectedVerilogFile!.name,
-          this.selectedSdfFile!.name,
-          this.generatedFilename
+          this.selectedVerilogFile.name,
+          this.selectedSdfFile.name,
+          generatedFilename
         ],
-        jsonContent: this.parsedContent,
-        // Fix type mismatches by providing undefined instead of null
-        verilogContent: this.verilogContent ?? undefined,
-        sdfContent: this.sdfContent ?? undefined,
+        verilogContent: verilogContent,
+        sdfContent: sdfContent,
+        jsonContent: parsedContent,
         visualizationState: {
-          clockFrequency: 1000000 // Default 1MHz
+          clockFrequency: 1000000
         }
       };
-
-      this.designService.addDesign(newDesign);
+  
+      // Add new design at the beginning
+      this.designService.addDesign(newDesign, true);
       this.resetForm();
+  
+    } catch (error) {
+      console.error('Error processing and saving design:', error);
+      alert('Error processing files. Please try again or contact support if the issue persists.');
+    } finally {
+      this.isProcessing = false;
     }
   }
 
@@ -145,6 +214,7 @@ export class TeacherInterfaceComponent implements OnInit {
     this.generatedFilename = null;
     this.verilogContent = null;
     this.sdfContent = null;
+    this.markdownPreview = null;
   }
 
   deleteDesign(id: string): void {
@@ -152,8 +222,45 @@ export class TeacherInterfaceComponent implements OnInit {
   }
 
   // Add public export method
-  exportDesign(id: string): void {
-    this.designService.exportDesign(id);
+  async exportDesign(id: string): Promise<void> {
+    const design = this.designs.find(d => d.id === id);
+    if (!design) return;
+  
+    const zip = new JSZip();
+  
+    // Add design files
+    if (design.verilogContent) {
+      zip.file(design.files[0], design.verilogContent);
+    }
+    if (design.sdfContent) {
+      zip.file(design.files[1], design.sdfContent);
+    }
+    if (design.jsonContent) {
+      zip.file(design.files[2], JSON.stringify(design.jsonContent, null, 2));
+    }
+  
+    // Add metadata
+    const metadata = {
+      name: design.name,
+      description: design.description,
+      visualizationState: design.visualizationState
+    };
+    zip.file('metadata.json', JSON.stringify(metadata, null, 2));
+  
+    try {
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = window.URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${design.name.toLowerCase().replace(/\s+/g, '_')}_design.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error creating ZIP file:', error);
+      alert('Failed to create export file');
+    }
   }
 
   triggerImport(): void {
@@ -226,6 +333,14 @@ export class TeacherInterfaceComponent implements OnInit {
     if (failures.length > 0) {
       const failedFiles = failures.map(f => f.file).join(', ');
       alert(`Failed to import the following designs: ${failedFiles}`);
+    }
+  }
+
+  updateMarkdownPreview(): void {
+    if (this.newDesignDescription) {
+      this.markdownPreview = String(marked.parse(this.newDesignDescription, { async: false }));
+    } else {
+      this.markdownPreview = null;
     }
   }
 }
