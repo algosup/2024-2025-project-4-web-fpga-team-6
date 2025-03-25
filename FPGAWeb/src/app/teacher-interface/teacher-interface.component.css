@@ -119,12 +119,12 @@ header h1 {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
 }
 
 .visualize-button .icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .icon-circle {
