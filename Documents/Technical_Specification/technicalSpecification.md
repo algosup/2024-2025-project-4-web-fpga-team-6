@@ -70,7 +70,7 @@ This document provides a detailed technical specification for the FPGA Simulator
 ---
 
 ## Points of Contact
-| Role | Name | Picture and links |
+| Role | Name | Picture and github link |
 | --- | --- | --- |
 | Project Manager   | Manech LAGUENS  | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJQY4YNT-b9fc406d8169-50">](https://github.com/Manech-Laguens)   |
 | Program Manager   | Elon DELLILE    | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJR05FL7-464fe5ab420c-50">](https://github.com/HiNett)           |
@@ -197,7 +197,7 @@ To streamline the simulation process, the backend performs several automated tas
 - **Schematic Generation:** The system parses Verilog and SDF files to extract circuit details and timing information, converting them into JSON schematics that are used for visualization.
 - **Seamless Integration:** This automated processing ensures that once files are uploaded, the necessary simulation data is immediately available to the frontend for display.
 
-more information about functional Specification in the [functional specification](../Functional_Specifications/functionalSpecification.md).
+more information about functional Specification in the [functional specification](../Functional_Specifications/functionalSpecifications.md).
 
 ---
 
