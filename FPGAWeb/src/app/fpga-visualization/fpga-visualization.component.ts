@@ -2,8 +2,9 @@ import { Component, OnInit, ElementRef, ViewChild, AfterViewInit, OnDestroy } fr
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';  // Add RouterLink import
 import { DesignService, Design } from '../services/design.service';
-import { VisualizationService, FpgaLayout } from '../services/visualization.service';
+import { VisualizationService } from '../services/visualization.service'; // Remove the FpgaLayout import
 import { FormsModule } from '@angular/forms';
+import { COMPONENT_CONFIGS } from '../models/component-config.model'; // Add these imports
 
 // First, let's define a proper interface for the design structure
 // Add these interfaces at the top of your file, outside the component class
@@ -20,6 +21,10 @@ interface FpgaDesignCell {
   type: string;
   connections: Record<string, string>;
   initial_state?: string;
+  // Add these properties to support LUT and other component types
+  mask?: string;         // For LUT truth table
+  K?: number;            // For LUT number of inputs
+  properties?: any;      // For additional component properties
 }
 
 interface FpgaDesignExternalWire {
@@ -34,6 +39,57 @@ interface FpgaDesignInterconnect {
     output: string;
   };
   propagation_delay?: number;
+}
+
+// Add these visualization model interfaces
+interface FpgaCell {
+  id: string;
+  name: string;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  connections: Record<string, string>;
+  initialState?: string;
+  properties?: any;
+  connectionPoints?: Record<string, {x: number, y: number}>;
+}
+
+interface ExternalWire {
+  id: string;
+  name: string;
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  connectionPoints?: Record<string, {x: number, y: number}>;
+}
+
+interface Interconnect {
+  id: string;
+  name: string;
+  sourceId: string;
+  sourcePort: string;
+  targetId: string;
+  targetPort: string;
+  points: Point[];
+  delay: number;
+  animationProgress?: number;
+  lastSignalState?: string;
+}
+
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface FpgaLayout {
+  cells: FpgaCell[];
+  externalWires: ExternalWire[];
+  interconnects: Interconnect[];
+  dimensions: { width: number; height: number };
 }
 
 /**
@@ -85,6 +141,10 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
   
   // Add a requestAnimationFrame-based rendering system
   private animationFrameId: number | null = null;
+
+  animating = false; // Add these properties to FpgaVisualizationComponent
+  signalAnimations: Map<string, number> = new Map(); // Track signal animations
+  lastTimestamp = 0;
   
   constructor(
     private designService: DesignService,
@@ -272,6 +332,7 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     }
   }
   
+  // Replace your updateSimulationState method with this fixed version
   private updateSimulationState(): void {
     if (!this.selectedDesign?.jsonContent || !this.layout) return;
     
@@ -288,16 +349,43 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       design = this.selectedDesign.jsonContent as FpgaDesign;
     }
     
-    // Now use the properly typed design variable
-    
     // Update states based on logic
     for (const cell of design.cells || []) {
       if (cell.type === 'DFF') {
         // D flip-flop behavior: on rising clock edge, Q takes D value
         if (this.clockState === '1') {
-          // Use bracket notation instead of dot notation for index signatures
           const dValue = this.simulationStates.get(cell.connections['D']) || '0';
           this.simulationStates.set(cell.connections['Q'], dValue);
+        }
+      } 
+      else if (cell.type === 'LUT_K') {
+        // LUT behavior: calculate output based on inputs and mask
+        const lutMask = (cell.mask || '00000000000000000000000000000000');
+        const lutK = cell.K || 5;
+        
+        // Get input values (0 to K-1)
+        const inputs: string[] = [];
+        for (let i = 0; i < lutK; i++) {
+          const inputName = `in_${i}`;
+          if (inputName in cell.connections) {
+            inputs.push(this.simulationStates.get(cell.connections[inputName]) || '0');
+          } else {
+            inputs.push('0'); // Default value if connection doesn't exist
+          }
+        }
+        
+        // Calculate index into mask
+        let index = 0;
+        for (let i = 0; i < inputs.length; i++) {
+          if (inputs[i] === '1') {
+            index |= (1 << i);
+          }
+        }
+        
+        // Get output from mask
+        const maskValue = lutMask.charAt(lutMask.length - 1 - index) === '1' ? '1' : '0';
+        if ('out' in cell.connections) {
+          this.simulationStates.set(cell.connections['out'], maskValue);
         }
       }
       // Add logic for other cell types as needed
@@ -305,9 +393,16 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     
     // Propagate signals through interconnects
     for (const ic of design.interconnects || []) {
-      // Use bracket notation for input and output properties
-      const sourceValue = this.simulationStates.get(ic.connections['input']) || '0';
-      this.simulationStates.set(ic.connections['output'], sourceValue);
+      const sourceValue = this.simulationStates.get(ic.connections.input) || '0';
+      this.simulationStates.set(ic.connections.output, sourceValue);
+    }
+    
+    // Start animation for signal propagation
+    this.animating = true;
+    
+    // Make sure we're rendering continuously during animation
+    if (!this.animationFrameId) {
+      this.renderFPGA();
     }
   }
   
@@ -438,12 +533,22 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     }
   }
   
-  private renderFPGA(): void {
+  // Update the renderFPGA method to use requestAnimationFrame for continuous animation
+  private renderFPGA(timestamp?: number): void {
     if (this.animationFrameId) {
       cancelAnimationFrame(this.animationFrameId);
     }
     
-    this.animationFrameId = requestAnimationFrame(() => {
+    // Calculate elapsed time for animations
+    const elapsed = timestamp && this.lastTimestamp ? timestamp - this.lastTimestamp : 0;
+    this.lastTimestamp = timestamp || 0;
+    
+    // Update signal animations
+    if (this.layout && elapsed > 0) {
+      this.updateSignalAnimations(elapsed);
+    }
+    
+    this.animationFrameId = requestAnimationFrame((time) => {
       if (!this.visualCanvas) return;
       
       const canvas = this.visualCanvas.nativeElement;
@@ -462,13 +567,19 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
         // Draw placeholder for no layout
         this.drawPlaceholder(ctx);
         ctx.restore();
+        
+        // Continue animation loop if needed
+        if (this.animating) {
+          this.renderFPGA(time);
+        }
+        
         return;
       }
       
       // Draw grid
       this.drawGrid(ctx);
       
-      // Draw interconnects (cables)
+      // Draw interconnects with animated signals
       for (const interconnect of this.layout.interconnects) {
         this.drawInterconnect(ctx, interconnect);
       }
@@ -484,8 +595,58 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       }
       
       ctx.restore();
-      this.animationFrameId = null;
+      
+      // Continue animation loop if needed
+      if (this.animating) {
+        this.renderFPGA(time);
+      } else {
+        this.animationFrameId = null;
+      }
     });
+  }
+  
+  // Update signal animations based on elapsed time
+  private updateSignalAnimations(elapsed: number): void {
+    if (!this.layout) return;
+    
+    let needsAnimation = false;
+    
+    // Update all interconnect animations
+    for (const ic of this.layout.interconnects) {
+      const currentState = this.simulationStates.get(ic.sourcePort) || '0';
+      
+      // If the signal state changed, restart the animation
+      if (currentState !== ic.lastSignalState) {
+        ic.animationProgress = 0;
+        ic.lastSignalState = currentState;
+        needsAnimation = true;
+      }
+      
+      // If animation is in progress, update it
+      if ((ic.animationProgress ?? 0) < 1) {
+        // Calculate animation progress based on propagation delay
+        const animSpeed = 200 + Math.min(ic.delay, 3000); // Cap at reasonable speed
+        ic.animationProgress = (ic.animationProgress ?? 0) + (elapsed / animSpeed);
+        
+        // Cap at 1 for completion
+        if ((ic.animationProgress ?? 0) > 1) {
+          ic.animationProgress = 1;
+          
+          // Propagate signal to target when animation completes
+          const targetComponent = this.layout.cells.find(c => c.id === ic.targetId) || 
+                                 this.layout.externalWires.find(w => w.id === ic.targetId);
+          
+          if (targetComponent) {
+            this.simulationStates.set(ic.targetPort, currentState);
+          }
+        } else {
+          needsAnimation = true;
+        }
+      }
+    }
+    
+    // Track if we need to keep animating
+    this.animating = needsAnimation;
   }
   
   private drawPlaceholder(ctx: CanvasRenderingContext2D): void {
@@ -523,104 +684,242 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     }
   }
   
+  // Enhanced cell drawing with SVGs and effects
   private drawCell(ctx: CanvasRenderingContext2D, cell: any): void {
     const state = this.simulationStates.get(cell.name) || '0';
     const isHighlighted = this.highlightedCell === cell.id;
     
-    // Draw cell rectangle
-    ctx.fillStyle = isHighlighted ? '#f0f8ff' : '#ffffff';
-    ctx.strokeStyle = '#0b3d91';
-    ctx.lineWidth = isHighlighted ? 3 : 2;
+    // Get component SVG if available
+    const svg = this.visualizationService.getSVGForComponent(cell.type);
     
-    // Rounded rectangle
-    this.roundRect(ctx, cell.x, cell.y, cell.width, cell.height, 10, true, true);
+    // Apply shadow for highlighted state
+    if (isHighlighted) {
+      ctx.shadowColor = 'rgba(11, 61, 145, 0.5)';
+      ctx.shadowBlur = 15;
+    }
     
-    // Cell type header
-    ctx.fillStyle = '#0b3d91';
-    ctx.fillRect(cell.x, cell.y, cell.width, 20);
+    if (svg) {
+      // Draw SVG image
+      ctx.drawImage(svg, cell.x, cell.y, cell.width, cell.height);
+    } else {
+      // Fallback to drawing a rectangle
+      ctx.fillStyle = isHighlighted ? '#f0f8ff' : '#ffffff';
+      ctx.strokeStyle = '#0b3d91';
+      ctx.lineWidth = isHighlighted ? 3 : 2;
+      
+      // Rounded rectangle
+      this.roundRect(ctx, cell.x, cell.y, cell.width, cell.height, 10, true, true);
+      
+      // Cell type header
+      ctx.fillStyle = '#0b3d91';
+      ctx.fillRect(cell.x, cell.y, cell.width, 20);
+      
+      // Cell name and type
+      ctx.font = '12px Arial';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText(cell.type, cell.x + cell.width / 2, cell.y + 15);
+      
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#0b3d91';
+      ctx.fillText(cell.name, cell.x + cell.width / 2, cell.y + 40);
+    }
     
-    // Cell name and type
-    ctx.font = '12px Arial';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText(cell.type, cell.x + cell.width / 2, cell.y + 15);
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     
-    ctx.font = '14px Arial';
-    ctx.fillStyle = '#0b3d91';
-    ctx.fillText(cell.name, cell.x + cell.width / 2, cell.y + 40);
+    // Get configuration for this cell type
+    const config = COMPONENT_CONFIGS[cell.type];
     
-    // Cell state indicator
-    const stateColor = this.visualizationService.getCellStateColor(state);
-    ctx.fillStyle = stateColor;
-    ctx.beginPath();
-    ctx.arc(cell.x + cell.width / 2, cell.y + 60, 8, 0, Math.PI * 2);
-    ctx.fill();
+    // Draw connection points with state indicators
+    if (cell.connectionPoints) {
+      Object.entries(cell.connectionPoints).forEach(([port, point]: [string, any]) => {
+        // Get connection state
+        const connName = cell.connections[port];
+        const connState = this.simulationStates.get(connName) || '0';
+        
+        // Draw connection point with glow effect
+        const glow = this.visualizationService.getStateGlow(connState);
+        ctx.shadowColor = glow.color;
+        ctx.shadowBlur = glow.blur;
+        
+        ctx.fillStyle = this.visualizationService.getCellStateColor(connState);
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        
+        // Draw port label if available in config
+        if (config?.connections) {
+          const connConfig = config.connections.find(c => c.id === port);
+          if (connConfig?.label) {
+            ctx.font = '10px Arial';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            
+            let labelX = point.x;
+            let labelY = point.y;
+            
+            // Position label based on side
+            switch (connConfig.side) {
+              case 'left':
+                labelX -= 15;
+                break;
+              case 'right':
+                labelX += 15;
+                break;
+              case 'top':
+                labelY -= 10;
+                break;
+              case 'bottom':
+                labelY += 15;
+                break;
+            }
+            
+            ctx.fillText(connConfig.label, labelX, labelY);
+          }
+        }
+      });
+    }
     
-    ctx.font = '12px Arial';
-    ctx.fillStyle = '#666';
-    ctx.fillText(`State: ${state}`, cell.x + cell.width / 2, cell.y + 70);
+    // Draw cell state indicator for LUT and DFF
+    if (cell.type === 'DFF' || cell.type === 'LUT_K') {
+      const stateColor = this.visualizationService.getCellStateColor(state);
+      const glow = this.visualizationService.getStateGlow(state);
+      
+      ctx.shadowColor = glow.color;
+      ctx.shadowBlur = glow.blur;
+      
+      ctx.fillStyle = stateColor;
+      ctx.beginPath();
+      ctx.arc(cell.x + cell.width / 2, cell.y + cell.height - 15, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
+    
+    // Special case for LUT: show the mask/truth table
+    if (cell.type === 'LUT_K' && cell.properties?.mask) {
+      ctx.font = '9px monospace';
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'center';
+      
+      const maskText = cell.properties.mask.substring(0, 8) + '...';
+      ctx.fillText(maskText, cell.x + cell.width / 2, cell.y + cell.height - 30);
+    }
   }
   
   private drawExternalWire(ctx: CanvasRenderingContext2D, wire: any): void {
     const state = this.simulationStates.get(wire.name) || '0';
     const isHighlighted = this.highlightedCell === wire.id;
     
-    // Draw I/O pad
-    ctx.fillStyle = isHighlighted ? '#f0f8ff' : '#ffffff';
-    ctx.strokeStyle = wire.type === 'input' ? '#27ae60' : '#e74c3c';
-    ctx.lineWidth = isHighlighted ? 3 : 2;
+    // Get SVG for input or output
+    const svg = this.visualizationService.getSVGForComponent(wire.type);
     
-    // Rounded rectangle for I/O
-    this.roundRect(ctx, wire.x, wire.y, wire.width, wire.height, 8, true, true);
+    // Apply shadow for highlighted state
+    if (isHighlighted) {
+      ctx.shadowColor = 'rgba(11, 61, 145, 0.5)';
+      ctx.shadowBlur = 15;
+    }
     
-    // Header bar
-    ctx.fillStyle = wire.type === 'input' ? '#27ae60' : '#e74c3c';
-    ctx.fillRect(wire.x, wire.y, wire.width, 18);
+    if (svg) {
+      // Draw SVG image
+      ctx.drawImage(svg, wire.x, wire.y, wire.width, wire.height);
+    } else {
+      // Fallback to drawing a rectangle
+      ctx.fillStyle = isHighlighted ? '#f0f8ff' : '#ffffff';
+      ctx.strokeStyle = wire.type === 'input' ? '#27ae60' : '#e74c3c';
+      ctx.lineWidth = isHighlighted ? 3 : 2;
+      
+      // Rounded rectangle for I/O
+      this.roundRect(ctx, wire.x, wire.y, wire.width, wire.height, 8, true, true);
+      
+      // Header bar
+      ctx.fillStyle = wire.type === 'input' ? '#27ae60' : '#e74c3c';
+      ctx.fillRect(wire.x, wire.y, wire.width, 18);
+      
+      // Wire name and type
+      ctx.font = '11px Arial';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText(wire.type.toUpperCase(), wire.x + wire.width / 2, wire.y + 13);
+    }
     
-    // Wire name and type
-    ctx.font = '11px Arial';
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.fillText(wire.type.toUpperCase(), wire.x + wire.width / 2, wire.y + 13);
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     
+    // Draw name
     ctx.font = '12px Arial';
     ctx.fillStyle = '#333';
+    ctx.textAlign = 'center';
     ctx.fillText(wire.name, wire.x + wire.width / 2, wire.y + 32);
     
-    // State indicator
+    // Draw connection points with state indicators
+    if (wire.connectionPoints) {
+      Object.entries(wire.connectionPoints).forEach(([port, point]: [string, any]) => {
+        // Draw connection point with glow effect
+        const glow = this.visualizationService.getStateGlow(state);
+        ctx.shadowColor = glow.color;
+        ctx.shadowBlur = glow.blur;
+        
+        ctx.fillStyle = this.visualizationService.getCellStateColor(state);
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      });
+    }
+    
+    // Draw state indicator
     const stateColor = this.visualizationService.getCellStateColor(state);
+    const glow = this.visualizationService.getStateGlow(state);
+    
+    ctx.shadowColor = glow.color;
+    ctx.shadowBlur = glow.blur * 1.5; // Stronger glow for I/O
+    
+    // Draw a larger indicator for I/O state
     ctx.fillStyle = stateColor;
     ctx.beginPath();
-    ctx.arc(wire.x + wire.width / 2, wire.y + wire.height - 15, 6, 0, Math.PI * 2);
+    ctx.arc(wire.x + wire.width / 2, wire.y + wire.height - 15, 10, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
     
-    ctx.font = '10px Arial';
-    ctx.fillStyle = '#666';
-    ctx.fillText(state, wire.x + wire.width / 2, wire.y + wire.height - 5);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     
-    // Add connection point marker
-    ctx.fillStyle = '#0b3d91';
-    if (wire.type === 'input') {
-      // Right side for input
-      ctx.beginPath();
-      ctx.arc(wire.x + wire.width, wire.y + wire.height / 2, 4, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Left side for output
-      ctx.beginPath();
-      ctx.arc(wire.x, wire.y + wire.height / 2, 4, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // State value display
+    ctx.font = 'bold 14px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(state, wire.x + wire.width / 2, wire.y + wire.height - 11);
   }
   
+  // Add an uncommented version of the drawInterconnect method
   private drawInterconnect(ctx: CanvasRenderingContext2D, interconnect: any): void {
     const { points } = interconnect;
+    const animationProgress = interconnect.animationProgress ?? 1;
+    
     if (!points || points.length < 2) return;
     
-    // Get signal state
-    const sourceState = this.simulationStates.get(interconnect.sourceId) || '0';
+    // Get signal state from source
+    const sourceState = this.simulationStates.get(interconnect.sourcePort) || '0';
     
-    // Draw the connecting lines
+    // Draw full path with inactive color
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     
@@ -628,23 +927,91 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       ctx.lineTo(points[i].x, points[i].y);
     }
     
+    ctx.strokeStyle = this.visualizationService.getCellStateColor('undefined');
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    
+    // Calculate the total path length
+    let totalLength = 0;
+    for (let i = 1; i < points.length; i++) {
+      totalLength += Math.sqrt(
+        Math.pow(points[i].x - points[i-1].x, 2) + 
+        Math.pow(points[i].y - points[i-1].y, 2)
+      );
+    }
+    
+    // Draw the animated part of the path
+    const animLength = totalLength * animationProgress;
+    let drawnLength = 0;
+    let remainingLength = animLength;
+    
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    
+    for (let i = 1; i < points.length; i++) {
+      const segmentLength = Math.sqrt(
+        Math.pow(points[i].x - points[i-1].x, 2) + 
+        Math.pow(points[i].y - points[i-1].y, 2)
+      );
+      
+      if (drawnLength + segmentLength <= animLength) {
+        // Draw the full segment
+        ctx.lineTo(points[i].x, points[i].y);
+        drawnLength += segmentLength;
+      } else {
+        // Draw a partial segment
+        const ratio = remainingLength / segmentLength;
+        const endX = points[i-1].x + (points[i].x - points[i-1].x) * ratio;
+        const endY = points[i-1].y + (points[i].y - points[i-1].y) * ratio;
+        ctx.lineTo(endX, endY);
+        break;
+      }
+      
+      remainingLength -= segmentLength;
+    }
+    
+    // Apply glow effect for active signals
+    const glow = this.visualizationService.getStateGlow(sourceState);
+    ctx.shadowColor = glow.color;
+    ctx.shadowBlur = glow.blur;
+    
     ctx.strokeStyle = this.visualizationService.getCellStateColor(sourceState);
     ctx.lineWidth = 3;
     ctx.stroke();
     
-    // Draw interconnect box at the middle point
+    // Reset shadow for other drawings
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    
+    // Draw interconnect box at the middle point if needed
     if (points.length > 2) {
       const midPoint = points[Math.floor(points.length / 2)];
       
-      // Interconnect box
+      // Interconnect box with custom appearance
       ctx.fillStyle = '#f8f9fa';
       ctx.strokeStyle = '#0b3d91';
       ctx.lineWidth = 1;
       
+      // Apply glow if signal has reached this point
+      if (animationProgress >= 0.5) {
+        ctx.shadowColor = glow.color;
+        ctx.shadowBlur = glow.blur;
+      }
+      
+      // Draw a small diamond shape
       ctx.beginPath();
-      ctx.rect(midPoint.x - 12, midPoint.y - 12, 24, 24);
+      ctx.moveTo(midPoint.x, midPoint.y - 8);
+      ctx.lineTo(midPoint.x + 8, midPoint.y);
+      ctx.lineTo(midPoint.x, midPoint.y + 8);
+      ctx.lineTo(midPoint.x - 8, midPoint.y);
+      ctx.closePath();
+      
       ctx.fill();
       ctx.stroke();
+      
+      // Reset shadow
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
       
       // Add delay text
       ctx.font = '9px Arial';
@@ -662,7 +1029,7 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
         }
       }
       
-      ctx.fillText(delayText, midPoint.x, midPoint.y + 4);
+      ctx.fillText(delayText, midPoint.x, midPoint.y + 20);
     }
   }
   

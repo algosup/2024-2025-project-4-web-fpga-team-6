@@ -1,0 +1,7 @@
+<!-- filepath: /Users/benoit/Documents/GitHub/2024-2025-project-4-web-fpga-team-6/FPGAWeb/src/assets/input_pin.svg -->
+<svg width="80" height="40" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="80" height="40" rx="8" fill="white" stroke="#27ae60" stroke-width="2"/>
+  <rect x="0" y="0" width="80" height="18" rx="8" ry="0" fill="#27ae60"/>
+  <text x="40" y="13" font-family="Arial" font-size="11" fill="white" text-anchor="middle">INPUT</text>
+  <circle cx="80" cy="20" r="3" fill="#0b3d91" stroke="none"/>
+</svg>

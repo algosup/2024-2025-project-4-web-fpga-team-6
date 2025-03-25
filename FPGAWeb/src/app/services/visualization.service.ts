@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { COMPONENT_CONFIGS, ComponentConfig } from '../models/component-config.model';
 
 interface Point {
   x: number;
@@ -15,6 +16,8 @@ interface FpgaCell {
   height: number;
   connections: Record<string, string>;
   initialState?: string;
+  properties?: any;
+  connectionPoints?: Record<string, {x: number, y: number}>;
 }
 
 interface ExternalWire {
@@ -25,6 +28,7 @@ interface ExternalWire {
   y: number;
   width: number;
   height: number;
+  connectionPoints?: Record<string, {x: number, y: number}>;
 }
 
 interface Interconnect {
@@ -36,6 +40,8 @@ interface Interconnect {
   targetPort: string;
   points: Point[];
   delay: number;
+  animationProgress?: number;
+  lastSignalState?: string;
 }
 
 export interface FpgaLayout {
@@ -49,19 +55,24 @@ export interface FpgaLayout {
   providedIn: 'root'
 })
 export class VisualizationService {
-  // Cell dimensions
-  private readonly CELL_WIDTH = 120;
-  private readonly CELL_HEIGHT = 80;
-  private readonly GPIO_WIDTH = 100;
-  private readonly GPIO_HEIGHT = 50;
-  private readonly PADDING = 80;
-  private readonly GRID_SIZE = 10;
+  // Component cache to store loaded SVGs
+  private svgCache: Map<string, HTMLImageElement> = new Map();
   
-  constructor() {}
-
-  /**
-   * Generate an FPGA layout from a JSON design
-   */
+  constructor() {
+    // Preload SVGs for smoother rendering
+    this.preloadComponentSVGs();
+  }
+  
+  private preloadComponentSVGs(): void {
+    Object.values(COMPONENT_CONFIGS).forEach(config => {
+      const img = new Image();
+      img.src = config.svgPath;
+      img.onload = () => {
+        this.svgCache.set(config.type, img);
+      };
+    });
+  }
+  
   generateLayout(design: any): FpgaLayout {
     if (!design || !design.cells || !design.external_wires || !design.interconnects) {
       throw new Error('Invalid design format');
@@ -75,66 +86,123 @@ export class VisualizationService {
     const inputs = design.external_wires.filter((wire: any) => wire.type === 'input');
     const outputs = design.external_wires.filter((wire: any) => wire.type === 'output');
     
-    // Place inputs on left, cells in middle, outputs on right
-    // Calculate grid positions
-    let gridY = this.PADDING;
+    // Use improved positioning algorithm that creates a multi-column layout
+    // for designs with many components
+    const maxCellsInColumn = 5;
     
-    // Place input wires on the left
+    // Position input wires in a column on the left
+    let gridY = 60;
+    let gridX = 60;
+    
+    // Place input wires on the left side
     for (let i = 0; i < inputs.length; i++) {
       const wire = inputs[i];
+      const config = COMPONENT_CONFIGS['input'];
+      
       externalWires.push({
         id: `ext_${wire.name}`,
         name: wire.name,
         type: wire.type,
-        x: this.PADDING,
+        x: gridX,
         y: gridY,
-        width: this.GPIO_WIDTH,
-        height: this.GPIO_HEIGHT
+        width: config.width,
+        height: config.height,
+        connectionPoints: this.getConnectionPoints(config, gridX, gridY)
       });
-      gridY += this.GPIO_HEIGHT + this.PADDING;
+      gridY += config.height + 40;
+      
+      // Start a new column if we reach the max cells per column
+      if ((i + 1) % maxCellsInColumn === 0) {
+        gridY = 60;
+        gridX += 200;
+      }
     }
     
-    // Reset y for cells which will be in the center
-    gridY = this.PADDING;
-    const cellX = 3 * this.PADDING + this.GPIO_WIDTH;
+    // Reset for cells
+    gridY = 60;
+    gridX = Math.max(300, gridX + 200); // Position cells to the right of inputs
     
-    // Place cells in middle
+    const cellStartX = gridX;
+    
+    // Place cells in middle columns
     for (let i = 0; i < design.cells.length; i++) {
       const cell = design.cells[i];
+      // Get configuration for this cell type or use default
+      const config = COMPONENT_CONFIGS[cell.type] || {
+        type: cell.type,
+        svgPath: 'assets/generic_component.svg',
+        width: 120,
+        height: 80,
+        connections: Object.keys(cell.connections).map((key, index, arr) => {
+          // Create default connection points based on connection names
+          const side = index < arr.length / 2 ? 'left' : 'right';
+          const y = side === 'left' 
+            ? 0.2 + (0.6 * index / (arr.length / 2)) 
+            : 0.2 + (0.6 * (index - Math.floor(arr.length / 2)) / (arr.length - Math.floor(arr.length / 2)));
+          return {
+            id: key,
+            x: side === 'left' ? 0 : 1,
+            y,
+            side,
+            label: key
+          };
+        })
+      };
+      
       cells.push({
         id: `cell_${cell.name}`,
         name: cell.name,
         type: cell.type,
-        x: cellX,
+        x: gridX,
         y: gridY,
-        width: this.CELL_WIDTH,
-        height: this.CELL_HEIGHT,
+        width: config.width,
+        height: config.height,
         connections: cell.connections,
-        initialState: cell.initial_state
+        initialState: cell.initial_state,
+        properties: cell, // Store original cell properties
+        connectionPoints: this.getConnectionPoints(config, gridX, gridY)
       });
-      gridY += this.CELL_HEIGHT + this.PADDING;
+      
+      // Move down for next cell
+      gridY += config.height + 60;
+      
+      // Start a new column if we reach the max cells per column
+      if ((i + 1) % maxCellsInColumn === 0) {
+        gridY = 60;
+        gridX += 220;
+      }
     }
     
-    // Reset y for output wires on the right
-    gridY = this.PADDING;
-    const outputX = 5 * this.PADDING + this.GPIO_WIDTH + this.CELL_WIDTH;
+    // Reset for outputs
+    gridY = 60;
+    gridX = Math.max(gridX + 220, cellStartX + 400); // Position outputs to the right of cells
     
     // Place output wires on the right
     for (let i = 0; i < outputs.length; i++) {
       const wire = outputs[i];
+      const config = COMPONENT_CONFIGS['output'];
+      
       externalWires.push({
         id: `ext_${wire.name}`,
         name: wire.name,
         type: wire.type,
-        x: outputX,
+        x: gridX,
         y: gridY,
-        width: this.GPIO_WIDTH,
-        height: this.GPIO_HEIGHT
+        width: config.width,
+        height: config.height,
+        connectionPoints: this.getConnectionPoints(config, gridX, gridY)
       });
-      gridY += this.GPIO_HEIGHT + this.PADDING;
+      
+      gridY += config.height + 40;
+      
+      // Start a new column if we reach the max cells per column
+      if ((i + 1) % maxCellsInColumn === 0) {
+        gridY = 60;
+        gridX += 200;
+      }
     }
     
-    // Generate interconnects between components
+    // Generate optimized interconnects between components
     const interconnects: Interconnect[] = this.createInterconnects(
       design.interconnects, 
       cells, 
@@ -142,13 +210,12 @@ export class VisualizationService {
     );
     
     // Calculate overall dimensions
-    const maxX = outputs.length ? outputX + this.GPIO_WIDTH + this.PADDING : 
-                                  cellX + this.CELL_WIDTH + this.PADDING;
+    const maxX = gridX + 200; // Add padding
     const maxY = Math.max(
-      inputs.length * (this.GPIO_HEIGHT + this.PADDING),
-      cells.length * (this.CELL_HEIGHT + this.PADDING),
-      outputs.length * (this.GPIO_HEIGHT + this.PADDING)
-    ) + this.PADDING;
+      inputs.length > 0 ? gridY + 80 : 0,
+      cells.length > 0 ? gridY + 80 : 0,
+      outputs.length > 0 ? gridY + 80 : 0
+    );
     
     return {
       cells,
@@ -161,9 +228,41 @@ export class VisualizationService {
     };
   }
   
-  /**
-   * Create interconnection routes between components
-   */
+  // Get actual positions of connection points based on component config
+  private getConnectionPoints(config: ComponentConfig, x: number, y: number): Record<string, {x: number, y: number}> {
+    const result: Record<string, {x: number, y: number}> = {};
+    
+    config.connections.forEach(conn => {
+      let connX = x;
+      let connY = y;
+      
+      // Position based on side
+      switch (conn.side) {
+        case 'left':
+          connX = x;
+          connY = y + config.height * conn.y;
+          break;
+        case 'right':
+          connX = x + config.width;
+          connY = y + config.height * conn.y;
+          break;
+        case 'top':
+          connX = x + config.width * conn.x;
+          connY = y;
+          break;
+        case 'bottom':
+          connX = x + config.width * conn.x;
+          connY = y + config.height;
+          break;
+      }
+      
+      result[conn.id] = {x: connX, y: connY};
+    });
+    
+    return result;
+  }
+  
+  // Method to create optimized interconnects with fewer crossings
   private createInterconnects(
     designInterconnects: any[], 
     cells: FpgaCell[], 
@@ -171,109 +270,124 @@ export class VisualizationService {
   ): Interconnect[] {
     const result: Interconnect[] = [];
     
+    // Build a connection point lookup table
+    const connectionPoints = new Map<string, {component: FpgaCell | ExternalWire, point: {x: number, y: number}}>();
+    
+    // Add cell connection points
+    cells.forEach(cell => {
+      Object.entries(cell.connections).forEach(([port, connName]) => {
+        // If the cell has a defined connection point for this port
+        if (cell.connectionPoints && cell.connectionPoints[port]) {
+          connectionPoints.set(connName, {
+            component: cell,
+            point: cell.connectionPoints[port]
+          });
+        }
+      });
+    });
+    
+    // Add external wire connection points
+    externalWires.forEach(wire => {
+      // For inputs, the output connection is the one to use
+      if (wire.type === 'input' && wire.connectionPoints?.['output']) {
+        connectionPoints.set(wire.name, {
+          component: wire,
+          point: wire.connectionPoints['output']
+        });
+      }
+      // For outputs, the input connection is the one to use
+      else if (wire.type === 'output' && wire.connectionPoints?.['input']) {
+        connectionPoints.set(wire.name, {
+          component: wire,
+          point: wire.connectionPoints['input']
+        });
+      }
+    });
+    
+    // Create interconnects with better routing
     for (const ic of designInterconnects) {
       const { input, output } = ic.connections;
       
-      // Find source and target components
-      const [sourceComponent, sourcePort] = this.findComponentAndPort(input, cells, externalWires);
-      const [targetComponent, targetPort] = this.findComponentAndPort(output, cells, externalWires);
+      // Find source and target connection points
+      const source = connectionPoints.get(input);
+      const target = connectionPoints.get(output);
       
-      if (!sourceComponent || !targetComponent) {
-        console.warn(`Could not find components for interconnect ${ic.name}`);
+      if (!source || !target) {
+        console.warn(`Could not find connection points for interconnect ${ic.name}`);
         continue;
       }
       
-      // Create route points
-      const points = this.generateRoute(sourceComponent, targetComponent);
+      // Generate optimized route
+      const points = this.generateOptimizedRoute(source.point, target.point);
       
       result.push({
         id: `interconnect_${ic.name}`,
         name: ic.name,
-        sourceId: sourceComponent.id,
-        sourcePort,
-        targetId: targetComponent.id,
-        targetPort,
+        sourceId: source.component.id,
+        sourcePort: input,
+        targetId: target.component.id,
+        targetPort: output,
         points,
-        delay: ic.propagation_delay
+        delay: parseFloat(ic.propagation_delay || '0'),
+        animationProgress: 0, // For animation
+        lastSignalState: '0', // For signal state tracking
       });
     }
     
     return result;
   }
   
-  /**
-   * Find component and its port based on port name
-   */
-  private findComponentAndPort(
-    portName: string, 
-    cells: FpgaCell[], 
-    externalWires: ExternalWire[]
-  ): [FpgaCell | ExternalWire | null, string] {
-    // First check cells
-    for (const cell of cells) {
-      for (const [port, conn] of Object.entries(cell.connections)) {
-        if (conn === portName) {
-          return [cell, port];
-        }
-      }
-    }
-    
-    // Check external wires (they don't have ports, use name directly)
-    for (const wire of externalWires) {
-      if (wire.name === portName) {
-        return [wire, 'connection'];
-      }
-    }
-    
-    return [null, ''];
-  }
-  
-  /**
-   * Generate a route between two components with clean right angles
-   */
-  private generateRoute(source: FpgaCell | ExternalWire, target: FpgaCell | ExternalWire): Point[] {
+  // Generate a route with nice curves and minimal crossings
+  private generateOptimizedRoute(source: {x: number, y: number}, target: {x: number, y: number}): Point[] {
     const points: Point[] = [];
     
-    // Source connection point (right side for inputs/cells, left side for outputs)
-    const sourceX = source.type === 'output' ? source.x : source.x + source.width;
-    const sourceY = source.y + source.height / 2;
-    points.push({ x: sourceX, y: sourceY });
+    // Add source point
+    points.push({ x: source.x, y: source.y });
     
-    // Middle point for connector box
-    const midX = (sourceX + (target.type === 'input' ? target.x : target.x)) / 2;
+    // Determine if we need to go horizontal or vertical first
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const isHorizontalFirst = Math.abs(dx) > Math.abs(dy);
     
-    // If source and target are not directly in line, create orthogonal path
-    if (Math.abs(sourceY - (target.y + target.height / 2)) > 5) {
-      // Horizontal line from source
-      points.push({ x: midX, y: sourceY });
-      
-      // Vertical line to target height
-      points.push({ x: midX, y: target.y + target.height / 2 });
+    // Calculate midpoints for the path
+    if (isHorizontalFirst) {
+      // Go horizontal first
+      const midX = source.x + dx * 0.5;
+      points.push({ x: midX, y: source.y });
+      points.push({ x: midX, y: target.y });
     } else {
-      // Simple middle point if aligned
-      points.push({ x: midX, y: sourceY });
+      // Go vertical first
+      const midY = source.y + dy * 0.5;
+      points.push({ x: source.x, y: midY });
+      points.push({ x: target.x, y: midY });
     }
     
-    // Target connection point (left side for cells/outputs, right side for inputs)
-    const targetX = target.type === 'input' ? target.x + target.width : target.x;
-    const targetY = target.y + target.height / 2;
-    
-    // If we need another horizontal segment
-    if (Math.abs(midX - targetX) > 5) {
-      points.push({ x: targetX, y: targetY });
-    }
+    // Add target point
+    points.push({ x: target.x, y: target.y });
     
     return points;
   }
   
-  /**
-   * Get the state color for cells and wires
-   */
+  // Get an SVG element for a component
+  getSVGForComponent(type: string): HTMLImageElement | null {
+    return this.svgCache.get(type) || null;
+  }
+  
+  // Get the state color for cells and wires with effects
   getCellStateColor(state: string): string {
     switch (state) {
-      case '1': return '#ff6666'; // Red for high
-      case '0': return '#6666ff'; // Blue for low
+      case '1': return '#ff5050'; // Bright red for high
+      case '0': return '#4d79ff'; // Bright blue for low
       default: return '#aaaaaa';  // Gray for undefined
+    }
+  }
+  
+  // Get glow effect parameters for a state
+  getStateGlow(state: string): { color: string; blur: number; } {
+    switch (state) {
+      case '1': return { color: 'rgba(255, 80, 80, 0.8)', blur: 15 };
+      case '0': return { color: 'rgba(77, 121, 255, 0.8)', blur: 10 };
+      default: return { color: 'rgba(170, 170, 170, 0.3)', blur: 5 };
     }
   }
 }
