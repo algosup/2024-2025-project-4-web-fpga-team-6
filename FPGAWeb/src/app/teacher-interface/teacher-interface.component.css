@@ -217,11 +217,18 @@ header h1 {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  justify-content: space-between; /* Make buttons take full width */
 }
 
 .upload-button, .reset-button {
   padding: 0.8rem 1.5rem;
   font-weight: 500;
+}
+
+.save-button, .reset-button {
+  padding: 0.8rem 1.5rem;
+  font-weight: 500;
+  flex: 1; /* Make buttons take equal width */
 }
 
 .upload-button:disabled {
@@ -245,7 +252,7 @@ header h1 {
 .designs-section h2 {
   font-size: 1.4rem;
   margin: 0;
-  color: var(--cnes-blue);
+  color: var (--cnes-blue);
   font-weight: 500;
 }
 
@@ -371,6 +378,7 @@ header h1 {
 .design-card:hover {
   transform: var(--hover-lift);
   box-shadow: var(--card-shadow-hover);
+  border-left: 6px solid var(--cnes-blue);
 }
 
 .design-card::before {
@@ -378,16 +386,14 @@ header h1 {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, var(--cnes-blue), var(--cnes-accent));
-  transform: scaleX(0);
+  height: 100%;
+  width: 3px;
+  background: var(--cnes-blue);
   transition: transform var(--transition-speed);
-  transform-origin: left;
 }
 
 .design-card:hover::before {
-  transform: scaleX(1);
+  transform: scaleY(1.2);
 }
 
 .design-header {
@@ -799,6 +805,15 @@ footer {
   transform: translateX(5px);
 }
 
+.file-entry.clickable {
+  cursor: pointer;
+}
+
+.file-entry.clickable:hover {
+  background: rgba(11, 61, 145, 0.1);
+  transform: translateX(5px);
+}
+
 /* Modern file upload zone */
 .file-upload-zone {
   border: 2px dashed var(--cnes-blue);
@@ -828,6 +843,11 @@ footer {
   cursor: pointer;
 }
 
+.file-upload-zone.error {
+  border-color: rgba(220, 53, 69, 0.6);
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
 .selected-files {
   margin-top: 1rem;
   font-size: 0.9rem;
@@ -844,7 +864,7 @@ footer {
 }
 
 .selected-file.verilog {
-  border-left: 3px solid var (--cnes-blue);
+  border-left: 3px solid var(--cnes-blue);
 }
 
 .selected-file.sdf {
@@ -1034,7 +1054,7 @@ footer {
 /* Hover effects for buttons with icons */
 .cnes-button:hover .icon {
   transform: scale(1.1);
-  transition: transform var(--transition-speed);
+  transition: transform var (--transition-speed);
 }
 
 /* Import zone styled like file upload zones */
@@ -1066,4 +1086,43 @@ footer {
   height: 32px;
   margin-bottom: 0.5rem;
   opacity: 0.7;
+}
+
+.optional-label {
+  font-size: 0.8rem;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.action-button {
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.json-preview {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(11, 61, 145, 0.1);
+}
+
+.json-preview h3 {
+  font-size: 1rem;
+  color: var(--cnes-blue);
+  margin: 0 0 1rem 0;
+}
+
+.json-content {
+  background-color: #f8f9fa;
+  border: 1px solid rgba(11, 61, 145, 0.2);
+  border-radius: 4px;
+  padding: 1rem;
+  max-height: 300px;
+  overflow: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
 }

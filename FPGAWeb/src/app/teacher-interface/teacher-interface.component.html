@@ -1,7 +1,7 @@
 <div class="teacher-container">
+  <!-- Header section -->
   <header>
     <div class="header-left">
-      <!-- CNES logo -->
       <div class="cnes-logo-small">
         <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img">
       </div>
@@ -14,6 +14,7 @@
   </header>
 
   <div class="main-content">
+    <!-- Upload new design section -->
     <div class="upload-section">
       <div class="section-header">
         <div class="section-left">
@@ -25,10 +26,12 @@
       </div>
       
       <div class="upload-form">
+        <!-- File upload zones -->
         <div class="file-upload-container">
           <!-- Verilog Upload Zone -->
           <div class="file-upload-zone verilog" 
                [class.dragging]="isDraggingVerilog"
+               [class.error]="missingVerilogFile"
                (dragover)="onDragOver($event, 'verilog')"
                (dragleave)="onDragLeave($event, 'verilog')"
                (drop)="onDrop($event, 'verilog')">
@@ -37,14 +40,13 @@
               <h3>Verilog File (.v)</h3>
               <p>Drop or click to upload</p>
             </div>
-            <input type="file"
-                   accept=".v"
-                   (change)="onFileSelected($event, 'verilog')">
+            <input type="file" accept=".v" (change)="onFileSelected($event, 'verilog')">
           </div>
 
           <!-- SDF Upload Zone -->
           <div class="file-upload-zone sdf"
                [class.dragging]="isDraggingSdf"
+               [class.error]="missingSdfFile"
                (dragover)="onDragOver($event, 'sdf')"
                (dragleave)="onDragLeave($event, 'sdf')"
                (drop)="onDrop($event, 'sdf')">
@@ -53,9 +55,7 @@
               <h3>SDF File (.sdf)</h3>
               <p>Drop or click to upload</p>
             </div>
-            <input type="file"
-                   accept=".sdf"
-                   (change)="onFileSelected($event, 'sdf')">
+            <input type="file" accept=".sdf" (change)="onFileSelected($event, 'sdf')">
           </div>
         </div>
 
@@ -72,18 +72,17 @@
         </div>
 
         <div class="form-group">
-          <label for="designName">Design Name (optional)</label>
+          <label for="designName">Design Name <span class="optional-label">optional</span></label>
           <input 
             type="text" 
             id="designName"
             [(ngModel)]="newDesignName"
             placeholder="Leave empty to use Verilog file name"
           >
-          <small>If left empty, the name will be taken from the Verilog file</small>
         </div>
 
         <div class="form-group">
-          <label for="designDescription">Description (Markdown supported)</label>
+          <label for="designDescription">Description <span class="optional-label">optional</span></label>
           <div class="markdown-container">
             <textarea 
               id="designDescription" 
@@ -99,9 +98,6 @@
               <div class="preview-content" [innerHTML]="markdownPreview"></div>
             </div>
           </div>
-          <small class="markdown-help">
-            Supported Markdown: **bold**, *italic*, # headers, - lists, `code`, etc.
-          </small>
         </div>
 
         <div class="form-actions">
@@ -123,16 +119,23 @@
             Reset Form
           </button>
         </div>
+
+        <div class="json-preview" *ngIf="parsedContent">
+          <h3>Generated JSON Preview</h3>
+          <pre class="json-content">{{ parsedContent }}</pre>
+        </div>
       </div>
     </div>
 
+    <!-- Manage designs section -->
     <div class="designs-section">
+      <!-- Section header -->
       <div class="section-header">
         <div class="section-left">
           <div class="section-icon">
             <img src="assets/menu.svg" alt="Manage" class="icon">
           </div>
-          <h2>Manage Designs</h2>
+          <h2>Manage Designs ({{ designs.length }})</h2>
         </div>
         <a [routerLink]="['/fpga-visualization']" class="cnes-button accent visualize-button">
           <span>Visualize Designs</span>
@@ -140,11 +143,12 @@
         </a>
       </div>
       
-      <!-- Add loading indicator -->
+      <!-- Loading indicator -->
       <div *ngIf="isLoading" class="loading-indicator">
         Loading examples...
       </div>
       
+      <!-- Import zone -->
       <div class="import-section">
         <div class="file-upload-zone import"
              [class.dragging]="isDragging"
@@ -164,24 +168,32 @@
         </div>
       </div>
       
+      <!-- Design cards -->
       <div class="designs-list">
         <div *ngFor="let design of designs" class="design-card">
           <div class="design-header">
             <h3>{{ design.name }}</h3>
             <div class="design-actions">
               <button 
-                class="cnes-button secondary export-button" 
-                (click)="exportDesign(design.id)"
+                class="cnes-button secondary action-button" 
+                (click)="editDesign(design)"
+                title="Edit"
               >
-                <img src="assets/export.svg" alt="Export" class="icon">
-                Export
+                <img src="assets/edit.svg" alt="Edit" class="icon">
               </button>
               <button 
-                class="delete-button" 
+                class="cnes-button secondary action-button" 
+                (click)="exportDesign(design.id)"
+                title="Export"
+              >
+                <img src="assets/export.svg" alt="Export" class="icon">
+              </button>
+              <button 
+                class="delete-button action-button" 
                 (click)="deleteDesign(design.id)"
+                title="Delete"
               >
                 <img src="assets/delete.svg" alt="Delete" class="icon">
-                Delete
               </button>
             </div>
           </div>
@@ -191,7 +203,7 @@
           
           <!-- Display only Verilog and SDF files with arrows -->
           <div class="design-files">
-            <div class="file-entry" *ngFor="let file of design.files | slice:0:2">
+            <div class="file-entry clickable" *ngFor="let file of design.files; let i = index" (click)="viewFile(design, i)">
               → {{ file }}
             </div>
           </div>
@@ -200,6 +212,7 @@
     </div>
   </div>
 
+  <!-- Footer -->
   <footer>
     <p>© CNES, 2024 - FPGA Visualization Platform</p>
     <div class="logo-small">

@@ -1,27 +1,5 @@
-
-// Add configuration object at the top
+// Simplified configuration focused on parsing logic
 const CONFIG = {
-    encoding: 'utf8' as BufferEncoding,
-    fileExtensions: {
-        verilog: '.v',
-        sdf: '.sdf',
-        postSynthesis: '_post_synthesis',
-        schematics: '_schematics.json'
-    },
-    directories: {
-        public: 'public',
-        schematics: 'schematics',
-        examples_folder: 'verilog_post_synthesis_examples',
-        examples: [
-            '1ff_no_rst_VTR',
-            '1ff_VTR',
-            '2ffs_no_rst_VTR',
-            '2ffs_VTR',
-            '5ffs_VTR',
-            'FULLLUT_VTR',
-            'LUT_VTR'
-        ]
-    },
     regexFlags: {
         global: 'g',
         globalMultiline: 'gs'
@@ -139,6 +117,12 @@ class CellNameGenerator {
     }
 }
 
+/**
+ * VerilogParser class - Parses Verilog and SDF files to generate circuit schematics
+ * 
+ * This parser handles the extraction of cells, interconnects, and timing information
+ * from post-synthesis Verilog and SDF files.
+ */
 export class VerilogParser {
     private content: string = '';
     private sdfContent: string = '';
@@ -154,9 +138,40 @@ export class VerilogParser {
         this.cellNamer = new CellNameGenerator();
     }
 
+    /**
+     * Load Verilog and SDF content for parsing
+     * @param verilogContent - The Verilog file content
+     * @param sdfContent - The SDF file content
+     */
     loadContent(verilogContent: string, sdfContent: string): void {
         this.content = verilogContent;
         this.sdfContent = sdfContent;
+    }
+
+    /**
+     * Parse the content and generate a schematic output
+     * @returns The parsed schematic structure
+     */
+    parse(): SchematicOutput {
+        this.parseModule();
+        this.parseTiming();
+        this.parseCells();
+        this.parseInterconnects();
+
+        return {
+            type: 'module',
+            name: this.moduleName,
+            external_wires: this.externalWires,
+            cells: this.cells,
+            interconnects: this.interconnects
+        };
+    }
+
+    /**
+     * Helper method to clean wire names by removing backslashes
+     */
+    private cleanWireName(name: string): string {
+        return name.replace(/\\/g, '').trim();
     }
 
     private parseModule(): void {
@@ -208,10 +223,6 @@ export class VerilogParser {
             const delay = interconnectMatch[2];
             this.delays[this.cleanWireName(routeName)] = delay;
         }
-    }
-
-    private cleanWireName(name: string): string {
-        return name.replace(/\\/g, '').trim();
     }
 
     private parseCells(): void {
@@ -345,21 +356,6 @@ export class VerilogParser {
             
             this.interconnects.push(interconnect);
         }
-    }
-
-    parse(): SchematicOutput {
-        this.parseModule();
-        this.parseTiming();
-        this.parseCells();
-        this.parseInterconnects();
-
-        return {
-            type: 'module',
-            name: this.moduleName,
-            external_wires: this.externalWires,
-            cells: this.cells,
-            interconnects: this.interconnects
-        };
     }
 }
 

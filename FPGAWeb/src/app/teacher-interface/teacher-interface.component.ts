@@ -3,55 +3,67 @@ import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
+import { distinctUntilChanged, map } from 'rxjs/operators';
+import { marked } from 'marked';
+import JSZip from 'jszip';
+
+// Services
 import { FileProcessingService } from '../services/file-processing.service';
 import { DesignService } from '../services/design.service';
 import { ExamplesLoaderService } from '../services/examples-loader.service';
 import { AppInitializerService } from '../services/app-initializer.service';
-import { Design } from '../models/design.model';
-import { VerilogParser } from '../services/parser'; // Add this import
-import JSZip from 'jszip';
-import { marked } from 'marked';
-import { distinctUntilChanged, map } from 'rxjs/operators';
 
+// Models
+import { Design } from '../models/design.model';
+
+/**
+ * TeacherInterfaceComponent - Provides functionality for teachers to 
+ * upload, manage, import and export FPGA designs.
+ */
 @Component({
   selector: 'app-teacher-interface',
   standalone: true,
-  imports: [
-    RouterLink, 
-    CommonModule, 
-    FormsModule,
-    HttpClientModule
-  ],
+  imports: [RouterLink, CommonModule, FormsModule, HttpClientModule],
   templateUrl: './teacher-interface.component.html',
   styleUrl: './teacher-interface.component.css'
 })
-
 export class TeacherInterfaceComponent implements OnInit {
+  // Simplified properties by grouping related items
   title = 'Teacher Interface';
   
-  // Mock data for existing applications
+  // Design data
   designs: Design[] = [];
-
-  // Variables for form
+  
+  // Form state
   newDesignName = '';
   newDesignDescription = '';
   selectedVerilogFile: File | null = null;
   selectedSdfFile: File | null = null;
+  markdownPreview: string | null = null;
+  
+  // Processing state
   isProcessing = false;
-
-  // Add new properties
+  isLoading = false;
+  
+  // Processed content
   parsedContent: string | null = null;
   generatedFilename: string | null = null;
   verilogContent: string | null = null;
   sdfContent: string | null = null;
+  
+  // Drag and drop state
   isDragging = false;
-  isLoading = false;
-  markdownPreview: string | null = null;
-
-  private markdown = marked;
-
   isDraggingVerilog = false;
   isDraggingSdf = false;
+
+  // Add these properties to track validation errors
+  missingVerilogFile = false;
+  missingSdfFile = false;
+
+  // Edit state
+  editingDesign: Design | null = null;
+  editDesignName = '';
+  editDesignDescription = '';
 
   constructor(
     private fileProcessingService: FileProcessingService,
@@ -59,24 +71,27 @@ export class TeacherInterfaceComponent implements OnInit {
     private examplesLoader: ExamplesLoaderService,
     private appInitializer: AppInitializerService
   ) {
-    // Configure marked options
-    this.markdown.setOptions({
+    // Configure markdown options once during initialization
+    marked.setOptions({
       breaks: true,
       gfm: true
     });
   }
 
   ngOnInit() {
+    // Track loading state from app initializer service
     this.appInitializer.isLoading$.subscribe(
       (loading: boolean) => this.isLoading = loading
     );
     
+    // Get designs with optimized change detection
     this.designService.getDesigns().pipe(
       distinctUntilChanged((prev, curr) => 
         JSON.stringify(prev) === JSON.stringify(curr)
       ),
       map(designs => designs.map(design => ({
         ...design,
+        // Provide default values for optional fields
         verilogContent: design.verilogContent || '',
         sdfContent: design.sdfContent || '',
         jsonContent: design.jsonContent || {},
@@ -91,18 +106,16 @@ export class TeacherInterfaceComponent implements OnInit {
     });
   }
 
-  // Methods for file handling
-  onVerilogFileSelected(event: Event): void {
+  // File handling methods consolidated into a cleaner pattern
+  onFileSelected(event: Event, type: 'verilog' | 'sdf'): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.selectedVerilogFile = input.files[0];
-    }
-  }
+    if (!input.files?.length) return;
 
-  onSdfFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.selectedSdfFile = input.files[0];
+    const file = input.files[0];
+    if (type === 'verilog') {
+      this.selectedVerilogFile = file;
+    } else {
+      this.selectedSdfFile = file;
     }
   }
 
@@ -112,21 +125,25 @@ export class TeacherInterfaceComponent implements OnInit {
       return;
     }
 
+    // Since we've checked they're not null above
+    const selectedVerilogFile = this.selectedVerilogFile!;
+    const selectedSdfFile = this.selectedSdfFile!;
+
     // If no name is provided, use the Verilog file name without extension
     if (!this.newDesignName.trim()) {
-      this.newDesignName = this.selectedVerilogFile.name.replace(/\.v$/, '');
+      this.newDesignName = selectedVerilogFile.name.replace(/\.v$/, '');
     }
 
     this.isProcessing = true;
     try {
       // Read file contents
-      const verilogContent = await this.selectedVerilogFile!.text();
-      const sdfContent = await this.selectedSdfFile!.text();
+      const verilogContent = await selectedVerilogFile.text();
+      const sdfContent = await selectedSdfFile.text();
       
       // Process the files and generate JSON
       const jsonContent = await this.fileProcessingService.processFiles(
-        this.selectedVerilogFile!,
-        this.selectedSdfFile!
+        selectedVerilogFile,
+        selectedSdfFile
       );
 
       // Store all contents
@@ -144,26 +161,37 @@ export class TeacherInterfaceComponent implements OnInit {
   }
 
   async saveDesign(): Promise<void> {
-    if (!this.selectedVerilogFile || !this.selectedSdfFile) {
+    this.missingVerilogFile = !this.selectedVerilogFile;
+    this.missingSdfFile = !this.selectedSdfFile;
+
+    if (this.missingVerilogFile || this.missingSdfFile) {
       return;
     }
-  
+
     try {
       this.isProcessing = true;
-  
+
+      const selectedVerilogFile = this.selectedVerilogFile!;
+      const selectedSdfFile = this.selectedSdfFile!;
+
+      // Read file contents directly, don't reuse FileReader multiple times on same file
+      const verilogContent = await this.fileProcessingService.readFileAsText(selectedVerilogFile);
+      const sdfContent = await this.fileProcessingService.readFileAsText(selectedSdfFile);
+      
+      // Log first few bytes to check content
+      console.log('Verilog content check:', verilogContent.substring(0, 100));
+      console.log('SDF content check:', sdfContent.substring(0, 100));
+
       // Process files using FileProcessingService
       const parsedContent = await this.fileProcessingService.processFiles(
-        this.selectedVerilogFile,
-        this.selectedSdfFile
+        selectedVerilogFile,
+        selectedSdfFile
       );
-  
-      const verilogContent = await this.selectedVerilogFile.text();
-      const sdfContent = await this.selectedSdfFile.text();
       
       // Generate filename for JSON
-      const designName = this.newDesignName || this.selectedVerilogFile.name.replace('.v', '');
+      const designName = this.newDesignName || selectedVerilogFile.name.replace('.v', '');
       const generatedFilename = `${designName.toLowerCase().replace(/\s+/g, '_')}_schematics.json`;
-  
+
       // Create and save the design
       const newDesign: Design = {
         id: `design_${Date.now()}`,
@@ -171,22 +199,30 @@ export class TeacherInterfaceComponent implements OnInit {
         description: this.newDesignDescription ? 
           String(marked.parse(this.newDesignDescription, { async: false })) : '',
         files: [
-          this.selectedVerilogFile.name,
-          this.selectedSdfFile.name,
+          selectedVerilogFile.name,
+          selectedSdfFile.name,
           generatedFilename
         ],
         verilogContent: verilogContent,
         sdfContent: sdfContent,
-        jsonContent: parsedContent,
+        jsonContent: JSON.parse(parsedContent), // Store as parsed JSON object
         visualizationState: {
           clockFrequency: 1000000
         }
       };
-  
+
       // Add new design at the beginning
       this.designService.addDesign(newDesign, true);
-      this.resetForm();
-  
+      
+      // Store parsed content for preview
+      this.parsedContent = parsedContent;
+      this.generatedFilename = generatedFilename;
+      
+      // Reset form only after we've stored the parsed content
+      setTimeout(() => {
+        this.resetForm();
+      }, 3000);  // Reset form after 3 seconds to allow users to see the preview
+
     } catch (error) {
       console.error('Error processing and saving design:', error);
       alert('Error processing files. Please try again or contact support if the issue persists.');
@@ -369,15 +405,50 @@ export class TeacherInterfaceComponent implements OnInit {
     }
   }
 
-  onFileSelected(event: Event, type: 'verilog' | 'sdf'): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-
-    const file = input.files[0];
-    if (type === 'verilog') {
-      this.selectedVerilogFile = file;
+  viewFile(design: Design, fileIndex: number): void {
+    let content: string;
+    let fileType: string;
+    
+    if (fileIndex === 0) {
+      content = design.verilogContent as string;
+      fileType = 'text/plain';
+    } else if (fileIndex === 1) {
+      content = design.sdfContent as string;
+      fileType = 'text/plain';
     } else {
-      this.selectedSdfFile = file;
+      content = JSON.stringify(design.jsonContent, null, 2);
+      fileType = 'application/json';
     }
+    
+    const blob = new Blob([content], { type: fileType });
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
+
+  editDesign(design: Design): void {
+    this.editingDesign = design;
+    this.editDesignName = design.name;
+    this.editDesignDescription = design.description;
+    // Add logic to open edit modal or form
+  }
+
+  saveEditedDesign(): void {
+    if (!this.editingDesign) return;
+
+    const updatedDesign = {
+      ...this.editingDesign,
+      name: this.editDesignName,
+      description: this.editDesignDescription ? 
+        String(marked.parse(this.editDesignDescription, { async: false })) : ''
+    };
+
+    this.designService.updateDesign(updatedDesign);
+    this.cancelEdit();
+  }
+
+  cancelEdit(): void {
+    this.editingDesign = null;
+    this.editDesignName = '';
+    this.editDesignDescription = '';
   }
 }

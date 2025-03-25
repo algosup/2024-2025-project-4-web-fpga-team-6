@@ -46,6 +46,14 @@ export class DesignService {
     this.designsSubject.next([...this.designs]);
   }
 
+  updateDesign(design: Design): void {
+    const index = this.designs.findIndex(d => d.id === design.id);
+    if (index !== -1) {
+      this.designs[index] = design;
+      this.designsSubject.next([...this.designs]);
+    }
+  }
+
   deleteDesign(id: string): void {
     this.designs = this.designs.filter(design => design.id !== id);
     this.designsSubject.next(this.designs);
