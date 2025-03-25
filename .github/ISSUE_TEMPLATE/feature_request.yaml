@@ -1,0 +1,46 @@
+name: "✨ Feature Request"
+description: "Suggest a new feature or enhancement."
+title: "[Feature]: Short description of the feature"
+labels: ["enhancement"]
+assignees: []
+
+body:
+  - type: textarea
+    id: feature_description
+    attributes:
+      label: "Describe the Feature"
+      description: "What functionality do you want to add or improve?"
+      placeholder: "Explain the feature in detail."
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: "Use Case / Motivation"
+      description: "Why is this feature needed? Who will benefit from it?"
+      placeholder: "Describe how this feature will help users."
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: "Proposed Solution"
+      description: "How do you think this should be implemented?"
+      placeholder: "Explain how this could work."
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives Considered"
+      description: "Have you considered any other solutions?"
+      placeholder: "List alternative approaches, if any."
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "I have searched for similar feature requests."
+          required: true
+        - label: "I have described the use case and motivation."
+          required: true
+        - label: "I have suggested a possible implementation."
+          required: false
