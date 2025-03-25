@@ -15,6 +15,8 @@ export interface ComponentConfig {
   labelPosition?: { x: number; y: number; }; // Optional custom label position
 }
 
+// Update the COMPONENT_CONFIGS to include better LUT handling
+
 export const COMPONENT_CONFIGS: Record<string, ComponentConfig> = {
   'DFF': {
     type: 'DFF',
@@ -28,6 +30,22 @@ export const COMPONENT_CONFIGS: Record<string, ComponentConfig> = {
       { id: 'Qn', x: 1, y: 0.7, side: 'right', label: 'Q̅' }
     ]
   },
+  // Add specific configuration for LUT
+  'LUT': {
+    type: 'LUT',
+    svgPath: 'assets/LUT.svg',
+    width: 140,
+    height: 100,
+    connections: [
+      { id: 'in_0', x: 0, y: 0.2, side: 'left', label: '0' },
+      { id: 'in_1', x: 0, y: 0.3, side: 'left', label: '1' },
+      { id: 'in_2', x: 0, y: 0.4, side: 'left', label: '2' },
+      { id: 'in_3', x: 0, y: 0.5, side: 'left', label: '3' },
+      { id: 'in_4', x: 0, y: 0.6, side: 'left', label: '4' },
+      { id: 'out', x: 1, y: 0.5, side: 'right', label: 'OUT' }
+    ]
+  },
+  // Keep the generic LUT_K config for compatibility
   'LUT_K': {
     type: 'LUT_K',
     svgPath: 'assets/LUT.svg',

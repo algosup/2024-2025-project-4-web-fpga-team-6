@@ -206,6 +206,7 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       
       if (design.jsonContent) {
         console.log('Loading design:', design.name);
+        
         try {
           // Make sure jsonContent is properly parsed
           let parsedContent: FpgaDesign;
@@ -215,6 +216,9 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
           } else {
             parsedContent = design.jsonContent as FpgaDesign;
           }
+          
+          // Log the design structure to help with debugging
+          console.log('Design structure:', parsedContent);
           
           this.layout = this.visualizationService.generateLayout(parsedContent);
           
@@ -358,43 +362,67 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
           this.simulationStates.set(cell.connections['Q'], dValue);
         }
       } 
-      else if (cell.type === 'LUT_K') {
+      else if (cell.type === 'LUT_K' || cell.type === 'LUT') {
         // LUT behavior: calculate output based on inputs and mask
-        const lutMask = (cell.mask || '00000000000000000000000000000000');
-        const lutK = cell.K || 5;
+        const lutMask = (cell.mask || cell.properties?.mask || '00000000000000000000000000000000');
         
-        // Get input values (0 to K-1)
-        const inputs: string[] = [];
-        for (let i = 0; i < lutK; i++) {
-          const inputName = `in_${i}`;
-          if (inputName in cell.connections) {
-            inputs.push(this.simulationStates.get(cell.connections[inputName]) || '0');
-          } else {
-            inputs.push('0'); // Default value if connection doesn't exist
+        // Parse the LUT inputs differently based on design format
+        const inputValues: string[] = [];
+        
+        // First, try to get from in_0, in_1, etc. format
+        let hasStandardInputs = false;
+        for (let i = 0; i < 5; i++) { // Assume max 5 inputs
+          const inputKey = `in_${i}`;
+          if (inputKey in cell.connections) {
+            hasStandardInputs = true;
+            const wireValue = this.simulationStates.get(cell.connections[inputKey]) || '0';
+            inputValues.push(wireValue);
+          }
+        }
+        
+        // If no standard inputs found, look for numerically indexed inputs
+        if (!hasStandardInputs) {
+          for (let i = 0; i < 5; i++) { // Assume max 5 inputs
+            const inputKey = `${i}`;
+            if (inputKey in cell.connections) {
+              const wireValue = this.simulationStates.get(cell.connections[inputKey]) || '0';
+              inputValues.push(wireValue);
+            }
           }
         }
         
         // Calculate index into mask
         let index = 0;
-        for (let i = 0; i < inputs.length; i++) {
-          if (inputs[i] === '1') {
+        for (let i = 0; i < inputValues.length; i++) {
+          if (inputValues[i] === '1') {
             index |= (1 << i);
           }
         }
         
         // Get output from mask
-        const maskValue = lutMask.charAt(lutMask.length - 1 - index) === '1' ? '1' : '0';
-        if ('out' in cell.connections) {
-          this.simulationStates.set(cell.connections['out'], maskValue);
+        let maskIndex = lutMask.length - 1 - index;
+        if (maskIndex < 0) maskIndex = 0;
+        if (maskIndex >= lutMask.length) maskIndex = lutMask.length - 1;
+        
+        const maskValue = lutMask.charAt(maskIndex) === '1' ? '1' : '0';
+        
+        // Set the output - try different possible output connections
+        const outputKeys = ['out', 'O', 'output', 'OUT'];
+        for (const key of outputKeys) {
+          if (key in cell.connections) {
+            this.simulationStates.set(cell.connections[key], maskValue);
+            break;
+          }
         }
       }
-      // Add logic for other cell types as needed
     }
     
     // Propagate signals through interconnects
     for (const ic of design.interconnects || []) {
-      const sourceValue = this.simulationStates.get(ic.connections.input) || '0';
-      this.simulationStates.set(ic.connections.output, sourceValue);
+      if (ic.connections && ic.connections.input && ic.connections.output) {
+        const sourceValue = this.simulationStates.get(ic.connections.input) || '0';
+        this.simulationStates.set(ic.connections.output, sourceValue);
+      }
     }
     
     // Start animation for signal propagation
@@ -689,8 +717,11 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     const state = this.simulationStates.get(cell.name) || '0';
     const isHighlighted = this.highlightedCell === cell.id;
     
+    // Special case for LUT - use trapezoid shape
+    const isLUT = cell.type === 'LUT' || cell.type === 'LUT_K';
+    
     // Get component SVG if available
-    const svg = this.visualizationService.getSVGForComponent(cell.type);
+    const svg = this.visualizationService.getSVGForComponent(isLUT ? 'LUT' : cell.type);
     
     // Apply shadow for highlighted state
     if (isHighlighted) {
@@ -702,27 +733,43 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       // Draw SVG image
       ctx.drawImage(svg, cell.x, cell.y, cell.width, cell.height);
     } else {
-      // Fallback to drawing a rectangle
+      // Fallback to drawing a rectangle or trapezoid for LUT
       ctx.fillStyle = isHighlighted ? '#f0f8ff' : '#ffffff';
       ctx.strokeStyle = '#0b3d91';
       ctx.lineWidth = isHighlighted ? 3 : 2;
       
-      // Rounded rectangle
-      this.roundRect(ctx, cell.x, cell.y, cell.width, cell.height, 10, true, true);
-      
-      // Cell type header
-      ctx.fillStyle = '#0b3d91';
-      ctx.fillRect(cell.x, cell.y, cell.width, 20);
+      if (isLUT) {
+        // Draw trapezoid for LUT
+        ctx.beginPath();
+        ctx.moveTo(cell.x + 20, cell.y + 10);
+        ctx.lineTo(cell.x + cell.width - 20, cell.y + 10);
+        ctx.lineTo(cell.x + cell.width - 10, cell.y + cell.height - 10);
+        ctx.lineTo(cell.x + 10, cell.y + cell.height - 10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        // LUT header
+        ctx.fillStyle = '#0b3d91';
+        ctx.fillRect(cell.x + 20, cell.y + 10, cell.width - 40, 20);
+      } else {
+        // Rounded rectangle for other components
+        this.roundRect(ctx, cell.x, cell.y, cell.width, cell.height, 10, true, true);
+        
+        // Cell type header
+        ctx.fillStyle = '#0b3d91';
+        ctx.fillRect(cell.x, cell.y, cell.width, 20);
+      }
       
       // Cell name and type
       ctx.font = '12px Arial';
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.fillText(cell.type, cell.x + cell.width / 2, cell.y + 15);
+      ctx.fillText(cell.type, cell.x + cell.width / 2, cell.y + 15 + (isLUT ? 10 : 0));
       
       ctx.font = '14px Arial';
       ctx.fillStyle = '#0b3d91';
-      ctx.fillText(cell.name, cell.x + cell.width / 2, cell.y + 40);
+      ctx.fillText(cell.name, cell.x + cell.width / 2, cell.y + 40 + (isLUT ? 5 : 0));
     }
     
     // Reset shadow
@@ -730,7 +777,7 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     ctx.shadowBlur = 0;
     
     // Get configuration for this cell type
-    const config = COMPONENT_CONFIGS[cell.type];
+    const config = COMPONENT_CONFIGS[isLUT ? 'LUT' : cell.type];
     
     // Draw connection points with state indicators
     if (cell.connectionPoints) {
@@ -789,7 +836,7 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     }
     
     // Draw cell state indicator for LUT and DFF
-    if (cell.type === 'DFF' || cell.type === 'LUT_K') {
+    if (cell.type === 'DFF' || isLUT) {
       const stateColor = this.visualizationService.getCellStateColor(state);
       const glow = this.visualizationService.getStateGlow(state);
       
@@ -805,14 +852,21 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       ctx.shadowBlur = 0;
     }
     
-    // Special case for LUT: show the mask/truth table
-    if (cell.type === 'LUT_K' && cell.properties?.mask) {
+    // Special case for LUT: show the truth table
+    if (isLUT && cell.properties?.mask) {
       ctx.font = '9px monospace';
       ctx.fillStyle = '#333';
       ctx.textAlign = 'center';
       
-      const maskText = cell.properties.mask.substring(0, 8) + '...';
+      // Show the mask in binary format with ellipsis if too long
+      const maskText = cell.properties.mask.substring(0, 8) + 
+        (cell.properties.mask.length > 8 ? '...' : '');
+      
       ctx.fillText(maskText, cell.x + cell.width / 2, cell.y + cell.height - 30);
+      
+      // Draw the truth table header
+      ctx.font = '8px Arial';
+      ctx.fillText('Mask:', cell.x + cell.width / 2, cell.y + cell.height - 42);
     }
   }
   
