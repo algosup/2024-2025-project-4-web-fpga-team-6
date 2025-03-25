@@ -7,7 +7,7 @@ This document provides a detailed technical specification for the FPGA Simulator
 
 - [Technical Specification: FPGA Simulator Web Interface](#technical-specification-fpga-simulator-web-interface)
   - [Table of Contents](#table-of-contents)
-  - [Document Tracking and Version (Revision History)](#document-tracking-and-version-revision-history)
+  - [Document Tracking and Version](#document-tracking-and-version)
   - [Points of Contact](#points-of-contact)
   - [Assumptions and Constraints](#assumptions-and-constraints)
     - [Assumptions](#assumptions)
@@ -50,7 +50,7 @@ This document provides a detailed technical specification for the FPGA Simulator
 
 ---
 
-## Document Tracking and Version (Revision History)
+## Document Tracking and Version
 | Version | Author       | Date       |
 |---------|--------------|------------|
 | 1.4.3   | Axel DAVID   | 2025-03-25 |
