@@ -7,6 +7,12 @@ This document provides a detailed technical specification for the FPGA Simulator
 
 - [Technical Specification: FPGA Simulator Web Interface](#technical-specification-fpga-simulator-web-interface)
   - [Table of Contents](#table-of-contents)
+  - [Document Tracking and Version (Revision History)](#document-tracking-and-version-revision-history)
+  - [Points of Contact](#points-of-contact)
+  - [Assumptions and Constraints](#assumptions-and-constraints)
+    - [Assumptions](#assumptions)
+    - [Constraints](#constraints)
+  - [Risk Assessment](#risk-assessment)
   - [1. Introduction](#1-introduction)
     - [1.1 Purpose](#11-purpose)
     - [1.2 Scope](#12-scope)
@@ -41,6 +47,63 @@ This document provides a detailed technical specification for the FPGA Simulator
   - [11. Glossary](#11-glossary)
     - [Conclusion](#conclusion)
 </details>
+
+---
+
+## Document Tracking and Version (Revision History)
+| Version | Author       | Date       |
+|---------|--------------|------------|
+| 1.4.3   | Axel DAVID   | 2025-03-25 |
+
+---
+
+| Role                | Name            | Signature | Date       |
+|---------------------|-----------------|-----------|------------|
+| Project Manager     | Manech LAGUENS | ✅         | 2025-03-25 |
+| Program Manager     | Elon DELLILE   | ✅         | 2025-03-25 |
+| Technical Leader    | Axel DAVID     | ✅         | 2025-03-25 |
+| Software Engineer   | Thomas PLANCHAD| ✅         | 2025-03-25 |
+| Software Engineer   | Evan UHRING    | ✅         | 2025-03-25 |
+| Quality Assurance   | Rémy Charles   | ✅         | 2025-03-25 |
+| Technical Writer    | Benoît de Keyn | ✅         | 2025-03-25 |
+
+---
+
+## Points of Contact
+| Role | Name | Picture and links |
+| --- | --- | --- |
+| Project Manager   | Manech LAGUENS  | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJQY4YNT-b9fc406d8169-50">](https://github.com/Manech-Laguens)   |
+| Program Manager   | Elon DELLILE    | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJR05FL7-464fe5ab420c-50">](https://github.com/HiNett)           |
+| Technical Leader  | Axel DAVID      | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U07D74Y2FN3-c49f70489f3b-50">](https://github.com/Fus1onAxel)       |
+| Software Engineer | Thomas PLANCHAD | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U02EY24GTT8-d1e0d5d26fcb-50">](https://github.com/thomas-planchard) |
+| Software Engineer | Evan UHRING     | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SZB90074-d12b12264117-50">](https://github.com/Evan-UHRING)      |
+| Quality Assurance | Rémy Charles    | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U0338M4B32R-c0f60ab9ca33-50">](https://github.com/RemyCHARLES)      |
+| Technical Writer  | Benoît de Keyn  | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SZ8EGZLK-4aa6205b5986-50">](https://github.com/benoitdekeyn)     |
+
+---
+
+## Assumptions and Constraints
+
+### Assumptions
+- Users have basic knowledge of Verilog and FPGA concepts.
+- The backend tools (e.g., Yosys, ModelSim) are stable and compatible with the system.
+- The platform will primarily be used in educational environments.
+
+### Constraints
+- The system is limited to simulation and visualization; it does not replace physical FPGA hardware.
+- The platform must support scalability for concurrent users but is not designed for industrial-scale deployment.
+- The project must adhere to the timeline and resource limitations defined by the team.
+
+---
+
+## Risk Assessment
+
+| Risk                     | Mitigation Strategy                     |
+|--------------------------|------------------------------------------|
+| Security vulnerabilities | Implement JWT-based authentication and input validation. |
+| Performance bottlenecks  | Optimize backend processing pipelines and use caching mechanisms. |
+| Compatibility issues     | Conduct thorough testing across supported environments. |
+| Limited resources         | Prioritize critical features and maintain regular communication with stakeholders. |
 
 ---
 
@@ -237,7 +300,6 @@ The following enhancements are planned to extend the capabilities of the FPGA Si
 | **SDF**         | Standard Delay Format, a file format for specifying timing information.|
 | **Yosys**       | An open-source framework for Verilog synthesis and optimization.|
 | **ModelSim**    | A simulation tool for verifying Verilog designs.               |
-| **Icarus Verilog** | A widely used Verilog simulation and synthesis tool.          |
 | **Angular SSR** | Server-Side Rendering in Angular, which improves performance and SEO. |
 
 ---
