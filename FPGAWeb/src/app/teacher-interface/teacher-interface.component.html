@@ -105,6 +105,7 @@
             class="cnes-button accent save-button" 
             (click)="saveDesign()" 
             [disabled]="isProcessing || !selectedVerilogFile || !selectedSdfFile"
+            [ngClass]="{'disabled-button': !selectedVerilogFile || !selectedSdfFile}"
           >
             <img src="assets/save.svg" alt="Save" class="icon">
             <span *ngIf="!isProcessing">Save Design</span>
@@ -121,8 +122,17 @@
         </div>
 
         <div class="json-preview" *ngIf="parsedContent">
-          <h3>Generated JSON Preview</h3>
-          <pre class="json-content">{{ parsedContent }}</pre>
+          <h3>
+            Generated JSON Preview
+            <button class="download-json-btn" (click)="downloadJson()" title="Download JSON">
+              <img src="assets/download.svg" alt="Download" class="icon">
+              Download
+            </button>
+          </h3>
+          <div class="json-viewer-container">
+            <!-- Simple pre element for JSON display -->
+            <pre class="json-content">{{ parsedContent }}</pre>
+          </div>
         </div>
       </div>
     </div>
@@ -201,9 +211,12 @@
           <!-- Display HTML description -->
           <div class="design-description" [innerHTML]="design.description"></div>
           
-          <!-- Display only Verilog and SDF files with arrows -->
+          <!-- Update the file entry section -->
           <div class="design-files">
-            <div class="file-entry clickable" *ngFor="let file of design.files; let i = index" (click)="viewFile(design, i)">
+            <div class="file-entry clickable" 
+                 *ngFor="let file of design.files; let i = index" 
+                 (click)="viewFile(design, i)"
+                 [hidden]="file === 'metadata.json'">
               → {{ file }}
             </div>
           </div>

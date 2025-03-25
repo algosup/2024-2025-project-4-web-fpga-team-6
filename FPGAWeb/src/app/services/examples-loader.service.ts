@@ -188,7 +188,7 @@ export class ExamplesLoaderService {
           files: [
             files.verilog,
             files.sdf,
-            `${dir}_parsed.json`,
+            `${dir}_schematics.json`,
             'metadata.json'
           ],
           verilogContent: verilog,

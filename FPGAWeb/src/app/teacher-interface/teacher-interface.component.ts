@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -174,14 +174,10 @@ export class TeacherInterfaceComponent implements OnInit {
       const selectedVerilogFile = this.selectedVerilogFile!;
       const selectedSdfFile = this.selectedSdfFile!;
 
-      // Read file contents directly, don't reuse FileReader multiple times on same file
+      // Read file contents directly
       const verilogContent = await this.fileProcessingService.readFileAsText(selectedVerilogFile);
       const sdfContent = await this.fileProcessingService.readFileAsText(selectedSdfFile);
       
-      // Log first few bytes to check content
-      console.log('Verilog content check:', verilogContent.substring(0, 100));
-      console.log('SDF content check:', sdfContent.substring(0, 100));
-
       // Process files using FileProcessingService
       const parsedContent = await this.fileProcessingService.processFiles(
         selectedVerilogFile,
@@ -205,7 +201,7 @@ export class TeacherInterfaceComponent implements OnInit {
         ],
         verilogContent: verilogContent,
         sdfContent: sdfContent,
-        jsonContent: JSON.parse(parsedContent), // Store as parsed JSON object
+        jsonContent: JSON.parse(parsedContent), 
         visualizationState: {
           clockFrequency: 1000000
         }
@@ -214,14 +210,18 @@ export class TeacherInterfaceComponent implements OnInit {
       // Add new design at the beginning
       this.designService.addDesign(newDesign, true);
       
-      // Store parsed content for preview
+      // Store parsed content for preview - retain this but don't clear it
       this.parsedContent = parsedContent;
       this.generatedFilename = generatedFilename;
       
-      // Reset form only after we've stored the parsed content
-      setTimeout(() => {
-        this.resetForm();
-      }, 3000);  // Reset form after 3 seconds to allow users to see the preview
+      // Reset form WITHOUT clearing parsed content
+      this.selectedVerilogFile = null;
+      this.selectedSdfFile = null;
+      this.newDesignName = '';
+      this.newDesignDescription = '';
+      this.markdownPreview = null;
+      this.missingVerilogFile = false;
+      this.missingSdfFile = false;
 
     } catch (error) {
       console.error('Error processing and saving design:', error);
@@ -231,30 +231,36 @@ export class TeacherInterfaceComponent implements OnInit {
     }
   }
 
-  downloadJson(): void {
-    if (this.parsedContent && this.generatedFilename) {
-      this.fileProcessingService.downloadJson(this.parsedContent, this.generatedFilename);
-    }
+  // Only clear JSON preview when explicitly requested
+  clearJsonPreview(): void {
+    this.parsedContent = null;
+    this.generatedFilename = null;
   }
 
+  // Update resetForm to clear the JSON preview
   resetForm(): void {
     this.selectedVerilogFile = null;
     this.selectedSdfFile = null;
     this.newDesignName = '';
     this.newDesignDescription = '';
-    this.markdownPreview = '';
+    this.markdownPreview = null;
 
-    // Reset file input elements
-    const verilogInput = document.getElementById('verilogFile') as HTMLInputElement;
-    const sdfInput = document.getElementById('sdfFile') as HTMLInputElement;
-    if (verilogInput) verilogInput.value = '';
-    if (sdfInput) verilogInput.value = '';
-
-    this.parsedContent = null;
-    this.generatedFilename = null;
+    // Clear files content
     this.verilogContent = null;
     this.sdfContent = null;
-    this.markdownPreview = null;
+    
+    // Reset validation states
+    this.missingVerilogFile = false;
+    this.missingSdfFile = false;
+
+    // Always clear JSON preview when reset is clicked
+    this.clearJsonPreview();
+  }
+
+  downloadJson(): void {
+    if (this.parsedContent && this.generatedFilename) {
+      this.fileProcessingService.downloadJson(this.parsedContent, this.generatedFilename);
+    }
   }
 
   deleteDesign(id: string): void {

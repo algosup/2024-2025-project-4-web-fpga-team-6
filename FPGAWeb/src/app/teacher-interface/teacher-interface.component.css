@@ -1116,13 +1116,215 @@ footer {
 }
 
 .json-content {
-  background-color: #f8f9fa;
-  border: 1px solid rgba(11, 61, 145, 0.2);
-  border-radius: 4px;
   padding: 1rem;
   max-height: 300px;
   overflow: auto;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 0.9rem;
+  white-space: pre;
+  margin: 0;
+  transition: max-height 0.3s ease;
+  background-color: #f8f9fa;
+}
+
+.json-content.expanded {
+  max-height: 600px;
+}
+
+/* Add resizable style */
+.resizable {
+  resize: vertical;
+  overflow: auto;
+  min-height: 200px;
+  max-height: 800px; /* Increased from 600px for more flexibility */
+  border-top: 1px solid #ddd;
+}
+
+/* JSON syntax highlighting */
+.json-key {
+  color: #0451a5;
+  font-weight: normal;
+}
+
+.json-string {
+  color: #a31515;
+}
+
+.json-number {
+  color: #098658;
+}
+
+.json-boolean {
+  color: #0000ff;
+}
+
+.json-null {
+  color: #808080;
+}
+
+.json-bracket {
+  color: #000000;
+}
+
+.disabled-button {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #ccc !important;
+  border-color: #aaa !important;
+  color: #666 !important;
+}
+
+.disabled-button:hover {
+  transform: none;
+}
+
+.disabled-button::after {
+  display: none;
+}
+
+/* JSON preview styles */
+.json-preview {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(11, 61, 145, 0.1);
+}
+
+.json-preview h3 {
+  font-size: 1rem;
+  color: var(--cnes-blue);
+  margin: 0 0 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.json-viewer-container {
+  background-color: #f8f9fa;
+  border: 1px solid rgba(11, 61, 145, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.json-content {
+  padding: 1rem;
+  height: 300px;
+  overflow: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  white-space: pre;
+  margin: 0;
+  resize: vertical;
+  min-height: 200px;
+  max-height: 600px;
+  color: #333;
+}
+
+.download-json-btn {
+  background: none;
+  border: none;
+  color: var(--cnes-blue);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.download-json-btn:hover {
+  background-color: rgba(11, 61, 145, 0.1);
+}
+
+.download-json-btn .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.json-viewer-container {
+  position: relative;
+  background-color: #f8f9fa;
+  border: 1px solid rgba(11, 61, 145, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.json-viewer-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: rgba(11, 61, 145, 0.05);
+  border-bottom: 1px solid rgba(11, 61, 145, 0.1);
+}
+
+.download-json-btn {
+  background: none;
+  border: none;
+  color: var(--cnes-blue);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.download-json-btn:hover {
+  background-color: rgba(11, 61, 145, 0.1);
+}
+
+.download-json-btn .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.json-content {
+  padding: 1rem;
+  height: 300px;
+  overflow: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
   white-space: pre-wrap;
+  margin: 0;
+  resize: vertical;
+  min-height: 200px;
+  max-height: 600px;
+  color: #333;
+}
+
+/* JSON syntax highlighting - ensure these are applied correctly */
+.json-content .json-key {
+  color: #0451a5 !important;
+}
+
+.json-content .json-string {
+  color: #a31515 !important;
+}
+
+.json-content .json-number {
+  color: #098658 !important;
+}
+
+.json-content .json-boolean {
+  color: #0000ff !important;
+}
+
+.json-content .json-null {
+  color: #808080 !important;
+}
+
+.json-content .json-bracket {
+  color: #000000 !important;
+}
+
+.json-frame {
+  width: 100%;
+  height: 300px;
+  border: none;
+  overflow: auto;
+  resize: vertical;
 }
