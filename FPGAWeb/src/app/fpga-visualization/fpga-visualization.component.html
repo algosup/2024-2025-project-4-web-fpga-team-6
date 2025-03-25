@@ -3,25 +3,39 @@
     <div class="header-left">
       <!-- CNES logo -->
       <div class="cnes-logo-small">
-        <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img">
+        <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img" width="30" height="30">
       </div>
       <h1>{{ title }}</h1>
     </div>
-    <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+    <div class="header-actions">
+      <a [routerLink]="['/teacher']" class="cnes-button accent teacher-button">Teacher Interface</a>
+      <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+    </div>
   </header>
 
   <div class="main-content">
     <div class="sidebar">
       <div class="example-selection">
-        <h2>Example Applications</h2>
+        <div class="section-header">
+          <h2>Available Designs</h2>
+          <a [routerLink]="['/teacher']" class="add-design">+</a>
+        </div>
         <div class="example-list">
-          <div 
-            *ngFor="let example of examples" 
-            class="example-item" 
-            [class.selected]="currentExample === example.id"
-            (click)="selectExample(example.id)"
-          >
-            {{ example.name }}
+          <div *ngFor="let design of designs" 
+               class="example-item" 
+               [class.selected]="currentExample === design.id">
+            <div class="example-header" (click)="selectExample(design.id)">
+              <span class="example-name">{{ design.name }}</span>
+              <button class="expand-button" 
+                      [class.expanded]="expandedDesignId === design.id"
+                      (click)="toggleDescription(design.id, $event)">
+                ▼
+              </button>
+            </div>
+            <div class="example-description" 
+                 *ngIf="expandedDesignId === design.id"
+                 [innerHTML]="design.description">
+            </div>
           </div>
         </div>
       </div>
@@ -76,38 +90,49 @@
             </button>
           </div>
         </div>
+        
+        <!-- Add cell details panel when component is selected -->
+        <div class="cell-details" *ngIf="showCellDetails && selectedCellDetails">
+          <h3>Component Details</h3>
+          <div class="details-content">
+            <p><strong>Name:</strong> {{ selectedCellDetails.name }}</p>
+            <p><strong>Type:</strong> {{ selectedCellDetails.type }}</p>
+            <p><strong>State:</strong> {{ selectedCellDetails.state }}</p>
+            
+            <!-- Display connections if available -->
+            <div *ngIf="selectedCellDetails.connections">
+              <p><strong>Connections:</strong></p>
+              <ul>
+                <li *ngFor="let conn of selectedCellDetails.connections | keyvalue">
+                  {{ conn.key }}: {{ conn.value }}
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="visualization">
-      <div *ngIf="!currentExample" class="no-selection">
-        <div class="cnes-satellite-placeholder">
-          <!-- CNES blue logo -->
-          <img src="/assets/3000px_Bleu.jpg" alt="CNES Blue Logo" class="cnes-blue-logo">
+      <div class="fpga-view">
+        <!-- Canvas for FPGA visualization -->
+        <canvas #visualCanvas class="fpga-canvas"></canvas>
+        
+        <div class="fpga-status" *ngIf="currentExample">
+          <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
+          <span class="status-text">Status: {{ isRunning ? 'Running' : (isPaused ? 'Paused' : 'Ready') }}</span>
+          <span class="speed-indicator">Speed: x{{ speed }}</span>
+          <span class="clock-indicator">Clock: {{ clockState === '1' ? 'HIGH' : 'LOW' }}</span>
         </div>
-        <p>Please select an example from the sidebar to start</p>
-      </div>
-
-      <div *ngIf="currentExample" class="fpga-view">
-        <!-- In a real app, this would be a canvas or SVG for the FPGA visualization -->
-        <div class="fpga-placeholder">
-          <div class="fpga-header">
-            <h3>FPGA Visualization for {{ getExampleName(currentExample) }}</h3>
-            <div class="fpga-status">
-              <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
-              <span class="status-text">Status: {{ isRunning ? 'Running' : (isPaused ? 'Paused' : 'Ready') }}</span>
-              <span class="speed-indicator">Speed: x{{ speed }}</span>
-            </div>
-          </div>
-          
-          <!-- Mock FPGA grid -->
-          <div class="fpga-grid">
-            <div *ngFor="let _ of [].constructor(100); let i = index" class="fpga-cell" [style.background-color]="getRandomColor()"></div>
-          </div>
-          
-          <div class="fpga-footer">
-            <p>© CNES, 2024 - FPGA Visualization Platform</p>
-          </div>
+        
+        <div class="fpga-instructions" *ngIf="currentExample">
+          <p><strong>Instructions:</strong></p>
+          <ul>
+            <li>Click and drag to pan around the design</li>
+            <li>Use the mouse wheel to zoom in/out</li>
+            <li>Click on components to view details</li>
+            <li>Click on input wires to toggle their state (0/1)</li>
+          </ul>
         </div>
       </div>
     </div>

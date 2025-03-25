@@ -9,6 +9,7 @@
   --cnes-black: #000000;
   --cnes-white: #ffffff;
   --cnes-accent: #ff9e16; /* Orange accent */
+  --cnes-dark-accent: #e88c00;
 }
 
 html, body { height: 100%; }
@@ -73,8 +74,10 @@ a:hover {
 
 .cnes-button.accent {
   background-color: var(--cnes-accent);
+  border: 2px solid var(--cnes-dark-accent);
 }
 
 .cnes-button.accent:hover {
-  background-color: #e88c00;
+  background-color: var(--cnes-dark-accent);
+  color: var(--cnes-white);
 }

@@ -1,41 +1,5 @@
-/**
- * This script converts the Verilog & SDF files into a JSON file containing in a convenient way:
- * - the schematic representation of the circuit.
- * - the timing information of the circuit.
- * 
- * A Verilog file (.v) contains the structural description of the circuit
- * - Like module definition, ports, wires, and cell instances (DFF, AND, OR, etc.)
- * 
- * A SDF file (.sdf) contains timing information for the circuit
- * - Like cell delays, interconnect delays, setup/hold times
- */
-
-import * as fs from 'fs';
-import * as path from 'path';
-
-// Add configuration object at the top
+// Simplified configuration focused on parsing logic
 const CONFIG = {
-    encoding: 'utf8' as BufferEncoding,
-    fileExtensions: {
-        verilog: '.v',
-        sdf: '.sdf',
-        postSynthesis: '_post_synthesis',
-        schematics: '_schematics.json'
-    },
-    directories: {
-        public: 'public',
-        schematics: 'schematics',
-        examples_folder: 'verilog_post_synthesis_examples',
-        examples: [
-            '1ff_no_rst_VTR',
-            '1ff_VTR',
-            '2ffs_no_rst_VTR',
-            '2ffs_VTR',
-            '5ffs_VTR',
-            'FULLLUT_VTR',
-            'LUT_VTR'
-        ]
-    },
     regexFlags: {
         global: 'g',
         globalMultiline: 'gs'
@@ -153,7 +117,13 @@ class CellNameGenerator {
     }
 }
 
-class VerilogParser {
+/**
+ * VerilogParser class - Parses Verilog and SDF files to generate circuit schematics
+ * 
+ * This parser handles the extraction of cells, interconnects, and timing information
+ * from post-synthesis Verilog and SDF files.
+ */
+export class VerilogParser {
     private content: string = '';
     private sdfContent: string = '';
     private moduleName: string = '';
@@ -164,13 +134,44 @@ class VerilogParser {
     private delays: { [key: string]: string } = {};
     private cellNamer: CellNameGenerator;
 
-    constructor(private verilogPath: string, private sdfPath: string) {
+    constructor() {
         this.cellNamer = new CellNameGenerator();
     }
 
-    private readFiles(): void {
-        this.content = fs.readFileSync(this.verilogPath, { encoding: CONFIG.encoding as BufferEncoding });
-        this.sdfContent = fs.readFileSync(this.sdfPath, { encoding: CONFIG.encoding as BufferEncoding });
+    /**
+     * Load Verilog and SDF content for parsing
+     * @param verilogContent - The Verilog file content
+     * @param sdfContent - The SDF file content
+     */
+    loadContent(verilogContent: string, sdfContent: string): void {
+        this.content = verilogContent;
+        this.sdfContent = sdfContent;
+    }
+
+    /**
+     * Parse the content and generate a schematic output
+     * @returns The parsed schematic structure
+     */
+    parse(): SchematicOutput {
+        this.parseModule();
+        this.parseTiming();
+        this.parseCells();
+        this.parseInterconnects();
+
+        return {
+            type: 'module',
+            name: this.moduleName,
+            external_wires: this.externalWires,
+            cells: this.cells,
+            interconnects: this.interconnects
+        };
+    }
+
+    /**
+     * Helper method to clean wire names by removing backslashes
+     */
+    private cleanWireName(name: string): string {
+        return name.replace(/\\/g, '').trim();
     }
 
     private parseModule(): void {
@@ -222,10 +223,6 @@ class VerilogParser {
             const delay = interconnectMatch[2];
             this.delays[this.cleanWireName(routeName)] = delay;
         }
-    }
-
-    private cleanWireName(name: string): string {
-        return name.replace(/\\/g, '').trim();
     }
 
     private parseCells(): void {
@@ -360,86 +357,5 @@ class VerilogParser {
             this.interconnects.push(interconnect);
         }
     }
-
-    parse(): SchematicOutput {
-        this.readFiles();
-        this.parseModule();
-        this.parseTiming();
-        this.parseCells();
-        this.parseInterconnects();
-
-        return {
-            type: 'module',
-            name: this.moduleName,
-            external_wires: this.externalWires,
-            cells: this.cells,
-            interconnects: this.interconnects
-        };
-    }
 }
 
-function processDirectory(rootDir: string, directory: string): void {
-    const publicDir = path.join(rootDir, '..', CONFIG.directories.public);
-    const inputDir = path.join(publicDir, directory);
-    const files = fs.readdirSync(inputDir);
-
-    let verilogFile: string | null = null;
-    let sdfFile: string | null = null;
-
-    for (const file of files) {
-        if (file.endsWith(CONFIG.fileExtensions.verilog)) {
-            if (verilogFile && !file.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.verilog)) {
-                continue;
-            }
-            verilogFile = file;
-        } else if (file.endsWith(CONFIG.fileExtensions.sdf)) {
-            sdfFile = file;
-        }
-    }
-
-    if (!verilogFile || !sdfFile) {
-        return;
-    }
-
-    let baseName;
-    if (verilogFile.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.verilog)) {
-        baseName = sdfFile.replace(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.sdf, '');
-    } else if (sdfFile.endsWith(CONFIG.fileExtensions.postSynthesis + CONFIG.fileExtensions.sdf)) {
-        baseName = sdfFile.replace(CONFIG.fileExtensions.sdf, '');
-    } else {
-        baseName = verilogFile.replace(CONFIG.fileExtensions.verilog, '');
-    }
-
-    const verilogPath = path.join(inputDir, verilogFile);
-    const sdfPath = path.join(inputDir, sdfFile);
-    const schematicsDir = path.join(publicDir, CONFIG.directories.schematics);
-    
-    if (!fs.existsSync(schematicsDir)) {
-        fs.mkdirSync(schematicsDir, { recursive: true });
-    }
-    
-    const outputFile = path.join(schematicsDir, `${baseName}_schematics.json`);
-    const parser = new VerilogParser(verilogPath, sdfPath);
-    const schematic = parser.parse();
-    fs.writeFileSync(outputFile, JSON.stringify(schematic, null, 4));
-    console.log(`Generated schematic: ${outputFile}`);
-}
-
-// Update main function to use configuration
-function main(): void {
-    const scriptDir = __dirname;
-    const srcDir = scriptDir.includes('dist') ? path.join(scriptDir, '../../src') : scriptDir;
-    
-    CONFIG.directories.examples.forEach(example => {
-        processDirectory(
-            srcDir, 
-            path.join(CONFIG.directories.examples_folder, example)
-        );
-    });
-}
-
-if (require.main === module) {
-    main();
-}
-
-export { VerilogParser, processDirectory };
