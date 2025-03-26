@@ -2,7 +2,7 @@
 
 ## Overview
 
-This week focused on 
+[This week focused on]
 
 ## Accomplishments
 

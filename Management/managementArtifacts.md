@@ -76,8 +76,18 @@ This section tracks the progress of essential categories such as:
 ## Weekly reports
 
 
-Each week will be resumed in weekly documents listed [here](TBD), or by following a precise week using the following links:
+Each week will be resumed in weekly documents listed [here](cumulative.md), or by following a precise week using the following links:
 
-- [Weekly Report 1](WeeklyReport1.md)
+- [Weekly Report 1](weeklyReport1.md)
+
+- [Weekly Report 2](weeklyReport2.md)
+
+- [Weekly Report 3](weeklyReport3.md)
+
+- [Weekly Report 4](weeklyReport4.md)
+
+- [Weekly Report 5](weeklyReport5.md)
+
+- [Weekly Report 6](weeklyReport6.md)
 
 
