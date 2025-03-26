@@ -66,7 +66,6 @@ This section tracks the progress of essential categories such as:
 #### Human Resources
 
 - Overtime (in hours)
-- Absence (in days)
 
 
 
@@ -76,7 +75,7 @@ This section tracks the progress of essential categories such as:
 ## Weekly reports
 
 
-Each week will be resumed in weekly documents listed [here](cumulative.md), or by following a precise week using the following links:
+Each week will be resumed in weekly documents listed [here](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/cumulative.md), or by following a precise week using the following links:
 
 - [Weekly Report 1](weeklyReport1.md)
 
