@@ -1,0 +1,152 @@
+.design-selection {
+  margin-bottom: 2rem;
+  background-color: var(--cnes-white);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.2rem;
+  border-top: 3px solid var(--cnes-blue);
+}
+
+.design-selection h2 {
+  font-size: 1.3rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--cnes-blue);
+  font-weight: 500;
+}
+
+.design-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.design-item {
+  padding: 0;
+  border: 1px solid rgba(11, 61, 145, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.design-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+}
+
+.design-name {
+  font-size: 0.95rem;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  color: var(--cnes-blue);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.expand-button.expanded {
+  transform: rotate(180deg);
+}
+
+.design-description {
+  padding: 1rem;
+  border-top: 1px solid rgba(11, 61, 145, 0.1);
+  background-color: rgba(11, 61, 145, 0.02);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+/* Style for HTML content in description */
+.design-description :deep(p) {
+  margin: 0.5em 0;
+}
+
+.design-description :deep(ul),
+.design-description :deep(ol) {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.design-description :deep(code) {
+  background-color: rgba(11, 61, 145, 0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.design-description :deep(pre) {
+  background-color: rgba(11, 61, 145, 0.05);
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.design-item:hover {
+  background-color: rgba(11, 61, 145, 0.05);
+  border-color: var(--cnes-light-blue);
+}
+
+.design-item.selected {
+  background-color: rgba(11, 61, 145, 0.1);
+  border-color: var(--cnes-blue);
+  color: var(--cnes-blue);
+  font-weight: 500;
+  position: relative;
+}
+
+.design-item.selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--cnes-blue);
+  border-radius: 4px 0 0 4px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h2 {
+  font-size: 1.3rem;
+  margin: 0;
+  color: var(--cnes-blue);
+  font-weight: 500;
+}
+
+.add-design {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background-color: var(--cnes-accent);
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.add-design:hover {
+  transform: translateY(-1px);
+  filter: brightness(110%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-design:active {
+  transform: translateY(0);
+}

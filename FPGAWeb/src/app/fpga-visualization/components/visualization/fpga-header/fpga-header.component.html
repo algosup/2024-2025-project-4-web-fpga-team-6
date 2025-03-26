@@ -1,0 +1,8 @@
+<div class="fpga-header">
+  <h3>FPGA Visualization for {{ title }}</h3>
+  <div class="fpga-status">
+    <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
+    <span class="status-text">Status: {{ isRunning ? 'Running' : (isPaused ? 'Paused' : 'Ready') }}</span>
+    <span class="speed-indicator">Speed: x{{ speed }}</span>
+  </div>
+</div>

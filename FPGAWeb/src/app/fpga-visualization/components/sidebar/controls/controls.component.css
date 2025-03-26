@@ -1,0 +1,102 @@
+.controls {
+  background-color: var(--cnes-white);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.2rem;
+  border-top: 3px solid var(--cnes-accent);
+}
+
+.controls h2 {
+  font-size: 1.3rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--cnes-blue);
+  font-weight: 500;
+}
+
+.control-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.control-button {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.7rem 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--cnes-blue);
+  color: var(--cnes-white);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+.control-button:hover:not(:disabled) {
+  filter: brightness(110%);
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  font-size: 0.9rem;
+}
+
+.play, .resume {
+  background-color: var(--cnes-blue);
+}
+
+.pause {
+  background-color: var(--cnes-accent);
+}
+
+.step {
+  background-color: var(--cnes-light-blue);
+}
+
+.speed-controls h3 {
+  font-size: 1rem;
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  color: var(--cnes-dark-gray);
+  font-weight: normal;
+}
+
+.speed-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.speed-button {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid rgba(11, 61, 145, 0.2);
+  border-radius: 4px;
+  background-color: var(--cnes-white);
+  color: var(--cnes-dark-gray);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Roboto', sans-serif;
+}
+
+.speed-button:hover {
+  background-color: rgba(11, 61, 145, 0.05);
+  border-color: var(--cnes-light-blue);
+}
+
+.speed-button.active {
+  background-color: var(--cnes-blue);
+  color: var(--cnes-white);
+  border-color: var(--cnes-blue);
+  font-weight: 500;
+}

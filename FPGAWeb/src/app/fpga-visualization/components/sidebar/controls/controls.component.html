@@ -1,0 +1,51 @@
+<div class="controls">
+  <h2>Simulation Controls</h2>
+  <div class="control-buttons">
+    <button 
+      (click)="onPlay()" 
+      [disabled]="isRunning || !hasSelection"
+      class="control-button play"
+    >
+      <span class="icon">▶</span> Play
+    </button>
+    
+    <button 
+      *ngIf="!isPaused"
+      (click)="onPause()" 
+      [disabled]="!isRunning"
+      class="control-button pause"
+    >
+      <span class="icon">⏸</span> Pause
+    </button>
+    
+    <button 
+      *ngIf="isPaused"
+      (click)="onResume()" 
+      class="control-button resume"
+    >
+      <span class="icon">▶</span> Resume
+    </button>
+    
+    <button 
+      (click)="onStep()" 
+      [disabled]="isRunning || !hasSelection"
+      class="control-button step"
+    >
+      <span class="icon">⏭</span> Step
+    </button>
+  </div>
+
+  <div class="speed-controls">
+    <h3>Simulation Speed</h3>
+    <div class="speed-buttons">
+      <button 
+        *ngFor="let s of speedOptions" 
+        (click)="onSpeedChange(s)" 
+        [class.active]="speed === s"
+        class="speed-button"
+      >
+        x{{ s }}
+      </button>
+    </div>
+  </div>
+</div>

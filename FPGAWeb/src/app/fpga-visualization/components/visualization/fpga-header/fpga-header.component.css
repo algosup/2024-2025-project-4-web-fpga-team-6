@@ -1,0 +1,54 @@
+.fpga-header {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.fpga-header h3 {
+  margin: 0;
+  color: var(--cnes-blue);
+  font-size: 1.3rem;
+}
+
+.fpga-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-indicator.running {
+  background-color: #27ae60;
+  box-shadow: 0 0 8px rgba(39, 174, 96, 0.5);
+}
+
+.status-indicator.paused {
+  background-color: var(--cnes-accent);
+  box-shadow: 0 0 8px rgba(255, 158, 22, 0.5);
+}
+
+.status-indicator.ready {
+  background-color: var(--cnes-light-blue);
+  box-shadow: 0 0 8px rgba(30, 91, 198, 0.5);
+}
+
+.status-text, .speed-indicator {
+  font-size: 0.9rem;
+  color: var(--cnes-dark-gray);
+}
+
+@media (max-width: 992px) {
+  .fpga-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

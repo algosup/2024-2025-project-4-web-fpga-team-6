@@ -15,109 +15,54 @@
 
   <div class="main-content">
     <div class="sidebar">
-      <div class="example-selection">
-        <div class="section-header">
-          <h2>Available Designs</h2>
-          <a [routerLink]="['/teacher']" class="add-design">+</a>
-        </div>
-        <div class="example-list">
-          <div *ngFor="let design of designs" 
-               class="example-item" 
-               [class.selected]="currentExample === design.id">
-            <div class="example-header" (click)="selectExample(design.id)">
-              <span class="example-name">{{ design.name }}</span>
-              <button class="expand-button" 
-                      [class.expanded]="expandedDesignId === design.id"
-                      (click)="toggleDescription(design.id, $event)">
-                ▼
-              </button>
-            </div>
-            <div class="example-description" 
-                 *ngIf="expandedDesignId === design.id"
-                 [innerHTML]="design.description">
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Design List Component (renamed from Example List) -->
+      <app-design-list
+        [designs]="designs"
+        [currentDesignId]="currentDesign"
+        [expandedDesignId]="expandedDesignId"
+        (selectDesign)="selectDesign($event)"
+        (toggleDescription)="toggleDescription($event)"
+      ></app-design-list>
 
-      <div class="controls">
-        <h2>Simulation Controls</h2>
-        <div class="control-buttons">
-          <button 
-            (click)="playSimulation()" 
-            [disabled]="isRunning || !currentExample"
-            class="control-button play"
-          >
-            <span class="icon">▶</span> Play
-          </button>
-          
-          <button 
-            *ngIf="!isPaused"
-            (click)="pauseSimulation()" 
-            [disabled]="!isRunning"
-            class="control-button pause"
-          >
-            <span class="icon">⏸</span> Pause
-          </button>
-          
-          <button 
-            *ngIf="isPaused"
-            (click)="resumeSimulation()" 
-            class="control-button resume"
-          >
-            <span class="icon">▶</span> Resume
-          </button>
-          
-          <button 
-            (click)="stepSimulation()" 
-            [disabled]="isRunning || !currentExample"
-            class="control-button step"
-          >
-            <span class="icon">⏭</span> Step
-          </button>
-        </div>
-
-        <div class="speed-controls">
-          <h3>Simulation Speed</h3>
-          <div class="speed-buttons">
-            <button 
-              *ngFor="let s of [1, 2, 4, 8]" 
-              (click)="changeSpeed(s)" 
-              [class.active]="speed === s"
-              class="speed-button"
-            >
-              x{{ s }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Controls Component -->
+      <app-controls
+        [isRunning]="isRunning"
+        [isPaused]="isPaused"
+        [speed]="speed"
+        [hasSelection]="!!currentDesign"
+        (play)="playSimulation()"
+        (pause)="pauseSimulation()"
+        (resume)="resumeSimulation()"
+        (step)="stepSimulation()"
+        (speedChange)="changeSpeed($event)"
+      ></app-controls>
     </div>
 
     <div class="visualization">
-      <div *ngIf="!currentExample" class="no-selection">
+      <!-- No selection state -->
+      <div *ngIf="!currentDesign" class="no-selection">
         <div class="cnes-satellite-placeholder">
-          <!-- CNES blue logo -->
           <img src="/assets/3000px_Bleu.jpg" alt="CNES Blue Logo" class="cnes-blue-logo">
         </div>
-        <p>Please select an example from the sidebar to start</p>
+        <p>Please select a design from the sidebar to start</p>
       </div>
 
-      <div *ngIf="currentExample" class="fpga-view">
-        <!-- In a real app, this would be a canvas or SVG for the FPGA visualization -->
+      <!-- FPGA visualization when a design is selected -->
+      <div *ngIf="currentDesign" class="fpga-view">
         <div class="fpga-placeholder">
-          <div class="fpga-header">
-            <h3>FPGA Visualization for {{ getExampleName(currentExample) }}</h3>
-            <div class="fpga-status">
-              <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
-              <span class="status-text">Status: {{ isRunning ? 'Running' : (isPaused ? 'Paused' : 'Ready') }}</span>
-              <span class="speed-indicator">Speed: x{{ speed }}</span>
-            </div>
-          </div>
+          <!-- FPGA Header Component -->
+          <app-fpga-header
+            [title]="getDesignName(currentDesign)"
+            [isRunning]="isRunning"
+            [isPaused]="isPaused"
+            [speed]="speed"
+          ></app-fpga-header>
           
-          <!-- Mock FPGA grid -->
-          <div class="fpga-grid">
-            <div *ngFor="let _ of [].constructor(100); let i = index" class="fpga-cell" [style.background-color]="getRandomColor()"></div>
-          </div>
+          <!-- D3 Visualization Component instead of JSON Viewer -->
+          <app-d3-visualization 
+            [design]="selectedDesign"
+            [isRunning]="isRunning"
+          ></app-d3-visualization>
           
           <div class="fpga-footer">
             <p>© CNES, 2024 - FPGA Visualization Platform</p>

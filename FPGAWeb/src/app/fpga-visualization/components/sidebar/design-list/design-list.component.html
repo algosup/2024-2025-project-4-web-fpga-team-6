@@ -1,0 +1,24 @@
+<div class="design-selection">
+  <div class="section-header">
+    <h2>Available Designs</h2>
+    <a [routerLink]="['/teacher']" class="add-design">+</a>
+  </div>
+  <div class="design-list">
+    <div *ngFor="let design of designs" 
+          class="design-item" 
+          [class.selected]="currentDesignId === design.id">
+      <div class="design-header" (click)="onSelectDesign(design.id)">
+        <span class="design-name">{{ design.name }}</span>
+        <button class="expand-button" 
+                [class.expanded]="expandedDesignId === design.id"
+                (click)="onToggleDescription(design.id, $event)">
+          ▼
+        </button>
+      </div>
+      <div class="design-description" 
+            *ngIf="expandedDesignId === design.id"
+            [innerHTML]="design.description">
+      </div>
+    </div>
+  </div>
+</div>
