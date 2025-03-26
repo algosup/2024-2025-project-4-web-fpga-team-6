@@ -1,0 +1,90 @@
+{
+    "type": "module",
+    "name": "FULLLUT",
+    "external_wires": [
+        {
+            "name": "ext_input_I1",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_I2",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_I3",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_I4",
+            "type": "input"
+        },
+        {
+            "name": "ext_output_O1",
+            "type": "output"
+        }
+    ],
+    "cells": [
+        {
+            "type": "LUT_K",
+            "name": "lut_k_1",
+            "K": 5,
+            "mask": "00000000011010010000000010010110",
+            "connections": {
+                "in_4": "lut_k_1_in_4",
+                "in_3": "0",
+                "in_2": "lut_k_1_in_2",
+                "in_1": "lut_k_1_in_1",
+                "in_0": "lut_k_1_in_0",
+                "out": "lut_k_1_out"
+            },
+            "in_out_delays": {
+                "in_0": "152",
+                "in_1": "152",
+                "in_2": "150",
+                "in_4": "118"
+            }
+        }
+    ],
+    "interconnects": [
+        {
+            "name": "route_ext_input_I1_TO_lut_k_1_in_1",
+            "connections": {
+                "input": "ext_input_I1",
+                "output": "lut_k_1_in_1"
+            },
+            "propagation_delay": "621.859"
+        },
+        {
+            "name": "route_ext_input_I2_TO_lut_k_1_in_0",
+            "connections": {
+                "input": "ext_input_I2",
+                "output": "lut_k_1_in_0"
+            },
+            "propagation_delay": "242.77"
+        },
+        {
+            "name": "route_ext_input_I3_TO_lut_k_1_in_2",
+            "connections": {
+                "input": "ext_input_I3",
+                "output": "lut_k_1_in_2"
+            },
+            "propagation_delay": "389.808"
+        },
+        {
+            "name": "route_ext_input_I4_TO_lut_k_1_in_4",
+            "connections": {
+                "input": "ext_input_I4",
+                "output": "lut_k_1_in_4"
+            },
+            "propagation_delay": "1921.19"
+        },
+        {
+            "name": "route_lut_k_1_out_TO_ext_output_O1",
+            "connections": {
+                "input": "lut_k_1_out",
+                "output": "ext_output_O1"
+            },
+            "propagation_delay": "1131.31"
+        }
+    ]
+}

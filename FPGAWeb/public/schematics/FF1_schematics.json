@@ -1,0 +1,105 @@
+{
+    "type": "module",
+    "name": "FF1",
+    "external_wires": [
+        {
+            "name": "ext_input_D",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_clk",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_async_reset",
+            "type": "input"
+        },
+        {
+            "name": "ext_output_Q",
+            "type": "output"
+        }
+    ],
+    "cells": [
+        {
+            "type": "DFF",
+            "name": "dff_1",
+            "connections": {
+                "D": "dff_1_D",
+                "Q": "dff_1_Q",
+                "clock": "dff_1_clock"
+            },
+            "initial_state": "0",
+            "D_stability_delay": "-46",
+            "Q_update_delay": "303"
+        },
+        {
+            "type": "LUT_K",
+            "name": "lut_k_1",
+            "K": 5,
+            "mask": "00000000000000000101000101000000",
+            "connections": {
+                "in_4": "0",
+                "in_3": "lut_k_1_in_3",
+                "in_2": "lut_k_1_in_2",
+                "in_1": "lut_k_1_in_1",
+                "in_0": "0",
+                "out": "lut_k_1_out"
+            },
+            "in_out_delays": {
+                "in_1": "152",
+                "in_2": "150",
+                "in_3": "150"
+            }
+        }
+    ],
+    "interconnects": [
+        {
+            "name": "route_ext_input_D_TO_lut_k_1_in_3",
+            "connections": {
+                "input": "ext_input_D",
+                "output": "lut_k_1_in_3"
+            },
+            "propagation_delay": "1693.56"
+        },
+        {
+            "name": "route_ext_input_clk_TO_dff_1_clock",
+            "connections": {
+                "input": "ext_input_clk",
+                "output": "dff_1_clock"
+            },
+            "propagation_delay": "10"
+        },
+        {
+            "name": "route_ext_input_async_reset_TO_lut_k_1_in_1",
+            "connections": {
+                "input": "ext_input_async_reset",
+                "output": "lut_k_1_in_1"
+            },
+            "propagation_delay": "463.327"
+        },
+        {
+            "name": "route_dff_1_Q_TO_lut_k_1_in_2",
+            "connections": {
+                "input": "dff_1_Q",
+                "output": "lut_k_1_in_2"
+            },
+            "propagation_delay": "0"
+        },
+        {
+            "name": "route_dff_1_Q_TO_ext_output_Q",
+            "connections": {
+                "input": "dff_1_Q",
+                "output": "ext_output_Q"
+            },
+            "propagation_delay": "2304.7"
+        },
+        {
+            "name": "route_lut_k_1_out_TO_dff_1_D",
+            "connections": {
+                "input": "lut_k_1_out",
+                "output": "dff_1_D"
+            },
+            "propagation_delay": "96"
+        }
+    ]
+}

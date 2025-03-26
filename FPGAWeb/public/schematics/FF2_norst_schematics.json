@@ -1,0 +1,86 @@
+{
+    "type": "module",
+    "name": "FF2_norst",
+    "external_wires": [
+        {
+            "name": "ext_input_D",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_clk",
+            "type": "input"
+        },
+        {
+            "name": "ext_output_Q",
+            "type": "output"
+        }
+    ],
+    "cells": [
+        {
+            "type": "DFF",
+            "name": "dff_1",
+            "connections": {
+                "D": "dff_1_D",
+                "Q": "dff_1_Q",
+                "clock": "dff_1_clock"
+            },
+            "initial_state": "0",
+            "D_stability_delay": "-46",
+            "Q_update_delay": "303"
+        },
+        {
+            "type": "DFF",
+            "name": "dff_2",
+            "connections": {
+                "D": "dff_2_D",
+                "Q": "dff_2_Q",
+                "clock": "dff_2_clock"
+            },
+            "initial_state": "0",
+            "D_stability_delay": "-46",
+            "Q_update_delay": "303"
+        }
+    ],
+    "interconnects": [
+        {
+            "name": "route_ext_input_D_TO_dff_1_D",
+            "connections": {
+                "input": "ext_input_D",
+                "output": "dff_1_D"
+            },
+            "propagation_delay": "407.526"
+        },
+        {
+            "name": "route_ext_input_clk_TO_dff_1_clock",
+            "connections": {
+                "input": "ext_input_clk",
+                "output": "dff_1_clock"
+            },
+            "propagation_delay": "10"
+        },
+        {
+            "name": "route_ext_input_clk_TO_dff_2_clock",
+            "connections": {
+                "input": "ext_input_clk",
+                "output": "dff_2_clock"
+            },
+            "propagation_delay": "10"
+        },
+        {
+            "name": "route_dff_2_Q_TO_ext_output_Q",
+            "connections": {
+                "input": "dff_2_Q",
+                "output": "ext_output_Q"
+            },
+            "propagation_delay": "1090.38"
+        },
+        {
+            "name": "route_dff_1_Q_TO_dff_2_D",
+            "connections": {
+                "input": "dff_1_Q",
+                "output": "dff_2_D"
+            },
+            "propagation_delay": "248"
+        }
+    ]
+}
