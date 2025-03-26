@@ -12,6 +12,10 @@ import { SpecializedComponentRendererService } from './renderers/specialized-com
 import { InteractionHandlerService } from './handlers/interaction-handler.service';
 import { SimulationHandlerService } from './handlers/simulation-handler.service';
 
+// Import new services
+import { LayoutService, LayoutOptions } from './layout/layout-service';
+import { ConnectionService, ConnectionData } from './connections/connection-service';
+
 @Component({
   selector: 'app-d3-visualization',
   standalone: true,
@@ -22,7 +26,9 @@ import { SimulationHandlerService } from './handlers/simulation-handler.service'
     ComponentRendererService,
     SpecializedComponentRendererService,
     InteractionHandlerService,
-    SimulationHandlerService
+    SimulationHandlerService,
+    LayoutService,
+    ConnectionService
   ],
   templateUrl: './d3-visualization.component.html',
   styleUrls: ['./d3-visualization.component.css']
@@ -30,10 +36,13 @@ import { SimulationHandlerService } from './handlers/simulation-handler.service'
 export class D3VisualizationComponent implements OnInit, OnChanges {
   @Input() design: Design | null = null;
   @Input() isRunning = false;
+  @Input() layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
+  
   @ViewChild('svgContainer', { static: true }) private svgContainer!: ElementRef;
   
   private svg: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
   private components: ComponentData[] = [];
+  private connections: ConnectionData[] = [];
   private parsedData: any = null;
   
   private config: VisualizationConfig = {
@@ -52,7 +61,9 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
     private gridRenderer: GridRendererService,
     private componentRenderer: ComponentRendererService,
     private interactionHandler: InteractionHandlerService,
-    private simulationHandler: SimulationHandlerService
+    private simulationHandler: SimulationHandlerService,
+    private layoutService: LayoutService,
+    private connectionService: ConnectionService
   ) {}
 
   ngOnInit() {
@@ -69,6 +80,10 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
     
     if (changes['isRunning'] && this.svg && this.parsedData) {
       this.handleSimulationStateChange();
+    }
+    
+    if (changes['layoutType'] && this.svg && this.components.length > 0) {
+      this.applyCurrentLayout();
     }
   }
 
@@ -118,6 +133,7 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
       
       // Clear previous visualization
       this.svg.selectAll('.component').remove();
+      this.svg.selectAll('.connections').remove();
       
       // Extract components from parsed data
       this.components = this.dataExtractor.extractComponents(this.parsedData);
@@ -131,6 +147,13 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
       // Render components
       const componentNodes = this.componentRenderer.renderComponents(context, this.components);
       
+      // Apply the layout
+      this.applyCurrentLayout(componentNodes);
+      
+      // Extract and render connections
+      this.connections = this.connectionService.extractConnections(this.parsedData, this.components);
+      this.connectionService.renderConnections(context, this.components, this.connections);
+      
       // Setup interactions
       this.interactionHandler.setupInteractions(componentNodes);
       
@@ -139,6 +162,28 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
       
     } catch (e) {
       console.error('Error parsing JSON for visualization:', e);
+    }
+  }
+  
+  private applyCurrentLayout(nodes?: d3.Selection<any, ComponentData, any, any>) {
+    if (!this.svg || !nodes) return;
+    
+    const context: RendererContext = {
+      svg: this.svg,
+      config: this.config
+    };
+    
+    const layoutOptions: LayoutOptions = {
+      type: this.layoutType,
+      padding: 30,
+      enableDragging: true
+    };
+    
+    this.layoutService.applyLayout(context, nodes, layoutOptions);
+    
+    // Update connections after layout change
+    if (this.connections.length > 0) {
+      this.connectionService.renderConnections(context, this.components, this.connections);
     }
   }
   

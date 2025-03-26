@@ -43,3 +43,51 @@ svg {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 10;
 }
+
+/* Connections styling */
+.connections {
+  pointer-events: none; /* Allow clicking through connections */
+}
+
+.connection {
+  transition: stroke 0.3s, stroke-opacity 0.3s;
+}
+
+.connection.data {
+  /* Default data connection styling already defined in ConnectionService */
+}
+
+.connection.clock {
+  /* Clock connection styling already defined in ConnectionService */
+}
+
+.connection.control {
+  /* Control connection styling already defined in ConnectionService */
+}
+
+/* When simulation is running */
+.is-running .connection.data {
+  stroke-opacity: 0.9;
+  animation: pulse-data 2s infinite;
+}
+
+.is-running .connection.clock {
+  stroke-opacity: 1;
+  animation: pulse-clock 1s infinite;
+}
+
+/* Pulse animation for connections when running */
+@keyframes pulse-data {
+  0%, 100% { stroke-opacity: 0.6; }
+  50% { stroke-opacity: 1; }
+}
+
+@keyframes pulse-clock {
+  0%, 100% { stroke-opacity: 0.8; }
+  50% { stroke-opacity: 1; }
+}
+
+/* Components should be draggable */
+.component {
+  cursor: move;
+}

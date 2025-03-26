@@ -5,6 +5,7 @@ export interface ComponentData {
   name: string;
   type: string;
   data: any;
+  position?: { x: number; y: number }; // Add position property
 }
 
 export interface VisualizationConfig {
