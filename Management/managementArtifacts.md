@@ -77,13 +77,13 @@ This section tracks the progress of essential categories such as:
 
 Each week will be resumed in weekly documents listed [here](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/cumulative.md), or by following a precise week using the following links:
 
-- [Weekly Report 1](weeklyReport1.md)
+- [Weekly Report 1](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/weeklyReport1.md)
 
-- [Weekly Report 2](weeklyReport2.md)
+- [Weekly Report 2](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/weeklyReport2.md)
 
-- [Weekly Report 3](weeklyReport3.md)
+- [Weekly Report 3](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/weeklyReport3.md)
 
-- [Weekly Report 4](weeklyReport4.md)
+- [Weekly Report 4](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/weeklyReport4.md)
 
 - [Weekly Report 5](weeklyReport5.md)
 
