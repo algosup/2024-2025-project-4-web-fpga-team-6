@@ -483,12 +483,12 @@ header h1 {
 .timing-label {
   position: absolute;
   background-color: rgba(255, 253, 240, 0.98);
-  border: 1px solid rgba(11, 61, 145, 0.5);
+  border: 1px solid; /* Remove the fixed color to use the dynamic one */
   border-radius: 4px;
   padding: 5px 10px;
   font-size: 12px;
   font-weight: bold;
-  color: #103262;
+  /* Color will be set dynamically */
   z-index: 1000;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
   pointer-events: none;
@@ -502,7 +502,7 @@ header h1 {
   height: 0;
   border-style: solid;
   border-width: 5px;
-  border-color: rgba(255, 253, 240, 0.98) transparent transparent transparent;
+  /* Border color will be set dynamically */
   z-index: 1000;
   pointer-events: none;
   transform-origin: center;
@@ -565,6 +565,45 @@ header h1 {
 .details-content ul {
   padding-left: 1.2rem;
   margin: 0.5rem 0;
+}
+
+/* Timing legend styling */
+.timing-legend {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(11, 61, 145, 0.1);
+}
+
+.timing-legend h3 {
+  font-size: 1rem;
+  margin: 0 0 0.8rem 0;
+  color: var(--cnes-dark-gray);
+  font-weight: 500;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.legend-color {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.legend-text {
+  font-size: 0.9rem;
+  color: var(--cnes-dark-gray);
 }
 
 @media (max-width: 992px) {

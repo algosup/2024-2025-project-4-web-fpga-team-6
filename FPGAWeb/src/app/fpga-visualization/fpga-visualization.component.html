@@ -110,6 +110,25 @@
             </div>
           </div>
         </div>
+        
+        <!-- Add timing legend section -->
+        <div class="timing-legend" *ngIf="currentExample">
+          <h3>Timing Legend</h3>
+          <div class="legend-items">
+            <div class="legend-item">
+              <span class="legend-color" style="background-color: #e74c3c;"></span>
+              <span class="legend-text">High delay (≥ 2ns)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background-color: #f39c12;"></span>
+              <span class="legend-text">Medium delay (1-2ns)</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color" style="background-color: #7f8c8d;"></span>
+              <span class="legend-text">Low delay (< 1ns)</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

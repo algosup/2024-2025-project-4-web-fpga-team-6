@@ -1090,7 +1090,14 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     // Get signal state from source
     const sourceState = this.simulationStates.get(interconnect.sourcePort) || '0';
     
-    // Draw full path with inactive color
+    // Get the delay color for this interconnect
+    let delayValue = 0;
+    if (interconnect.delay) {
+      delayValue = parseFloat(interconnect.delay);
+    }
+    const delayColor = this.getDelayColor(delayValue);
+    
+    // Draw full path with delay-based color
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     
@@ -1098,11 +1105,11 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       ctx.lineTo(points[i].x, points[i].y);
     }
     
-    // Change color when hovered to provide feedback
+    // Change color when hovered to provide feedback or use delay-based color
     const isHighlighted = this.highlightedInterconnect === interconnect.id;
     ctx.strokeStyle = isHighlighted ? 
       'rgba(44, 120, 212, 0.5)' : 
-      this.visualizationService.getCellStateColor('undefined');
+      delayColor; // Use delay color instead of undefined color
     
     ctx.lineWidth = isHighlighted ? 3.5 : 2.5;
     ctx.stroke();
@@ -1166,12 +1173,13 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       
       // Format delay for display
       let delayText = '';
+      
       if (interconnect.delay) {
-        const delay = parseFloat(interconnect.delay);
-        if (delay >= 1000) {
-          delayText = `${(delay / 1000).toFixed(1)}ns`;
+        delayValue = parseFloat(interconnect.delay);
+        if (delayValue >= 1000) {
+          delayText = `${(delayValue / 1000).toFixed(1)}ns`;
         } else {
-          delayText = `${delay.toFixed(0)}ps`;
+          delayText = `${delayValue.toFixed(0)}ps`;
         }
       } else {
         delayText = '0ps'; // Always show some value for delay
@@ -1198,13 +1206,14 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       const labelScreenX = midPointScreenX;
       const labelScreenY = midPointScreenY - 30;
       
-      // Use the overlay to display the timing label
+      // Use the overlay to display the timing label with color coding
       this.displayTimingLabelInOverlay(
         timingLabel,
         labelScreenX,
         labelScreenY,
         midPointScreenX,
-        midPointScreenY
+        midPointScreenY,
+        delayColor
       );
     }
   }
@@ -1214,7 +1223,8 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     x: number,
     y: number,
     midPointX: number,
-    midPointY: number
+    midPointY: number,
+    color: string = '#103262' // Default color if not specified
   ): void {
     if (!this.labelsOverlay?.nativeElement) return;
     
@@ -1226,6 +1236,10 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     labelEl.textContent = label;
     labelEl.style.left = `${x}px`;
     labelEl.style.top = `${y}px`;
+    
+    // Apply color coding
+    labelEl.style.color = color;
+    labelEl.style.borderColor = color;
     
     // Calculate angle for the arrow
     const angle = Math.atan2(midPointY - y, midPointX - x);
@@ -1243,6 +1257,9 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     arrowEl.style.top = `${arrowY}px`;
     arrowEl.style.transform = `translate(-50%, -50%) rotate(${angle + Math.PI}rad)`;
     
+    // Color the arrow to match the label
+    arrowEl.style.borderColor = `${color} transparent transparent transparent`;
+    
     // Add to overlay
     overlay.appendChild(labelEl);
     overlay.appendChild(arrowEl);
@@ -1251,39 +1268,31 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     this.timingLabels.push(labelEl);
     this.timingLabels.push(arrowEl);
   }
-  
-  // Helper method to find the closest point on the path to the label
-  private getPathPointNearestToLabel(midPoint: Point, labelX: number, labelY: number, pathPoints: Point[]): Point {
-    // Default to midpoint
-    let closestPoint = midPoint;
-    let minDistance = Number.MAX_VALUE;
-    
-    // Find the closest point on the path to our label
-    for (let i = 0; i < pathPoints.length; i++) {
-      const point = pathPoints[i];
-      const distance = Math.sqrt(
-        Math.pow(point.x - labelX, 2) + 
-        Math.pow(point.y - labelY, 2)
-      );
-      
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestPoint = point;
-      }
+
+  private clearTimingLabels(): void {
+    if (this.labelsOverlay?.nativeElement) {
+      this.labelsOverlay.nativeElement.innerHTML = '';
     }
+    this.timingLabels = [];
+  }
+
+  // Add this helper method to determine color based on delay value
+  private getDelayColor(delay: number): string {
+    // Define thresholds for different delay categories (in picoseconds)
+    const highDelayThreshold = 2000;  // 2000ps = 2ns
+    const mediumDelayThreshold = 1000; // 1000ps = 1ns
     
-    return closestPoint;
+    if (delay >= highDelayThreshold) {
+      return '#e74c3c'; // Red for high delay
+    } else if (delay >= mediumDelayThreshold) {
+      return '#f39c12'; // Orange for medium delay
+    } else if (delay > 0) {
+      return '#7f8c8d'; // Gray for low delay
+    } else {
+      return '#7f8c8d'; // Default gray for zero or undefined delay
+    }
   }
-  
-  // Helper method to check if two rectangles overlap
-  private checkRectOverlap(rect1: { x: number, y: number, width: number, height: number }, 
-                          rect2: { x: number, y: number, width: number, height: number }): boolean {
-    return rect1.x < rect2.x + rect2.width &&
-           rect1.x + rect1.width > rect2.x &&
-           rect1.y < rect2.y + rect2.height &&
-           rect1.y + rect1.height > rect2.y;
-  }
-  
+
   // Helper to draw rounded rectangles
   private roundRect(
     ctx: CanvasRenderingContext2D,
@@ -1315,7 +1324,7 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
   toggleDescription(designId: string, event: Event): void {
     // Prevent the click from also triggering selectExample
     event.stopPropagation();
-    
+      
     if (this.expandedDesignId === designId) {
       // If already expanded, collapse it
       this.expandedDesignId = null;
@@ -1323,13 +1332,5 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       // Otherwise expand this design description
       this.expandedDesignId = designId;
     }
-  }
-  
-  // Add method to clear timing labels
-  private clearTimingLabels(): void {
-    if (this.labelsOverlay?.nativeElement) {
-      this.labelsOverlay.nativeElement.innerHTML = '';
-    }
-    this.timingLabels = [];
   }
 }
