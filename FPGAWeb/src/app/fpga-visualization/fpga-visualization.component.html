@@ -116,7 +116,11 @@
     <div class="visualization">
       <div class="fpga-view">
         <!-- Canvas for FPGA visualization -->
-        <canvas #visualCanvas class="fpga-canvas"></canvas>
+        <div class="canvas-container">
+          <canvas #visualCanvas class="fpga-canvas"></canvas>
+          <!-- Add overlay div for timing labels -->
+          <div #labelsOverlay class="canvas-overlay"></div>
+        </div>
         
         <div class="fpga-status" *ngIf="currentExample">
           <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
