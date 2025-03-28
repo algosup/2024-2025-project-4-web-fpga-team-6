@@ -485,7 +485,7 @@ header h1 {
   background-color: rgba(255, 253, 240, 0.98);
   border: 1px solid; /* Remove the fixed color to use the dynamic one */
   border-radius: 4px;
-  padding: 5px 10px;
+  padding: 8px 12px; /* Increased padding */
   font-size: 12px;
   font-weight: bold;
   /* Color will be set dynamically */
@@ -494,6 +494,7 @@ header h1 {
   pointer-events: none;
   transform: translate(-50%, -50%);
   white-space: nowrap;
+  letter-spacing: 0.3px; /* Add letter spacing for better readability */
 }
 
 .timing-label-arrow {
@@ -501,7 +502,7 @@ header h1 {
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 5px;
+  border-width: 6px; /* Slightly larger arrow */
   /* Border color will be set dynamically */
   z-index: 1000;
   pointer-events: none;
@@ -524,24 +525,31 @@ header h1 {
 
 .fpga-instructions {
   font-size: 0.9rem;
-  padding: 0.8rem;
+  padding: 1rem; /* Increased from 0.8rem */
   background-color: rgba(11, 61, 145, 0.05);
   border-radius: 4px;
-  margin-top: 1rem;
+  margin-top: 1.2rem; /* Increased from 1rem */
+  line-height: 1.5; /* Added for better readability */
 }
 
 .fpga-instructions ul {
-  padding-left: 1.2rem;
-  margin-top: 0.4rem;
+  padding-left: 1.5rem; /* Increased from 1.2rem */
+  margin-top: 0.6rem; /* Increased from 0.4rem */
+}
+
+.fpga-instructions ul li.signal-direction-note {
+  font-style: italic;
+  color: var(--cnes-blue);
+  margin-top: 0.5rem;
 }
 
 .fpga-instructions li {
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.5rem; /* Increased from 0.3rem */
 }
 
 .cell-details {
-  margin-top: 1.5rem;
-  padding: 1rem;
+  margin-top: 2rem; /* Increased from 1.5rem */
+  padding: 1.2rem; /* Increased from 1rem */
   background-color: rgba(11, 61, 145, 0.05);
   border-radius: 4px;
   border-left: 3px solid var(--cnes-blue);
@@ -549,34 +557,39 @@ header h1 {
 
 .cell-details h3 {
   margin-top: 0;
-  margin-bottom: 0.8rem;
+  margin-bottom: 1rem; /* Increased from 0.8rem */
   font-size: 1rem;
   color: var(--cnes-blue);
 }
 
 .details-content {
   font-size: 0.9rem;
+  line-height: 1.5; /* Added line height for better readability */
 }
 
 .details-content p {
-  margin: 0.3rem 0;
+  margin: 0.5rem 0; /* Increased from 0.3rem */
 }
 
 .details-content ul {
-  padding-left: 1.2rem;
-  margin: 0.5rem 0;
+  padding-left: 1.5rem; /* Increased from 1.2rem */
+  margin: 0.7rem 0; /* Increased from 0.5rem */
+}
+
+.details-content li {
+  margin-bottom: 0.5rem; /* Added for better spacing between list items */
 }
 
 /* Timing legend styling */
 .timing-legend {
-  margin-top: 1.5rem;
-  padding-top: 1rem;
+  margin-top: 2rem; /* Increased from 1.5rem */
+  padding-top: 1.2rem; /* Increased from 1rem */
   border-top: 1px solid rgba(11, 61, 145, 0.1);
 }
 
 .timing-legend h3 {
   font-size: 1rem;
-  margin: 0 0 0.8rem 0;
+  margin: 0 0 1rem 0; /* Increased from 0.8rem */
   color: var(--cnes-dark-gray);
   font-weight: 500;
 }
@@ -584,13 +597,14 @@ header h1 {
 .legend-items {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.8rem; /* Increased from 0.5rem */
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem; /* Increased from 0.8rem */
+  padding: 2px 0; /* Added padding for better spacing */
 }
 
 .legend-color {
@@ -599,10 +613,19 @@ header h1 {
   height: 16px;
   border-radius: 4px;
   border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0; /* Prevent square from shrinking */
 }
 
 .legend-text {
   font-size: 0.9rem;
+  color: var(--cnes-dark-gray);
+  line-height: 1.4; /* Added line height for better readability */
+}
+
+.fpga-footer {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.8rem;
   color: var(--cnes-dark-gray);
 }
 

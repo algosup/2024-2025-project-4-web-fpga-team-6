@@ -55,11 +55,9 @@ export interface FpgaLayout {
   providedIn: 'root'
 })
 export class VisualizationService {
-  // Component cache to store loaded SVGs
   private svgCache: Map<string, HTMLImageElement> = new Map();
   
   constructor() {
-    // Preload SVGs for smoother rendering
     this.preloadComponentSVGs();
   }
   
@@ -78,25 +76,22 @@ export class VisualizationService {
       throw new Error('Invalid design format');
     }
 
-    // First, create the cells and IO components
     const cells: FpgaCell[] = [];
     const externalWires: ExternalWire[] = [];
     
-    // Group external wires by type
     const inputs = design.external_wires.filter((wire: any) => wire.type === 'input');
     const outputs = design.external_wires.filter((wire: any) => wire.type === 'output');
+
+    const connectivityGraph = this.buildConnectivityGraph(design);
+    const fanoutGroups = this.analyzeFanouts(connectivityGraph);
     
-    // Use improved positioning algorithm that creates a multi-column layout
-    // for designs with many components
-    const maxCellsInColumn = 5;
-    
-    // Position input wires in a column on the left
     let gridY = 60;
     let gridX = 60;
     
-    // Place input wires on the left side
-    for (let i = 0; i < inputs.length; i++) {
-      const wire = inputs[i];
+    const inputOrder = this.optimizeInputOrder(inputs, connectivityGraph);
+    
+    for (let i = 0; i < inputOrder.length; i++) {
+      const wire = inputOrder[i];
       const config = COMPONENT_CONFIGS['input'];
       
       externalWires.push({
@@ -111,37 +106,45 @@ export class VisualizationService {
       });
       gridY += config.height + 40;
       
-      // Start a new column if we reach the max cells per column
-      if ((i + 1) % maxCellsInColumn === 0) {
+      if ((i + 1) % 5 === 0) {
         gridY = 60;
         gridX += 200;
       }
     }
     
-    // Reset for cells
     gridY = 60;
-    gridX = Math.max(300, gridX + 200); // Position cells to the right of inputs
+    gridX = Math.max(300, gridX + 200);
     
     const cellStartX = gridX;
     
-    // Place cells in middle columns
-    for (let i = 0; i < design.cells.length; i++) {
-      const cell = design.cells[i];
+    const { cellLayers, cellOrder } = this.assignCellLayers(design.cells, connectivityGraph);
+    
+    let currentLayer = 0;
+    let layerX = cellStartX;
+    let maxLayerHeight = 0;
+    
+    for (const cellName of cellOrder) {
+      const cell = design.cells.find((c: any) => c.name === cellName);
+      if (!cell) continue;
       
-      // Determine the cell type, handling variants like "LUT_K" vs "LUT"
-      let cellType = cell.type;
-      if (cellType.startsWith('LUT')) {
-        cellType = 'LUT'; // Normalize LUT types
+      if (cellLayers.get(cellName) !== currentLayer) {
+        currentLayer = cellLayers.get(cellName) || 0;
+        gridY = 60;
+        layerX += maxLayerHeight > 0 ? (maxLayerHeight + 180) : 220;
+        maxLayerHeight = 0;
       }
       
-      // Get configuration for this cell type or use default
+      let cellType = cell.type;
+      if (cellType.startsWith('LUT')) {
+        cellType = 'LUT';
+      }
+      
       const config = COMPONENT_CONFIGS[cellType] || {
         type: cell.type,
         svgPath: 'assets/generic_component.svg',
         width: 120,
         height: 80,
         connections: Object.keys(cell.connections).map((key, index, arr) => {
-          // Create default connection points based on connection names
           const side = index < arr.length / 2 ? 'left' : 'right';
           const y = side === 'left' 
             ? 0.2 + (0.6 * index / Math.max(1, arr.length / 2)) 
@@ -160,33 +163,27 @@ export class VisualizationService {
         id: `cell_${cell.name}`,
         name: cell.name,
         type: cell.type,
-        x: gridX,
+        x: layerX,
         y: gridY,
         width: config.width,
         height: config.height,
         connections: cell.connections,
         initialState: cell.initial_state,
-        properties: cell, // Store original cell properties
-        connectionPoints: this.getConnectionPoints(config, gridX, gridY)
+        properties: cell,
+        connectionPoints: this.getConnectionPoints(config, layerX, gridY)
       });
       
-      // Move down for next cell
+      maxLayerHeight = Math.max(maxLayerHeight, config.height);
       gridY += config.height + 60;
-      
-      // Start a new column if we reach the max cells per column
-      if ((i + 1) % maxCellsInColumn === 0) {
-        gridY = 60;
-        gridX += 220;
-      }
     }
     
-    // Reset for outputs
     gridY = 60;
-    gridX = Math.max(gridX + 220, cellStartX + 400); // Position outputs to the right of cells
+    gridX = Math.max(layerX + 220, cellStartX + 400);
     
-    // Place output wires on the right
-    for (let i = 0; i < outputs.length; i++) {
-      const wire = outputs[i];
+    const outputOrder = this.optimizeOutputOrder(outputs, connectivityGraph);
+    
+    for (let i = 0; i < outputOrder.length; i++) {
+      const wire = outputOrder[i];
       const config = COMPONENT_CONFIGS['output'];
       
       externalWires.push({
@@ -202,22 +199,20 @@ export class VisualizationService {
       
       gridY += config.height + 40;
       
-      // Start a new column if we reach the max cells per column
-      if ((i + 1) % maxCellsInColumn === 0) {
+      if ((i + 1) % 5 === 0) {
         gridY = 60;
         gridX += 200;
       }
     }
     
-    // Generate optimized interconnects between components
     const interconnects: Interconnect[] = this.createInterconnects(
       design.interconnects, 
       cells, 
-      externalWires
+      externalWires,
+      connectivityGraph
     );
     
-    // Calculate overall dimensions
-    const maxX = gridX + 200; // Add padding
+    const maxX = gridX + 200;
     const maxY = Math.max(
       inputs.length > 0 ? gridY + 80 : 0,
       cells.length > 0 ? gridY + 80 : 0,
@@ -234,64 +229,219 @@ export class VisualizationService {
       }
     };
     
-    // Debug logging to help troubleshoot connection issues
-    // this.logLayoutConnectionPoints(layout);
-    
     return layout;
   }
   
-  // Get actual positions of connection points based on component config
-  private getConnectionPoints(config: ComponentConfig, x: number, y: number): Record<string, {x: number, y: number}> {
-    const result: Record<string, {x: number, y: number}> = {};
+  private buildConnectivityGraph(design: any): any {
+    const graph = new Map<string, Set<string>>();
+    const reverseGraph = new Map<string, Set<string>>();
+  
+    for (const cell of design.cells) {
+      graph.set(cell.name, new Set<string>());
+      reverseGraph.set(cell.name, new Set<string>());
+    }
     
-    config.connections.forEach(conn => {
-      let connX = x;
-      let connY = y;
-      
-      // Position based on side
-      switch (conn.side) {
-        case 'left':
-          connX = x;
-          connY = y + config.height * conn.y;
-          break;
-        case 'right':
-          connX = x + config.width;
-          connY = y + config.height * conn.y;
-          break;
-        case 'top':
-          connX = x + config.width * conn.x;
-          connY = y;
-          break;
-        case 'bottom':
-          connX = x + config.width * conn.x;
-          connY = y + config.height;
-          break;
-      }
-      
-      result[conn.id] = {x: connX, y: connY};
-    });
-    
-    return result;
+    for (const wire of design.external_wires) {
+      graph.set(wire.name, new Set<string>());
+      reverseGraph.set(wire.name, new Set<string>());
+    }
+  
+    for (const ic of design.interconnects) {
+      const { input, output } = ic.connections || {};
+      if (!input || !output) continue;
+  
+      const sourceWireName = input.split('.')[0];
+      const targetWireName = output.split('.')[0];
+  
+      const sourceConnections = graph.get(sourceWireName) || new Set<string>();
+      sourceConnections.add(targetWireName);
+      graph.set(sourceWireName, sourceConnections);
+  
+      const targetConnections = reverseGraph.get(targetWireName) || new Set<string>();
+      targetConnections.add(sourceWireName);
+      reverseGraph.set(targetWireName, targetConnections);
+    }
+  
+    return { forward: graph, reverse: reverseGraph };
   }
   
-  // Method to create optimized interconnects with fewer crossings
+  private analyzeFanouts(graph: any): Map<string, string[]> {
+    const fanoutGroups = new Map<string, string[]>();
+    
+    for (const [source, targets] of graph.forward.entries()) {
+      if (targets.size > 1) {
+        fanoutGroups.set(source, Array.from(targets));
+      }
+    }
+    
+    return fanoutGroups;
+  }
+  
+  private assignCellLayers(cells: any[], graph: any): { cellLayers: Map<string, number>, cellOrder: string[] } {
+    const cellLayers = new Map<string, number>();
+    const visited = new Set<string>();
+    const sorted: string[] = [];
+    
+    function visit(node: string, currentLayer = 0) {
+      if (visited.has(node)) return;
+      visited.add(node);
+      
+      const deps = graph.reverse.get(node) || new Set<string>();
+      for (const dep of deps) {
+        if (!visited.has(dep)) {
+          visit(dep, currentLayer + 1);
+        }
+      }
+      
+      let maxDependencyLayer = -1;
+      for (const dep of deps) {
+        const depLayer = cellLayers.get(dep) || 0;
+        maxDependencyLayer = Math.max(maxDependencyLayer, depLayer);
+      }
+      
+      const layer = deps.size > 0 ? maxDependencyLayer + 1 : 0;
+      cellLayers.set(node, layer);
+      sorted.push(node);
+    }
+    
+    for (const cell of cells) {
+      if (!visited.has(cell.name)) {
+        visit(cell.name);
+      }
+    }
+    
+    const sortedByLayer: string[] = [];
+    
+    let maxLayer = 0;
+    for (const layer of cellLayers.values()) {
+      maxLayer = Math.max(maxLayer, layer);
+    }
+    
+    for (let layer = 0; layer <= maxLayer; layer++) {
+      const cellsInLayer = sorted.filter(cell => cellLayers.get(cell) === layer);
+      const sortedLayer = this.sortCellsWithinLayer(cellsInLayer, graph);
+      sortedByLayer.push(...sortedLayer);
+    }
+    
+    return { cellLayers, cellOrder: sortedByLayer };
+  }
+  
+  private sortCellsWithinLayer(cells: string[], graph: any): string[] {
+    if (cells.length <= 1) return cells;
+    
+    const cellScores = new Map<string, number>();
+    
+    cells.forEach(cell => {
+      const sources = Array.from(graph.reverse.get(cell) || []);
+      const targets = Array.from(graph.forward.get(cell) || []);
+      
+      let positionSum = 0;
+      let connectionCount = 0;
+      
+      sources.forEach(source => {
+        if (graph.position && graph.position.has(source)) {
+          positionSum += graph.position.get(source);
+          connectionCount++;
+        }
+      });
+      
+      targets.forEach(target => {
+        if (graph.position && graph.position.has(target)) {
+          positionSum += graph.position.get(target);
+          connectionCount++;
+        }
+      });
+      
+      const score = connectionCount > 0 ? 
+        positionSum / connectionCount : 
+        cell.charCodeAt(0);
+      
+      cellScores.set(cell, score);
+    });
+    
+    return [...cells].sort((a, b) => 
+      (cellScores.get(a) || 0) - (cellScores.get(b) || 0)
+    );
+  }
+  
+  private optimizeInputOrder(inputs: any[], graph: any): any[] {
+    if (inputs.length <= 1) return inputs;
+    
+    const inputWeights = new Map<string, number>();
+    
+    for (const input of inputs) {
+      const targets = graph.forward.get(input.name) || new Set<string>();
+      
+      let weight = 0;
+      for (const target of targets) {
+        const targetLayer = this.estimateComponentLayer(target, graph);
+        weight += targetLayer * 100;
+      }
+      
+      inputWeights.set(input.name, weight || 0);
+    }
+    
+    return [...inputs].sort((a, b) => 
+      (inputWeights.get(a.name) || 0) - (inputWeights.get(b.name) || 0)
+    );
+  }
+  
+  private optimizeOutputOrder(outputs: any[], graph: any): any[] {
+    if (outputs.length <= 1) return outputs;
+    
+    const outputWeights = new Map<string, number>();
+    
+    for (const output of outputs) {
+      const sources = graph.reverse.get(output.name) || new Set<string>();
+      
+      let weight = 0;
+      for (const source of sources) {
+        const sourceLayer = this.estimateComponentLayer(source, graph);
+        weight += sourceLayer * 100;
+      }
+      
+      outputWeights.set(output.name, weight || 0);
+    }
+    
+    return [...outputs].sort((a, b) => 
+      (outputWeights.get(a.name) || 0) - (outputWeights.get(b.name) || 0)
+    );
+  }
+  
+  private estimateComponentLayer(componentName: string, graph: any): number {
+    let maxDepth = 0;
+    const visited = new Set<string>();
+    
+    const calculateDepth = (node: string, depth: number) => {
+      if (visited.has(node)) return;
+      visited.add(node);
+      
+      maxDepth = Math.max(maxDepth, depth);
+      
+      const sources = graph.reverse.get(node);
+      if (sources) {
+        for (const source of sources) {
+          calculateDepth(source, depth + 1);
+        }
+      }
+    };
+    
+    calculateDepth(componentName, 0);
+    return maxDepth;
+  }
+
   private createInterconnects(
     designInterconnects: any[], 
     cells: FpgaCell[], 
-    externalWires: ExternalWire[]
+    externalWires: ExternalWire[],
+    connectivityGraph: any
   ): Interconnect[] {
-    const result: Interconnect[] = [];
-    
-    // Build a connection point lookup table
     const connectionPoints = new Map<string, {component: FpgaCell | ExternalWire, point: {x: number, y: number}}>();
     
-    // Add cell connection points with normalization
     cells.forEach(cell => {
       Object.entries(cell.connections).forEach(([port, connName]) => {
-        // Normalize port names for common issues
         const normalizedPort = this.normalizePortName(port);
         
-        // If the cell has a defined connection point for this port
         if (cell.connectionPoints && cell.connectionPoints[normalizedPort]) {
           connectionPoints.set(connName as string, {
             component: cell,
@@ -306,16 +456,13 @@ export class VisualizationService {
       });
     });
     
-    // Add external wire connection points
     externalWires.forEach(wire => {
-      // For inputs, the output connection is the one to use
       if (wire.type === 'input' && wire.connectionPoints?.['output']) {
         connectionPoints.set(wire.name, {
           component: wire,
           point: wire.connectionPoints['output']
         });
       }
-      // For outputs, the input connection is the one to use
       else if (wire.type === 'output' && wire.connectionPoints?.['input']) {
         connectionPoints.set(wire.name, {
           component: wire,
@@ -323,45 +470,39 @@ export class VisualizationService {
         });
       }
     });
+
+    const fanoutGroups = new Map<string, any[]>();
     
-    // Create interconnects with better routing
     for (const ic of designInterconnects) {
       const { input, output } = ic.connections || {};
+      if (!input || !output) continue;
       
-      if (!input || !output) {
-        console.warn(`Interconnect ${ic.name} has invalid connections:`, ic.connections);
-        continue;
+      const key = input;
+      if (!fanoutGroups.has(key)) {
+        fanoutGroups.set(key, []);
       }
-      
-      // Find source and target connection points
-      const source = connectionPoints.get(input);
-      const target = connectionPoints.get(output);
-      
-      if (!source || !target) {
-        console.warn(`Could not find connection points for interconnect ${ic.name}`);
+      fanoutGroups.get(key)?.push(ic);
+    }
+    
+    const result: Interconnect[] = [];
+    
+    for (const [sourceKey, interconnects] of fanoutGroups.entries()) {
+      if (interconnects.length === 1) {
+        const ic = interconnects[0];
+        const { input, output } = ic.connections || {};
         
-        // Create default connection points as fallback
-        // Find source component by name
-        const sourceWireName = input.split(".")[0]; // Assuming format like "wireName.portName"
-        const sourceComp = [...cells, ...externalWires].find(c => c.name === sourceWireName);
+        const source = connectionPoints.get(input);
+        const target = connectionPoints.get(output);
         
-        // Find target component by name
-        const targetWireName = output.split(".")[0];
-        const targetComp = [...cells, ...externalWires].find(c => c.name === targetWireName);
-        
-        if (sourceComp && targetComp) {
-          // Create a direct connection between component centers
-          const points = [
-            { x: sourceComp.x + sourceComp.width/2, y: sourceComp.y + sourceComp.height/2 },
-            { x: targetComp.x + targetComp.width/2, y: targetComp.y + targetComp.height/2 }
-          ];
+        if (source && target) {
+          const points = this.generateOptimizedRoute(source.point, target.point);
           
           result.push({
             id: `interconnect_${ic.name}`,
             name: ic.name,
-            sourceId: sourceComp.id,
+            sourceId: source.component.id,
             sourcePort: input,
-            targetId: targetComp.id,
+            targetId: target.component.id,
             targetPort: output,
             points,
             delay: parseFloat(ic.propagation_delay || '0'),
@@ -369,108 +510,145 @@ export class VisualizationService {
             lastSignalState: '0',
           });
         }
-        
-        continue;
+      } else {
+        this.createBundledFanout(sourceKey, interconnects, connectionPoints, result);
       }
-      
-      // Generate optimized route
-      const points = this.generateOptimizedRoute(source.point, target.point);
-      
-      result.push({
-        id: `interconnect_${ic.name}`,
-        name: ic.name,
-        sourceId: source.component.id,
-        sourcePort: input,
-        targetId: target.component.id,
-        targetPort: output,
-        points,
-        delay: parseFloat(ic.propagation_delay || '0'),
-        animationProgress: 0,
-        lastSignalState: '0',
-      });
     }
     
     return result;
   }
   
-  // Add a helper method to normalize port names for common connections
-  private normalizePortName(portName: string): string {
-    // Common aliases for clock signals
-    if (portName.toLowerCase() === 'clk' || 
-        portName.toLowerCase() === 'clock' || 
-        portName.toLowerCase() === 'ck') {
-      return 'CLK';
-    }
+  private createBundledFanout(
+    sourceKey: string, 
+    interconnects: any[], 
+    connectionPoints: Map<string, {component: FpgaCell | ExternalWire, point: {x: number, y: number}}>,
+    result: Interconnect[]
+  ): void {
+    const source = connectionPoints.get(sourceKey);
+    if (!source) return;
     
-    // Common aliases for data inputs
-    if (portName.toLowerCase() === 'd' || 
-        portName.toLowerCase() === 'data' || 
-        portName.toLowerCase() === 'in') {
-      return 'D';
-    }
+    const targets = interconnects.map(ic => {
+      const { output } = ic.connections || {};
+      const target = connectionPoints.get(output);
+      return {
+        interconnect: ic,
+        targetInfo: target
+      };
+    }).filter(t => t.targetInfo);
     
-    // Common aliases for outputs
-    if (portName.toLowerCase() === 'q' || 
-        portName.toLowerCase() === 'out') {
-      return 'Q';
-    }
+    if (targets.length === 0) return;
     
-    // Common aliases for inverted outputs
-    if (portName.toLowerCase() === 'qn' || 
-        portName.toLowerCase() === 'q_n' || 
-        portName.toLowerCase() === 'qb') {
-      return 'Qn';
-    }
+    targets.sort((a, b) => a.targetInfo!.point.y - b.targetInfo!.point.y);
     
-    return portName;
+    const avgTargetX = targets.reduce((sum, t) => sum + t.targetInfo!.point.x, 0) / targets.length;
+    
+    const minTargetY = targets[0].targetInfo!.point.y;
+    const maxTargetY = targets[targets.length - 1].targetInfo!.point.y;
+    const trunkY = (minTargetY + maxTargetY) / 2;
+    
+    const trunkPoint = {
+      x: source.point.x + (avgTargetX - source.point.x) * 0.6,
+      y: trunkY
+    };
+    
+    const trunkPath = [
+      { x: source.point.x, y: source.point.y },
+      { x: source.point.x + 20, y: source.point.y },
+      { x: trunkPoint.x, y: trunkPoint.y }
+    ];
+    
+    for (const target of targets) {
+      const ic = target.interconnect;
+      const targetPoint = target.targetInfo!.point;
+      
+      const branchPath = [
+        { x: trunkPoint.x, y: trunkPoint.y },
+        { x: targetPoint.x - 20, y: trunkPoint.y },
+        { x: targetPoint.x - 20, y: targetPoint.y },
+        { x: targetPoint.x, y: targetPoint.y }
+      ];
+      
+      if (Math.abs(targetPoint.y - trunkPoint.y) > 40) {
+        branchPath[1] = { x: trunkPoint.x, y: targetPoint.y };
+        branchPath[2] = { x: targetPoint.x - 20, y: targetPoint.y };
+      }
+      
+      result.push({
+        id: `interconnect_${ic.name}`,
+        name: ic.name,
+        sourceId: source.component.id,
+        sourcePort: ic.connections.input,
+        targetId: target.targetInfo!.component.id,
+        targetPort: ic.connections.output,
+        points: branchPath,
+        delay: parseFloat(ic.propagation_delay || '0'),
+        animationProgress: 0,
+        lastSignalState: '0',
+      });
+    }
   }
-  
-  // Generate a route with nice curves and minimal crossings
+
   private generateOptimizedRoute(source: {x: number, y: number}, target: {x: number, y: number}): Point[] {
     const points: Point[] = [];
-    
-    // Add source point
-    points.push({ x: source.x, y: source.y });
-    
-    // Determine if we need to go horizontal or vertical first
     const dx = target.x - source.x;
     const dy = target.y - source.y;
-    const isHorizontalFirst = Math.abs(dx) > Math.abs(dy);
     
-    // Calculate midpoints for the path
-    if (isHorizontalFirst) {
-      // Go horizontal first
+    points.push({ x: source.x, y: source.y });
+    
+    if (Math.abs(dx) < 40 && Math.abs(dy) < 40) {
+      points.push({ x: target.x, y: target.y });
+    }
+    else if (Math.abs(dx) > Math.abs(dy) * 3) {
       const midX = source.x + dx * 0.5;
       points.push({ x: midX, y: source.y });
       points.push({ x: midX, y: target.y });
-    } else {
-      // Go vertical first
+      points.push({ x: target.x, y: target.y });
+    }
+    else if (Math.abs(dy) > Math.abs(dx) * 3) {
       const midY = source.y + dy * 0.5;
       points.push({ x: source.x, y: midY });
       points.push({ x: target.x, y: midY });
+      points.push({ x: target.x, y: target.y });
+    }
+    else {
+      const initialDist = Math.min(20, Math.abs(dx) * 0.2);
+      if (dx > 0) {
+        points.push({ x: source.x + initialDist, y: source.y });
+      } else {
+        points.push({ x: source.x - initialDist, y: source.y });
+      }
+      
+      const midX = source.x + dx * 0.5;
+      const midY = source.y + dy * 0.5;
+      points.push({ x: midX, y: source.y + dy * 0.3 });
+      points.push({ x: midX, y: midY });
+      points.push({ x: target.x - dx * 0.3, y: midY });
+      
+      const finalDist = Math.min(20, Math.abs(dx) * 0.2);
+      if (dx > 0) {
+        points.push({ x: target.x - finalDist, y: target.y });
+      } else {
+        points.push({ x: target.x + finalDist, y: target.y });
+      }
     }
     
-    // Add target point
     points.push({ x: target.x, y: target.y });
     
     return points;
   }
   
-  // Get an SVG element for a component
   getSVGForComponent(type: string): HTMLImageElement | null {
     return this.svgCache.get(type) || null;
   }
   
-  // Get the state color for cells and wires with effects
   getCellStateColor(state: string): string {
     switch (state) {
-      case '1': return '#ff5050'; // Bright red for high
-      case '0': return '#4d79ff'; // Bright blue for low
-      default: return '#aaaaaa';  // Gray for undefined
+      case '1': return '#ff5050';
+      case '0': return '#4d79ff';
+      default: return '#aaaaaa';
     }
   }
   
-  // Get glow effect parameters for a state
   getStateGlow(state: string): { color: string; blur: number; } {
     switch (state) {
       case '1': return { color: 'rgba(255, 80, 80, 0.8)', blur: 15 };
@@ -479,7 +657,6 @@ export class VisualizationService {
     }
   }
 
-  // Add this method to help debug connection issues
   public logLayoutConnectionPoints(layout: FpgaLayout): void {
     console.group('FPGA Layout Connection Points');
     
@@ -504,5 +681,41 @@ export class VisualizationService {
     });
     
     console.groupEnd();
+  }
+
+  // Helper method to normalize port names for common naming variations
+  private normalizePortName(port: string): string {
+    // Handle common naming variations in port IDs
+    if (port.startsWith('in_') || port.startsWith('in[')) {
+      return 'input';
+    } else if (port === 'out' || port === 'O' || port === 'output' || port === 'OUT') {
+      return 'output';
+    } else if (port === 'Q' || port === 'q') {
+      return 'output';
+    } else if (port === 'D' || port === 'd') {
+      return 'input';
+    } else if (port === 'CLK' || port === 'clk' || port === 'clock' || port === 'CK') {
+      return 'clock';
+    }
+    return port;
+  }
+  
+  // Helper method to get connection points for a component
+  private getConnectionPoints(config: ComponentConfig, x: number, y: number): Record<string, {x: number, y: number}> {
+    const result: Record<string, {x: number, y: number}> = {};
+    
+    if (!config.connections) {
+      return result;
+    }
+    
+    for (const connection of config.connections) {
+      // Calculate absolute position based on relative coordinates
+      const pointX = x + connection.x * config.width;
+      const pointY = y + connection.y * config.height;
+      
+      result[connection.id] = { x: pointX, y: pointY };
+    }
+    
+    return result;
   }
 }

@@ -1109,10 +1109,13 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     const isHighlighted = this.highlightedInterconnect === interconnect.id;
     ctx.strokeStyle = isHighlighted ? 
       'rgba(44, 120, 212, 0.5)' : 
-      delayColor; // Use delay color instead of undefined color
+      delayColor; 
     
     ctx.lineWidth = isHighlighted ? 3.5 : 2.5;
     ctx.stroke();
+    
+    // Draw direction arrows along the path
+    this.drawDirectionArrows(ctx, points, ctx.strokeStyle);
     
     // Calculate the total path length
     let totalLength = 0;
@@ -1216,6 +1219,88 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
         delayColor
       );
     }
+  }
+
+  // Add this helper method to draw direction arrows along a path
+  private drawDirectionArrows(ctx: CanvasRenderingContext2D, points: Point[], color: string): void {
+    if (points.length < 2) return;
+    
+    // Save context state before making changes
+    ctx.save();
+    
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    
+    // Calculate interval for arrow placement - place arrows roughly every 50-80px based on path length
+    const totalSegments = points.length - 1;
+    const arrowInterval = Math.ceil(totalSegments / Math.max(1, Math.floor(totalSegments / 2)));
+    
+    // Draw arrows at calculated intervals
+    for (let i = 1; i < points.length; i++) {
+      // Only draw arrows at certain intervals to avoid cluttering
+      if ((i % arrowInterval !== 0) && (i !== points.length - 2)) continue;
+      
+      const p1 = points[i - 1];
+      const p2 = points[i];
+      
+      // Calculate midpoint of current segment where arrow will be drawn
+      const midX = (p1.x + p2.x) / 2;
+      const midY = (p1.y + p2.y) / 2;
+      
+      // Calculate angle for arrow direction
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+      
+      // Draw the arrow
+      this.drawArrow(ctx, midX, midY, angle, 8, color);
+    }
+    
+    // Always draw an arrow near the end point to clearly show destination
+    if (points.length >= 2) {
+      const p1 = points[points.length - 2];
+      const p2 = points[points.length - 1];
+      
+      // Position arrow close to end but not at the very end
+      const ratio = 0.7; // 70% of the way from p1 to p2
+      const arrowX = p1.x + (p2.x - p1.x) * ratio;
+      const arrowY = p1.y + (p2.y - p1.y) * ratio;
+      
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+      this.drawArrow(ctx, arrowX, arrowY, angle, 8, color);
+    }
+    
+    // Restore context to original state
+    ctx.restore();
+  }
+
+  // Add this helper method to draw an individual arrow
+  private drawArrow(
+    ctx: CanvasRenderingContext2D, 
+    x: number, 
+    y: number, 
+    angle: number, 
+    size: number,
+    color: string
+  ): void {
+    // Save context state
+    ctx.save();
+    
+    // Move to arrow position and rotate canvas to arrow direction
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    
+    // Draw the arrow
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(-size, size / 2);
+    ctx.lineTo(-size, -size / 2);
+    ctx.closePath();
+    
+    // Fill and stroke the arrow
+    ctx.fillStyle = color;
+    ctx.fill();
+    
+    // Restore context to original state
+    ctx.restore();
   }
 
   private displayTimingLabelInOverlay(
