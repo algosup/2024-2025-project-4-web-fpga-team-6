@@ -145,6 +145,9 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
   animating = false; // Add these properties to FpgaVisualizationComponent
   signalAnimations: Map<string, number> = new Map(); // Track signal animations
   lastTimestamp = 0;
+
+  // Add this property to track timing display positions
+  private timeDisplayPositions: {x: number, y: number, width: number, height: number}[] = [];
   
   constructor(
     private designService: DesignService,
@@ -576,6 +579,9 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
       this.updateSignalAnimations(elapsed);
     }
     
+    // Reset time display positions for this render cycle
+    this.timeDisplayPositions = [];
+    
     this.animationFrameId = requestAnimationFrame((time) => {
       if (!this.visualCanvas) return;
       
@@ -963,7 +969,6 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     ctx.fillText(state, wire.x + wire.width / 2, wire.y + wire.height - 11);
   }
   
-  // Add an uncommented version of the drawInterconnect method
   private drawInterconnect(ctx: CanvasRenderingContext2D, interconnect: any): void {
     const { points } = interconnect;
     const animationProgress = interconnect.animationProgress ?? 1;
@@ -1039,38 +1044,12 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     
     // Draw interconnect box at the middle point if needed
     if (points.length > 2) {
+      // Choose the midpoint for timing display
       const midPoint = points[Math.floor(points.length / 2)];
       
-      // Interconnect box with custom appearance
-      ctx.fillStyle = '#f8f9fa';
-      ctx.strokeStyle = '#0b3d91';
-      ctx.lineWidth = 1;
-      
-      // Apply glow if signal has reached this point
-      if (animationProgress >= 0.5) {
-        ctx.shadowColor = glow.color;
-        ctx.shadowBlur = glow.blur;
-      }
-      
-      // Draw a small diamond shape
-      ctx.beginPath();
-      ctx.moveTo(midPoint.x, midPoint.y - 8);
-      ctx.lineTo(midPoint.x + 8, midPoint.y);
-      ctx.lineTo(midPoint.x, midPoint.y + 8);
-      ctx.lineTo(midPoint.x - 8, midPoint.y);
-      ctx.closePath();
-      
-      ctx.fill();
-      ctx.stroke();
-      
-      // Reset shadow
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-      
-      // Add delay text
-      ctx.font = '9px Arial';
-      ctx.fillStyle = '#333';
-      ctx.textAlign = 'center';
+      // Starting position for the timing label
+      let displayX = midPoint.x;
+      let displayY = midPoint.y;
       
       // Format delay for display
       let delayText = '';
@@ -1082,9 +1061,252 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
           delayText = `${delay.toFixed(0)}ps`;
         }
       }
+
+      // Skip drawing if no delay to show
+      if (!delayText) return;
+
+      // Enhance the timing label with prefix for clarity
+      const timingLabel = `Delay: ${delayText}`;
       
-      ctx.fillText(delayText, midPoint.x, midPoint.y + 20);
+      // Measure text to create proper sizing
+      ctx.font = 'bold 11px Arial';
+      const textMetrics = ctx.measureText(timingLabel);
+      const textWidth = textMetrics.width;
+      const textHeight = 14; // Approximate height based on font size
+      
+      // Add padding around text
+      const paddingX = 10;
+      const paddingY = 8;
+      
+      // Determine the size for collision detection and display
+      const labelWidth = textWidth + (paddingX * 2);
+      const labelHeight = textHeight + (paddingY * 2);
+      
+      // Area that the timing label would occupy
+      const occupiedArea = {
+        x: displayX - (labelWidth / 2),
+        y: displayY - (labelHeight / 2),
+        width: labelWidth,
+        height: labelHeight
+      };
+      
+      // Check for collision with existing time displays and adjust position
+      const collisionCheck = () => {
+        for (const pos of this.timeDisplayPositions) {
+          if (this.checkRectOverlap(occupiedArea, pos)) {
+            return true;  // Collision detected
+          }
+        }
+        return false;  // No collision
+      };
+      
+      // Try different positions if there's a collision
+      if (collisionCheck()) {
+        // First try standard positions away from the path
+        const candidatePositions = [
+          { dx: 0, dy: -60 },  // Above
+          { dx: 70, dy: 0 },   // Right
+          { dx: 0, dy: 60 },   // Below
+          { dx: -70, dy: 0 },  // Left
+          { dx: -60, dy: -60 }, // Top-left
+          { dx: 60, dy: -60 },  // Top-right
+          { dx: 60, dy: 60 },   // Bottom-right
+          { dx: -60, dy: 60 }   // Bottom-left
+        ];
+        
+        let foundPosition = false;
+        
+        // Try positions with increasing distance
+        for (let distance = 1; distance <= 3; distance++) {
+          for (const pos of candidatePositions) {
+            const testX = midPoint.x + pos.dx * distance;
+            const testY = midPoint.y + pos.dy * distance;
+            
+            occupiedArea.x = testX - (labelWidth / 2);
+            occupiedArea.y = testY - (labelHeight / 2);
+            
+            if (!collisionCheck()) {
+              displayX = testX;
+              displayY = testY;
+              foundPosition = true;
+              break;
+            }
+          }
+          if (foundPosition) break;
+        }
+        
+        // If we still have collision, generate a position based on interconnect ID
+        if (!foundPosition) {
+          const idSum = interconnect.id.split('').reduce((acc: any, char: string) => acc + char.charCodeAt(0), 0);
+          displayX = midPoint.x + ((idSum % 9) - 4) * 40;
+          displayY = midPoint.y + (((idSum * 17) % 9) - 4) * 40;
+          
+          // Update occupied area for tracking
+          occupiedArea.x = displayX - (labelWidth / 2);
+          occupiedArea.y = displayY - (labelHeight / 2);
+        }
+      }
+      
+      // Track this position to avoid placing other time displays here
+      this.timeDisplayPositions.push({
+        x: occupiedArea.x,
+        y: occupiedArea.y,
+        width: occupiedArea.width,
+        height: occupiedArea.height
+      });
+      
+      // Draw connection line with arrow from path to timing label
+      if (midPoint.x !== displayX || midPoint.y !== displayY) {
+        // Calculate the angle for the leader line
+        const dx = displayX - midPoint.x;
+        const dy = displayY - midPoint.y;
+        const angle = Math.atan2(dy, dx);
+        
+        // Calculate label edge point for leader line
+        const edgeX = displayX - (Math.cos(angle) * (labelWidth / 2));
+        const edgeY = displayY - (Math.sin(angle) * (labelHeight / 2));
+        
+        // Draw the leader line with a slight curve for better visibility
+        ctx.strokeStyle = '#555555';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        
+        // Starting point (on the signal path)
+        ctx.moveTo(midPoint.x, midPoint.y);
+        
+        // Control point for curve (20% along the way)
+        const ctrlX = midPoint.x + dx * 0.2;
+        const ctrlY = midPoint.y + dy * 0.2;
+        
+        // End point (at label edge)
+        ctx.quadraticCurveTo(ctrlX, ctrlY, edgeX, edgeY);
+        ctx.stroke();
+        
+        // Draw arrowhead pointing to the label
+        const arrowSize = 6;
+        ctx.fillStyle = '#555555';
+        ctx.beginPath();
+        ctx.moveTo(edgeX, edgeY);
+        ctx.lineTo(
+          edgeX - arrowSize * Math.cos(angle - Math.PI/6),
+          edgeY - arrowSize * Math.sin(angle - Math.PI/6)
+        );
+        ctx.lineTo(
+          edgeX - arrowSize * Math.cos(angle + Math.PI/6),
+          edgeY - arrowSize * Math.sin(angle + Math.PI/6)
+        );
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // Create visually distinctive timing label
+      
+      // Draw background with shadow for depth
+      ctx.shadowColor = 'rgba(0,0,0,0.2)';
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 1;
+      
+      // Rounded rectangle for timing label with gradient background
+      const cornerRadius = 6;
+      
+      // Create gradient background 
+      const gradient = ctx.createLinearGradient(
+        displayX - (labelWidth/2), 
+        displayY - (labelHeight/2), 
+        displayX - (labelWidth/2), 
+        displayY + (labelHeight/2)
+      );
+      gradient.addColorStop(0, '#f0f7ff');
+      gradient.addColorStop(1, '#e0edff');
+      
+      ctx.fillStyle = gradient;
+      this.roundRect(
+        ctx, 
+        displayX - (labelWidth/2), 
+        displayY - (labelHeight/2), 
+        labelWidth, 
+        labelHeight, 
+        cornerRadius, 
+        true, 
+        false
+      );
+      
+      // Border for the label
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = '#2c78d4';
+      ctx.lineWidth = 1.5;
+      this.roundRect(
+        ctx, 
+        displayX - (labelWidth/2), 
+        displayY - (labelHeight/2), 
+        labelWidth, 
+        labelHeight, 
+        cornerRadius, 
+        false, 
+        true
+      );
+      
+      // Draw timing text with high contrast
+      ctx.font = 'bold 11px Arial';
+      ctx.fillStyle = '#103262';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Draw the timing label
+      ctx.fillText(timingLabel, displayX, displayY);
+      
+      // Apply glow if signal has reached this point
+      if (animationProgress >= 0.5) {
+        const pathPoint = this.getPathPointNearestToLabel(midPoint, displayX, displayY, points);
+        
+        // Draw a small highlight dot on the signal path
+        ctx.shadowColor = glow.color;
+        ctx.shadowBlur = glow.blur;
+        ctx.fillStyle = this.visualizationService.getCellStateColor(sourceState);
+        ctx.beginPath();
+        ctx.arc(pathPoint.x, pathPoint.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
     }
+  }
+
+  // Helper method to find the closest point on the path to the label
+  private getPathPointNearestToLabel(midPoint: Point, labelX: number, labelY: number, pathPoints: Point[]): Point {
+    // Default to midpoint
+    let closestPoint = midPoint;
+    let minDistance = Number.MAX_VALUE;
+    
+    // Find the closest point on the path to our label
+    for (let i = 0; i < pathPoints.length; i++) {
+      const point = pathPoints[i];
+      const distance = Math.sqrt(
+        Math.pow(point.x - labelX, 2) + 
+        Math.pow(point.y - labelY, 2)
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestPoint = point;
+      }
+    }
+    
+    return closestPoint;
+  }
+  
+  // Helper method to check if two rectangles overlap
+  private checkRectOverlap(rect1: { x: number, y: number, width: number, height: number }, 
+                          rect2: { x: number, y: number, width: number, height: number }): boolean {
+    return rect1.x < rect2.x + rect2.width &&
+           rect1.x + rect1.width > rect2.x &&
+           rect1.y < rect2.y + rect2.height &&
+           rect1.y + rect1.height > rect2.y;
   }
   
   // Helper to draw rounded rectangles
