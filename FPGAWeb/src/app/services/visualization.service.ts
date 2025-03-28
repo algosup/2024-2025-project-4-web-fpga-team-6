@@ -73,7 +73,7 @@ export class VisualizationService {
     });
   }
   
-  generateLayout(design: any): FpgaLayout {
+  public generateLayout(design: any): FpgaLayout {
     if (!design || !design.cells || !design.external_wires || !design.interconnects) {
       throw new Error('Invalid design format');
     }
@@ -127,8 +127,15 @@ export class VisualizationService {
     // Place cells in middle columns
     for (let i = 0; i < design.cells.length; i++) {
       const cell = design.cells[i];
+      
+      // Determine the cell type, handling variants like "LUT_K" vs "LUT"
+      let cellType = cell.type;
+      if (cellType.startsWith('LUT')) {
+        cellType = 'LUT'; // Normalize LUT types
+      }
+      
       // Get configuration for this cell type or use default
-      const config = COMPONENT_CONFIGS[cell.type] || {
+      const config = COMPONENT_CONFIGS[cellType] || {
         type: cell.type,
         svgPath: 'assets/generic_component.svg',
         width: 120,
@@ -137,8 +144,8 @@ export class VisualizationService {
           // Create default connection points based on connection names
           const side = index < arr.length / 2 ? 'left' : 'right';
           const y = side === 'left' 
-            ? 0.2 + (0.6 * index / (arr.length / 2)) 
-            : 0.2 + (0.6 * (index - Math.floor(arr.length / 2)) / (arr.length - Math.floor(arr.length / 2)));
+            ? 0.2 + (0.6 * index / Math.max(1, arr.length / 2)) 
+            : 0.2 + (0.6 * (index - Math.floor(arr.length / 2)) / Math.max(1, arr.length - Math.floor(arr.length / 2)));
           return {
             id: key,
             x: side === 'left' ? 0 : 1,
@@ -217,7 +224,7 @@ export class VisualizationService {
       outputs.length > 0 ? gridY + 80 : 0
     );
     
-    return {
+    const layout = {
       cells,
       externalWires,
       interconnects,
@@ -226,6 +233,11 @@ export class VisualizationService {
         height: maxY
       }
     };
+    
+    // Debug logging to help troubleshoot connection issues
+    // this.logLayoutConnectionPoints(layout);
+    
+    return layout;
   }
   
   // Get actual positions of connection points based on component config
@@ -273,12 +285,20 @@ export class VisualizationService {
     // Build a connection point lookup table
     const connectionPoints = new Map<string, {component: FpgaCell | ExternalWire, point: {x: number, y: number}}>();
     
-    // Add cell connection points
+    // Add cell connection points with normalization
     cells.forEach(cell => {
       Object.entries(cell.connections).forEach(([port, connName]) => {
+        // Normalize port names for common issues
+        const normalizedPort = this.normalizePortName(port);
+        
         // If the cell has a defined connection point for this port
-        if (cell.connectionPoints && cell.connectionPoints[port]) {
-          connectionPoints.set(connName, {
+        if (cell.connectionPoints && cell.connectionPoints[normalizedPort]) {
+          connectionPoints.set(connName as string, {
+            component: cell,
+            point: cell.connectionPoints[normalizedPort]
+          });
+        } else if (cell.connectionPoints && cell.connectionPoints[port]) {
+          connectionPoints.set(connName as string, {
             component: cell,
             point: cell.connectionPoints[port]
           });
@@ -306,7 +326,12 @@ export class VisualizationService {
     
     // Create interconnects with better routing
     for (const ic of designInterconnects) {
-      const { input, output } = ic.connections;
+      const { input, output } = ic.connections || {};
+      
+      if (!input || !output) {
+        console.warn(`Interconnect ${ic.name} has invalid connections:`, ic.connections);
+        continue;
+      }
       
       // Find source and target connection points
       const source = connectionPoints.get(input);
@@ -314,6 +339,37 @@ export class VisualizationService {
       
       if (!source || !target) {
         console.warn(`Could not find connection points for interconnect ${ic.name}`);
+        
+        // Create default connection points as fallback
+        // Find source component by name
+        const sourceWireName = input.split(".")[0]; // Assuming format like "wireName.portName"
+        const sourceComp = [...cells, ...externalWires].find(c => c.name === sourceWireName);
+        
+        // Find target component by name
+        const targetWireName = output.split(".")[0];
+        const targetComp = [...cells, ...externalWires].find(c => c.name === targetWireName);
+        
+        if (sourceComp && targetComp) {
+          // Create a direct connection between component centers
+          const points = [
+            { x: sourceComp.x + sourceComp.width/2, y: sourceComp.y + sourceComp.height/2 },
+            { x: targetComp.x + targetComp.width/2, y: targetComp.y + targetComp.height/2 }
+          ];
+          
+          result.push({
+            id: `interconnect_${ic.name}`,
+            name: ic.name,
+            sourceId: sourceComp.id,
+            sourcePort: input,
+            targetId: targetComp.id,
+            targetPort: output,
+            points,
+            delay: parseFloat(ic.propagation_delay || '0'),
+            animationProgress: 0,
+            lastSignalState: '0',
+          });
+        }
+        
         continue;
       }
       
@@ -329,12 +385,44 @@ export class VisualizationService {
         targetPort: output,
         points,
         delay: parseFloat(ic.propagation_delay || '0'),
-        animationProgress: 0, // For animation
-        lastSignalState: '0', // For signal state tracking
+        animationProgress: 0,
+        lastSignalState: '0',
       });
     }
     
     return result;
+  }
+  
+  // Add a helper method to normalize port names for common connections
+  private normalizePortName(portName: string): string {
+    // Common aliases for clock signals
+    if (portName.toLowerCase() === 'clk' || 
+        portName.toLowerCase() === 'clock' || 
+        portName.toLowerCase() === 'ck') {
+      return 'CLK';
+    }
+    
+    // Common aliases for data inputs
+    if (portName.toLowerCase() === 'd' || 
+        portName.toLowerCase() === 'data' || 
+        portName.toLowerCase() === 'in') {
+      return 'D';
+    }
+    
+    // Common aliases for outputs
+    if (portName.toLowerCase() === 'q' || 
+        portName.toLowerCase() === 'out') {
+      return 'Q';
+    }
+    
+    // Common aliases for inverted outputs
+    if (portName.toLowerCase() === 'qn' || 
+        portName.toLowerCase() === 'q_n' || 
+        portName.toLowerCase() === 'qb') {
+      return 'Qn';
+    }
+    
+    return portName;
   }
   
   // Generate a route with nice curves and minimal crossings
@@ -389,5 +477,32 @@ export class VisualizationService {
       case '0': return { color: 'rgba(77, 121, 255, 0.8)', blur: 10 };
       default: return { color: 'rgba(170, 170, 170, 0.3)', blur: 5 };
     }
+  }
+
+  // Add this method to help debug connection issues
+  public logLayoutConnectionPoints(layout: FpgaLayout): void {
+    console.group('FPGA Layout Connection Points');
+    
+    console.log('Cells:');
+    layout.cells.forEach(cell => {
+      console.group(`Cell: ${cell.name} (${cell.type})`);
+      console.log('Connections:', cell.connections);
+      console.log('Connection Points:', cell.connectionPoints);
+      console.groupEnd();
+    });
+    
+    console.log('External Wires:');
+    layout.externalWires.forEach(wire => {
+      console.group(`Wire: ${wire.name} (${wire.type})`);
+      console.log('Connection Points:', wire.connectionPoints);
+      console.groupEnd();
+    });
+    
+    console.log('Interconnects:');
+    layout.interconnects.forEach(ic => {
+      console.log(`${ic.name}: ${ic.sourcePort} → ${ic.targetPort}`);
+    });
+    
+    console.groupEnd();
   }
 }
