@@ -122,6 +122,7 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
   /** Canvas reference for rendering */
   @ViewChild('visualCanvas') visualCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('labelsOverlay') labelsOverlay!: ElementRef<HTMLDivElement>;
+  @ViewChild('canvasContainer') canvasContainer!: ElementRef<HTMLDivElement>;
   
   layout: FpgaLayout | null = null;
   canvasWidth = 800;
@@ -155,6 +156,10 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
   // Add properties for managing timing labels
   private timingLabels: HTMLElement[] = [];
   
+  // Add isFullScreen property
+  isFullScreen = false;
+  previousDimensions = { width: 0, height: 0 };
+
   constructor(
     private designService: DesignService,
     private visualizationService: VisualizationService
@@ -170,6 +175,9 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
   ngAfterViewInit(): void {
     // Initialize canvas when view is ready
     this.setupCanvas();
+    
+    // Add fullscreen change event listener
+    document.addEventListener('fullscreenchange', this.handleFullscreenChange.bind(this));
   }
   
   ngOnDestroy(): void {
@@ -179,6 +187,9 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     
     // Clean up the global event listener
     window.removeEventListener('mouseup', this.handleMouseUp.bind(this));
+    
+    // Remove fullscreen change event listener
+    document.removeEventListener('fullscreenchange', this.handleFullscreenChange.bind(this));
     
     // Clean up any timing labels
     this.clearTimingLabels();
@@ -200,6 +211,9 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     
     canvas.addEventListener('wheel', this.handleMouseWheel.bind(this));
     canvas.addEventListener('click', this.handleCanvasClick.bind(this));
+    
+    // Add window resize handler
+    window.addEventListener('resize', this.handleWindowResize.bind(this));
     
     // Initial render with empty state
     this.renderFPGA();
@@ -1416,6 +1430,98 @@ export class FpgaVisualizationComponent implements OnInit, AfterViewInit, OnDest
     } else {
       // Otherwise expand this design description
       this.expandedDesignId = designId;
+    }
+  }
+
+  /**
+   * Toggles full screen mode for the canvas container
+   */
+  toggleFullScreen(): void {
+    if (!this.canvasContainer) return;
+    
+    const container = this.canvasContainer.nativeElement;
+    
+    if (!this.isFullScreen) {
+      // Save current dimensions before going full screen
+      this.previousDimensions = {
+        width: this.canvasWidth,
+        height: this.canvasHeight
+      };
+      
+      // Request full screen
+      if (container.requestFullscreen) {
+        container.requestFullscreen();
+      }
+    } else {
+      // Exit full screen
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+  
+  /**
+   * Handle fullscreen change events from the browser
+   */
+  private handleFullscreenChange(): void {
+    // Update isFullScreen state based on document.fullscreenElement
+    this.isFullScreen = !!document.fullscreenElement;
+    
+    if (this.isFullScreen) {
+      // Resize canvas to fill the screen
+      this.resizeCanvasForFullscreen();
+    } else {
+      // Restore original dimensions
+      this.restoreCanvasFromFullscreen();
+    }
+  }
+  
+  /**
+   * Resize canvas to fill the entire screen in fullscreen mode
+   */
+  private resizeCanvasForFullscreen(): void {
+    if (!this.visualCanvas) return;
+    
+    const canvas = this.visualCanvas.nativeElement;
+    
+    // Get screen dimensions
+    this.canvasWidth = window.innerWidth;
+    this.canvasHeight = window.innerHeight;
+    
+    // Update canvas size
+    canvas.width = this.canvasWidth;
+    canvas.height = this.canvasHeight;
+    
+    // Re-render with new dimensions
+    this.renderFPGA();
+  }
+  
+  /**
+   * Restore canvas to its original dimensions when exiting fullscreen
+   */
+  private restoreCanvasFromFullscreen(): void {
+    if (!this.visualCanvas) return;
+    
+    const canvas = this.visualCanvas.nativeElement;
+    
+    // Restore previous dimensions
+    this.canvasWidth = this.previousDimensions.width || 800;
+    this.canvasHeight = this.previousDimensions.height || 600;
+    
+    // Update canvas size
+    canvas.width = this.canvasWidth;
+    canvas.height = this.canvasHeight;
+    
+    // Re-render with restored dimensions
+    this.renderFPGA();
+  }
+  
+  /**
+   * Handle window resize events, particularly important in fullscreen mode
+   */
+  private handleWindowResize(): void {
+    if (this.isFullScreen) {
+      this.resizeCanvasForFullscreen();
     }
   }
 }

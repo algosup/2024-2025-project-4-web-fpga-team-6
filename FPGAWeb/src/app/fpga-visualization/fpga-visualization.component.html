@@ -135,7 +135,25 @@
     <div class="visualization">
       <div class="fpga-view">
         <!-- Canvas for FPGA visualization -->
-        <div class="canvas-container">
+        <div class="fpga-header">
+          <h3>{{ selectedDesign?.name }}</h3>
+          <div class="fpga-status">
+            <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
+            <span class="status-text" *ngIf="isRunning">Running</span>
+            <span class="status-text" *ngIf="isPaused">Paused</span>
+            <span class="status-text" *ngIf="!isRunning && !isPaused">Ready</span>
+            <span class="speed-indicator" *ngIf="isRunning || isPaused">Speed: x{{ speed }}</span>
+            <span class="clock-indicator" *ngIf="currentExample">Clock: {{ clockState }}</span>
+            
+            <!-- Add full screen toggle button -->
+            <button class="fullscreen-toggle" (click)="toggleFullScreen()" title="Toggle full screen">
+              <span *ngIf="!isFullScreen">⛶</span>
+              <span *ngIf="isFullScreen">⮌</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="canvas-container" #canvasContainer>
           <canvas #visualCanvas class="fpga-canvas"></canvas>
           <!-- Add overlay div for timing labels -->
           <div #labelsOverlay class="canvas-overlay"></div>

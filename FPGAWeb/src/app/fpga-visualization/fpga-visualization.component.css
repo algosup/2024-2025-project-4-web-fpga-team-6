@@ -691,3 +691,60 @@ header h1 {
   --indicator-color-rgb: 30, 91, 198;
   background-color: var(--cnes-light-blue);
 }
+
+/* Styles for fullscreen toggle button */
+.fullscreen-toggle {
+  background: none;
+  border: none;
+  color: var(--cnes-blue);
+  font-size: 1.2rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.fullscreen-toggle:hover {
+  background-color: rgba(11, 61, 145, 0.1);
+}
+
+.fullscreen-toggle:focus {
+  outline: none;
+}
+
+/* Styles for when canvas container is in fullscreen mode */
+.canvas-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999;
+  background-color: white;
+  padding: 0;
+  margin: 0;
+}
+
+/* Control header for fullscreen mode */
+.fullscreen-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10000;
+  opacity: 0.2;
+  transition: opacity 0.3s;
+}
+
+.fullscreen-header:hover {
+  opacity: 1;
+}
