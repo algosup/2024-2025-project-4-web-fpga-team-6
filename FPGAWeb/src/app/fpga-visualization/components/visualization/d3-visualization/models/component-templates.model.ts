@@ -14,7 +14,7 @@ export interface ComponentTemplate {
   width: number;
   height: number;
   pins: Pin[];
-  shape: 'rectangle' | 'trapezoid' | 'rounded' | 'tag' | 'custom';
+  shape: 'rectangle' | 'trapezoid' | 'rounded' | 'tag' | 'triangle-tipped' | 'custom';
   shapeData?: any; // For custom shapes, additional parameters
 }
 
@@ -146,13 +146,14 @@ export class ComponentTemplates {
     };
   }
   
-  // External Wire/Port Template - Paper tag style with rounded corners
+  // External Wire/Port Template - Triangle-tipped rectangle
   static getExternalWireTemplate(direction: 'input' | 'output' | 'inout' = 'input', defaultName: string = 'WIRE'): ComponentTemplate {
     const width = 80;
     const height = 30;
+    const tipWidth = 15; // Width of the triangular tip
     const pins: Pin[] = [];
     
-    // For input wires, the connection point is on the right side
+    // For input wires, the connection point is on the right tip
     if (direction === 'input' || direction === 'inout') {
       pins.push({
         id: 'out',
@@ -163,7 +164,7 @@ export class ComponentTemplates {
       });
     }
     
-    // For output wires, the connection point is on the left side
+    // For output wires, the connection point is on the left tip
     if (direction === 'output' || direction === 'inout') {
       pins.push({
         id: 'in',
@@ -179,10 +180,10 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      shape: 'rounded',
+      shape: 'triangle-tipped',  // New shape type
       shapeData: {
-        radius: 10,
-        direction: direction
+        direction: direction,
+        tipWidth: tipWidth
       }
     };
   }
