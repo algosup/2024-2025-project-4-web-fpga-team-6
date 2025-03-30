@@ -398,40 +398,19 @@ export class ConnectionService implements OnDestroy {
   }
   
   private createPath(source: { x: number; y: number }, target: { x: number; y: number }): string {
-    // Determine control points for a curved path
-    const dx = target.x - source.x;
-    const dy = target.y - source.y;
-    const midX = source.x + dx / 2;
-    const midY = source.y + dy / 2;
+    // Always use orthogonal connections with right angles
+    // This ensures wires exit the component at 90 degrees
     
-    // Use different curve styles based on placement and direction
-    if (Math.abs(dx) > Math.abs(dy) * 2) {
-      // Horizontal dominant connection - S curve
-      return `M ${source.x},${source.y} 
-              C ${midX},${source.y} 
-                ${midX},${target.y} 
-                ${target.x},${target.y}`;
-    } else if (Math.abs(dy) > Math.abs(dx) * 2) {
-      // Vertical dominant connection - inverted S curve
-      return `M ${source.x},${source.y} 
-              C ${source.x},${midY} 
-                ${target.x},${midY} 
-                ${target.x},${target.y}`;
-    } else {
-      // Diagonal or balanced - use a gentler curve
-      const controlPointOffset = Math.max(Math.abs(dx), Math.abs(dy)) * 0.5;
-      
-      // Determine control point directions based on relative positions
-      const cp1x = source.x + Math.sign(dx) * controlPointOffset;
-      const cp1y = source.y;
-      const cp2x = target.x - Math.sign(dx) * controlPointOffset;
-      const cp2y = target.y;
-      
-      return `M ${source.x},${source.y} 
-              C ${cp1x},${cp1y} 
-                ${cp2x},${cp2y} 
-                ${target.x},${target.y}`;
-    }
+    // Determine the intermediate points for the orthogonal path
+    const midX = (source.x + target.x) / 2;
+    
+    // Create an orthogonal path with right angles
+    return `M ${source.x},${source.y} 
+            L ${source.x + 10 * Math.sign(target.x - source.x)},${source.y}
+            L ${midX},${source.y} 
+            L ${midX},${target.y}
+            L ${target.x - 10 * Math.sign(target.x - source.x)},${target.y}
+            L ${target.x},${target.y}`;
   }
   
   private handleComponentMoved(event: Event): void {
