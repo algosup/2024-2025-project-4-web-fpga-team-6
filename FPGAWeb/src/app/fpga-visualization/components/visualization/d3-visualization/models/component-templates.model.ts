@@ -8,25 +8,27 @@ export interface Pin {
   side?: 'left' | 'top' | 'right' | 'bottom';
 }
 
-// Update the ComponentTemplate interface to include the component name in renderShape
+// Remove the renderShape function from ComponentTemplate
 export interface ComponentTemplate {
   type: string;
   width: number;
   height: number;
   pins: Pin[];
-  renderShape: (g: d3.Selection<any, any, any, any>, fillColor: string, name?: string) => void;
+  shape: 'rectangle' | 'trapezoid' | 'rounded' | 'tag' | 'custom';
+  shapeData?: any; // For custom shapes, additional parameters
 }
 
 export class ComponentTemplates {
   
   // LUT Template - Pronounced trapezoid with wider base on left, much narrower top on right
-  static getLutTemplate(inputs: number = 4): ComponentTemplate {
-    const width = 100;
-    const height = 60;
+  static getLutTemplate(inputs: number = 1): ComponentTemplate {
+    // Base dimensions for 1-input LUT
+    const baseWidth = 80;
+    const baseHeight = 40;
     
-    // Make the right side much shorter to create a more dramatic trapezoid effect
-    const rightHeight = height * 0.4; // Only 40% of the full height
-    const topOffset = (height - rightHeight) / 2;
+    // Scale dimensions based on input count
+    const width = baseWidth + (inputs > 1 ? (inputs - 1) * 5 : 0);
+    const height = baseHeight + (inputs > 1 ? (inputs - 1) * 10 : 0);
     
     // Generate input pins based on input count
     const pins: Pin[] = [];
@@ -62,30 +64,9 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      renderShape: (g, fillColor, name = 'LUT') => {
-        // LUT is a dramatic trapezoid with wider base on left
-        const path = g.append('path')
-          .attr('d', `
-            M 0,0
-            L ${width},${topOffset}
-            L ${width},${topOffset + rightHeight}
-            L 0,${height}
-            Z
-          `)
-          .attr('fill', fillColor)
-          .attr('stroke', '#0B3D91')
-          .attr('stroke-width', 1);
-          
-        // Add LUT label with the provided name
-        g.append('text')
-          .attr('x', width * 0.4)
-          .attr('y', height / 2)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'middle')
-          .attr('fill', '#ffffff')
-          .attr('font-weight', 'bold')
-          .attr('font-size', '12px')
-          .text(name);
+      shape: 'trapezoid',
+      shapeData: {
+        rightHeight: height * 0.4, // Only 40% of the full height
       }
     };
   }
@@ -118,43 +99,11 @@ export class ComponentTemplates {
           id: 'Q',
           name: 'Q',
           type: 'output',
-          position: { x: width, y: height / 2 }, // Centered the Q output vertically
+          position: { x: width, y: height / 2 },
           side: 'right'
         }
-        // Removed the QN pin as requested
       ],
-      renderShape: (g, fillColor, name = 'DFF') => {
-        // DFF is a rectangle
-        g.append('rect')
-          .attr('width', width)
-          .attr('height', height)
-          .attr('fill', fillColor)
-          .attr('stroke', '#0B3D91')
-          .attr('stroke-width', 1)
-          .attr('rx', 5)
-          .attr('ry', 5);
-        
-        // Add DFF label with provided name
-        g.append('text')
-          .attr('x', width / 2)
-          .attr('y', height / 2)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'middle')
-          .attr('fill', '#ffffff')
-          .attr('font-weight', 'bold')
-          .attr('font-size', '12px')
-          .text(name);
-          
-        // Add clock symbol (triangle)
-        g.append('path')
-          .attr('d', `
-            M ${15},${2 * height / 3 - 7}
-            L ${15},${2 * height / 3 + 7}
-            L ${25},${2 * height / 3}
-            Z
-          `)
-          .attr('fill', '#ffffff');
-      }
+      shape: 'rectangle'
     };
   }
   
@@ -167,21 +116,21 @@ export class ComponentTemplates {
     
     if (direction === 'input' || direction === 'bidirectional') {
       pins.push({
-        id: 'in',
-        name: 'IN',
-        type: 'input',
-        position: { x: 0, y: height / 2 },
-        side: 'left'
+        id: 'out',
+        name: 'O',
+        type: 'output',
+        position: { x: width, y: height / 2 },
+        side: 'right'
       });
     }
     
     if (direction === 'output' || direction === 'bidirectional') {
       pins.push({
-        id: 'out',
-        name: 'OUT',
-        type: 'output',
-        position: { x: width, y: height / 2 },
-        side: 'right'
+        id: 'in',
+        name: 'I',
+        type: 'input',
+        position: { x: 0, y: height / 2 },
+        side: 'left'
       });
     }
     
@@ -190,32 +139,9 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      renderShape: (g, fillColor, name = `GPIO ${direction.toUpperCase()}`) => {
-        // GPIO is a tag-like shape
-        const radius = height / 4;
-        const path = g.append('path')
-          .attr('d', `
-            M ${radius},0
-            L ${width - radius},0
-            A ${radius},${radius} 0 0,1 ${width - radius},${height}
-            L ${radius},${height}
-            A ${radius},${radius} 0 0,1 ${radius},0
-            Z
-          `)
-          .attr('fill', fillColor)
-          .attr('stroke', '#0B3D91')
-          .attr('stroke-width', 1);
-        
-        // Add GPIO label
-        g.append('text')
-          .attr('x', width / 2)
-          .attr('y', height / 2)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'middle')
-          .attr('fill', '#ffffff')
-          .attr('font-weight', 'bold')
-          .attr('font-size', '12px')
-          .text(name);
+      shape: 'tag',
+      shapeData: {
+        direction: direction
       }
     };
   }
@@ -224,15 +150,13 @@ export class ComponentTemplates {
   static getExternalWireTemplate(direction: 'input' | 'output' | 'inout' = 'input', defaultName: string = 'WIRE'): ComponentTemplate {
     const width = 80;
     const height = 30;
-    const tipRadius = 10; // Radius for the rounded tip
-    
     const pins: Pin[] = [];
     
     // For input wires, the connection point is on the right side
     if (direction === 'input' || direction === 'inout') {
       pins.push({
         id: 'out',
-        name: '',
+        name: 'O',
         type: 'output',
         position: { x: width, y: height / 2 },
         side: 'right'
@@ -243,7 +167,7 @@ export class ComponentTemplates {
     if (direction === 'output' || direction === 'inout') {
       pins.push({
         id: 'in',
-        name: '',
+        name: 'I',
         type: 'input',
         position: { x: 0, y: height / 2 },
         side: 'left'
@@ -255,73 +179,78 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      renderShape: (g, fillColor, name = defaultName) => {
-        // Create paper tag shape - rounded rectangle with extra rounded tip on one side
-        const path = g.append('path')
-          .attr('d', `
-            M ${tipRadius},0
-            A ${tipRadius},${tipRadius} 0 0,0 0,${height/2}
-            A ${tipRadius},${tipRadius} 0 0,0 ${tipRadius},${height}
-            L ${width-tipRadius},${height}
-            A ${tipRadius},${tipRadius} 0 0,0 ${width},${height/2}
-            A ${tipRadius},${tipRadius} 0 0,0 ${width-tipRadius},0
-            Z
-          `)
-          .attr('fill', fillColor)
-          .attr('stroke', '#0B3D91')
-          .attr('stroke-width', 1);
-        
-        // Add wire name label with the provided name
-        g.append('text')
-          .attr('x', width / 2)
-          .attr('y', height / 2)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'middle')
-          .attr('fill', '#ffffff')
-          .attr('font-weight', 'bold')
-          .attr('font-size', '12px')
-          .text(name);
+      shape: 'rounded',
+      shapeData: {
+        radius: 10,
+        direction: direction
       }
     };
   }
   
   // Get template by component type
   static getTemplateForComponent(component: any): ComponentTemplate {
-    const type = component.type?.toLowerCase() || '';
+    const type = (component.type || '').toLowerCase();
     
     if (type.includes('lut')) {
-      // Extract input count if available, default to 4
-      const inputMatch = type.match(/(\d+)/);
-      const inputCount = inputMatch ? parseInt(inputMatch[1], 10) : 4;
+      // Extract input count from LUT type or data
+      let inputCount = 1; // Start with minimal configuration
+      
+      // Try to identify size from standard patterns
+      if (type.includes('lut_') || type.includes('lut')) {
+        // Try patterns like lut_5, lut5, or lut_k_5
+        const match = type.match(/lut(?:_k_|_)?(\d+)/);
+        if (match && match[1]) {
+          inputCount = parseInt(match[1], 10);
+        }
+      }
+      
+      // Check various data formats for input count
+      if (component.data) {
+        // Check component data for K value (for FF2 format)
+        if (component.data.K) {
+          inputCount = parseInt(component.data.K, 10);
+        }
+        // Check for inputs array/count
+        else if (Array.isArray(component.data.inputs)) {
+          inputCount = component.data.inputs.length;
+        }
+        // Check for pinCount or input_count property
+        else if (component.data.pinCount) {
+          // Subtract 1 for output pin
+          inputCount = parseInt(component.data.pinCount, 10) - 1;
+        }
+        else if (component.data.input_count) {
+          inputCount = parseInt(component.data.input_count, 10);
+        }
+      }
+      
+      // Ensure a reasonable range (1-8 inputs)
+      inputCount = Math.max(1, Math.min(8, inputCount));
+      
       return this.getLutTemplate(inputCount);
     }
     
+    // Rest of the method remains the same...
     if (type.includes('ff') || type.includes('flop') || type.includes('dff')) {
       return this.getDffTemplate();
     }
     
     if (type.includes('gpio') || type.includes('io')) {
       let direction = 'bidirectional';
-      if (type.includes('in') && !type.includes('out')) {
-        direction = 'input';
-      } else if (type.includes('out') && !type.includes('in')) {
-        direction = 'output';
-      }
+      if (type.includes('input')) direction = 'input';
+      if (type.includes('output')) direction = 'output';
       return this.getGpioTemplate(direction as any);
     }
     
-    // Check for external wires, ports, or nets
     if (type.includes('wire') || type.includes('port') || type.includes('net')) {
       let direction = 'input';
-      if (type.includes('out')) {
-        direction = 'output';
-      } else if (type.includes('inout')) {
-        direction = 'inout';
-      }
-      return this.getExternalWireTemplate(direction as any, component.name);
+      if (type.includes('input')) direction = 'input';
+      if (type.includes('output')) direction = 'output';
+      if (type.includes('inout')) direction = 'inout';
+      return this.getExternalWireTemplate(direction as any, component.name || 'WIRE');
     }
     
-    // Default to LUT template
-    return this.getLutTemplate();
+    // Default to minimal LUT template (1 input)
+    return this.getLutTemplate(1);
   }
 }

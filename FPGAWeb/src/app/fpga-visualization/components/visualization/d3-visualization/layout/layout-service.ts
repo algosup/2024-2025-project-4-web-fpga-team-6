@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import * as d3 from 'd3';
 import { ComponentData, RendererContext } from '../models/visualization.model';
 import { Pin } from '../models/component-templates.model';
+import { VisualizationConfigService, LayoutConfig } from '../config/visualization-config.service';
 
 // Create a type that satisfies d3's simulation node requirements
 interface SimulationComponentData extends ComponentData, d3.SimulationNodeDatum {
@@ -10,8 +11,9 @@ interface SimulationComponentData extends ComponentData, d3.SimulationNodeDatum 
 
 export interface LayoutOptions {
   type: 'grid' | 'force' | 'hierarchical';
-  padding: number;
-  enableDragging: boolean;
+  padding?: number;
+  enableDragging?: boolean;
+  // Additional layout-specific options can be added here
 }
 
 @Injectable({
@@ -20,11 +22,21 @@ export interface LayoutOptions {
 export class LayoutService {
   private draggedNode: any = null;
   
+  constructor(private configService: VisualizationConfigService) {}
+  
   applyLayout(
     context: RendererContext,
     nodes: d3.Selection<any, ComponentData, any, any>,
-    options: LayoutOptions = { type: 'grid', padding: 30, enableDragging: true }
+    options?: Partial<LayoutOptions>
   ): void {
+    // Merge passed options with default configuration
+    const layoutConfig = this.configService.layout;
+    const mergedOptions: LayoutOptions = {
+      type: options?.type || layoutConfig.type,
+      padding: options?.padding || layoutConfig.padding,
+      enableDragging: options?.enableDragging !== undefined ? options.enableDragging : layoutConfig.enableDragging
+    };
+    
     // Check if this looks like an FF2 schematic
     const hasFF2Structure = nodes.data().some(d => 
       d.id.includes('ext_input') || 
@@ -35,28 +47,29 @@ export class LayoutService {
     
     if (hasFF2Structure) {
       console.log("Using specialized FF2 schematic layout");
-      this.applySchematicLayout(context, nodes, options);
+      this.applySchematicLayout(context, nodes, mergedOptions);
     } else {
       // Use regular layouts
-      switch (options.type) {
+      switch (mergedOptions.type) {
         case 'force':
-          this.applyForceLayout(context, nodes, options);
+          this.applyForceLayout(context, nodes, mergedOptions);
           break;
         case 'hierarchical':
-          this.applyHierarchicalLayout(context, nodes, options);
+          this.applyHierarchicalLayout(context, nodes, mergedOptions);
           break;
         case 'grid':
         default:
-          this.applyGridLayout(context, nodes, options);
+          this.applyGridLayout(context, nodes, mergedOptions);
           break;
       }
     }
     
-    if (options.enableDragging) {
+    if (mergedOptions.enableDragging) {
       this.enableDragging(nodes);
     }
   }
   
+  // Fix the possibly undefined padding and compMargin issues
   private applyGridLayout(
     context: RendererContext,
     nodes: d3.Selection<any, ComponentData, any, any>,
@@ -90,7 +103,7 @@ export class LayoutService {
       return `translate(${x}, ${y})`;
     });
   }
-  
+
   private applyForceLayout(
     context: RendererContext,
     nodes: d3.Selection<any, ComponentData, any, any>,
@@ -115,41 +128,50 @@ export class LayoutService {
       if (!node.position) {
         node.position = { x: Math.random() * width, y: Math.random() * height };
       }
-      // Explicitly assign properties required by d3.forceSimulation
-      node.x = node.position.x;
-      node.y = node.position.y;
+      
+      // Initialize velocity if using force layout
+      if (!node.vx) node.vx = 0;
+      if (!node.vy) node.vy = 0;
     });
     
-    // Create force simulation with correct typing
-    const simulation = d3.forceSimulation<SimulationComponentData>(nodesData)
+    // Create a force simulation
+    const simulation = d3.forceSimulation(nodesData)
+      .force('link', d3.forceLink().distance(options.padding || 30))
       .force('charge', d3.forceManyBody().strength(-300))
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(config.componentSize.width / 1.5))
-      .force('x', d3.forceX(width / 2).strength(0.1))
-      .force('y', d3.forceY(height / 2).strength(0.1));
-      
-    // Run simulation for a fixed number of ticks to settle positions
-    simulation.tick(100);
+      .on('tick', ticked)
+      .on('end', ended);
     
-    nodes.attr('transform', (d: any) => {
-      // Constrain positions to prevent components from going off-screen
-      d.x = Math.max(options.padding, Math.min(width - options.padding, d.x || 0));
-      d.y = Math.max(options.padding, Math.min(height - options.padding, d.y || 0));
+    // Update node positions on each tick of the simulation
+    function ticked() {
+      // Constrain nodes to the canvas area
+      nodesData.forEach(d => {
+        // Use a default value of 0 if padding is undefined
+        const padding = options.padding || 0; 
+        d.x = Math.max(padding, Math.min(width - padding, d.x || 0));
+        d.y = Math.max(padding, Math.min(height - padding, d.y || 0));
+      });
       
-      // Make sure position is initialized
-      if (!d.position) d.position = { x: 0, y: 0 };
-      
-      // Update position for connections
-      d.position.x = d.x;
-      d.position.y = d.y;
-      
-      return `translate(${d.position.x}, ${d.position.y})`;
-    });
+      // Update the position of each node in the DOM
+      nodes.attr('transform', (d: ComponentData) => {
+        if (!d.position) d.position = { x: 0, y: 0 };
+        return `translate(${d.position.x}, ${d.position.y})`;
+      });
+    }
     
-    // Stop simulation
+    // When simulation ends
+    function ended() {
+      console.log('Force layout simulation ended');
+    }
+    
+    // Run the simulation for a fixed number of iterations
     simulation.stop();
+    for (let i = 0; i < 300; ++i) simulation.tick();
+    ended();
   }
-  
+
+  // Fix the hierarchical layout and schematic layout methods similarly with null checks
   private applyHierarchicalLayout(
     context: RendererContext,
     nodes: d3.Selection<any, ComponentData, any, any>,
@@ -165,7 +187,7 @@ export class LayoutService {
     const { config } = context;
     const width = config.width - config.margin.left - config.margin.right;
     const height = config.height - config.margin.top - config.margin.bottom;
-    const compMargin = options.padding;
+    const compMargin = options.padding || 30; // Provide default value
     
     // Group components by category
     const inputWires = nodes.data().filter(d => d.type.toLowerCase().includes('wire_input'));
@@ -256,7 +278,7 @@ export class LayoutService {
       return `translate(${d.position.x}, ${d.position.y})`;
     });
   }
-  
+
   private applySchematicLayout(
     context: RendererContext,
     nodes: d3.Selection<any, ComponentData, any, any>,
@@ -274,7 +296,7 @@ export class LayoutService {
     const height = config.height - config.margin.top - config.margin.bottom;
     const compWidth = config.componentSize.width;
     const compHeight = config.componentSize.height;
-    const padding = options.padding;
+    const padding = options.padding || 20; // Provide default value
     
     // For FF2 schematics, organize in a clear left-to-right data flow
     const inputWires = nodes.data().filter(d => d.id.includes('ext_input'));

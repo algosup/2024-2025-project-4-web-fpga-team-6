@@ -4,17 +4,18 @@ import { Design } from '../../../../services/design.service';
 import * as d3 from 'd3';
 
 // Import models and services
-import { ComponentData, VisualizationConfig, RendererContext } from './models/visualization.model';
+import { ComponentData, RendererContext } from './models/visualization.model'; // Remove VisualizationConfig
 import { DataExtractorService } from './utils/data-extractor.service';
 import { GridRendererService } from './renderers/grid-renderer.service';
-import { ComponentRendererService } from './renderers/component-renderer.service';
-import { SpecializedComponentRendererService } from './renderers/specialized-component-renderer.service';
 import { InteractionHandlerService } from './handlers/interaction-handler.service';
 import { SimulationHandlerService } from './handlers/simulation-handler.service';
 
 // Import new services
 import { LayoutService, LayoutOptions } from './layout/layout-service';
 import { ConnectionService, ConnectionData } from './connections/connection-service';
+import { UnifiedComponentRendererService } from './renderers/unified-component-renderer.service';
+import { VisualizationStyleService } from './styles/visualization-style.service';
+import { VisualizationConfigService, LayoutConfig } from './config/visualization-config.service';
 
 @Component({
   selector: 'app-d3-visualization',
@@ -23,12 +24,13 @@ import { ConnectionService, ConnectionData } from './connections/connection-serv
   providers: [
     DataExtractorService,
     GridRendererService,
-    ComponentRendererService,
-    SpecializedComponentRendererService,
+    UnifiedComponentRendererService, // Replace the two services with the unified one
     InteractionHandlerService,
     SimulationHandlerService,
     LayoutService,
-    ConnectionService
+    ConnectionService,
+    VisualizationStyleService,
+    VisualizationConfigService
   ],
   templateUrl: './d3-visualization.component.html',
   styleUrls: ['./d3-visualization.component.css']
@@ -37,6 +39,7 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
   @Input() design: Design | null = null;
   @Input() isRunning = false;
   @Input() layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
+  @Input() darkMode: boolean = false;
   
   @ViewChild('svgContainer', { static: true }) private svgContainer!: ElementRef;
   
@@ -45,25 +48,16 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
   private connections: ConnectionData[] = [];
   private parsedData: any = null;
   
-  private config: VisualizationConfig = {
-    width: 800,
-    height: 600,
-    margin: { top: 20, right: 20, bottom: 30, left: 50 },
-    componentSize: {
-      width: 120,
-      height: 60,
-      margin: 30
-    }
-  };
-
   constructor(
     private dataExtractor: DataExtractorService,
     private gridRenderer: GridRendererService,
-    private componentRenderer: ComponentRendererService,
+    private componentRenderer: UnifiedComponentRendererService, // Update the type
     private interactionHandler: InteractionHandlerService,
     private simulationHandler: SimulationHandlerService,
     private layoutService: LayoutService,
-    private connectionService: ConnectionService
+    private connectionService: ConnectionService,
+    private styleService: VisualizationStyleService,
+    private configService: VisualizationConfigService // Add config service
   ) {}
 
   ngOnInit() {
@@ -83,7 +77,15 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
     }
     
     if (changes['layoutType'] && this.svg && this.components.length > 0) {
+      // Update layout config
+      this.configService.updateLayoutConfig({ type: this.layoutType });
       this.applyCurrentLayout();
+    }
+
+    if (changes['darkMode'] && this.svg) {
+      // Update dark mode in config service
+      this.configService.updateStyleConfig({ darkMode: this.darkMode });
+      this.updateVisualization(); // Re-render with new style
     }
   }
 
@@ -96,28 +98,56 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
     const containerHeight = this.svgContainer.nativeElement.clientHeight;
     
     // Update config with container dimensions
-    this.config.width = Math.max(containerWidth, 800);
-    this.config.height = Math.max(containerHeight, 600);
+    const canvasConfig = this.configService.canvas;
+    canvasConfig.width = Math.max(containerWidth, 800);
+    canvasConfig.height = Math.max(containerHeight, 600);
+    this.configService.updateCanvasConfig(canvasConfig);
 
     // Create SVG element with full container width/height
     const svgSelection = d3.select(this.svgContainer.nativeElement)
       .append('svg')
       .attr('width', '100%')
       .attr('height', '100%')
-      .attr('viewBox', `0 0 ${this.config.width} ${this.config.height}`)
+      .attr('viewBox', `0 0 ${canvasConfig.width} ${canvasConfig.height}`)
       .attr('preserveAspectRatio', 'xMidYMid meet');
       
     this.svg = svgSelection.append('g')
-      .attr('transform', `translate(${this.config.margin.left},${this.config.margin.top})`);
+      .attr('transform', `translate(${canvasConfig.margin.left},${canvasConfig.margin.top})`);
       
     // Create renderer context
     const context: RendererContext = {
       svg: this.svg,
-      config: this.config
+      config: this.configService.canvas // Use config from service
     };
       
-    // Add background grid
-    this.gridRenderer.renderGrid(context);
+    // Add background grid if enabled
+    if (canvasConfig.showGrid) {
+      this.gridRenderer.renderGrid(context);
+    }
+    
+    // Setup zoom behavior if enabled
+    if (this.configService.interaction.zoomEnabled) {
+      this.setupZoom(svgSelection);
+    }
+  }
+  
+  // Add zoom functionality
+  private setupZoom(svg: d3.Selection<SVGSVGElement, unknown, null, undefined>) {
+    const zoomGroup = this.svg;
+    const interactionConfig = this.configService.interaction;
+    
+    // Create zoom behavior
+    const zoom = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent(interactionConfig.zoomExtent)
+      .on('zoom', (event: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+        zoomGroup?.attr('transform', event.transform.toString());
+      });
+    
+    // Apply zoom behavior
+    svg.call(zoom);
+    
+    // Add zoom controls if needed
+    // (This could be implemented as separate buttons)
   }
 
   private updateVisualization() {
@@ -133,7 +163,7 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
       
       // Clear previous visualization
       this.svg.selectAll('.component').remove();
-      this.svg.selectAll('.connections').remove();
+      this.svg.selectAll('.connections').remove(); // Make sure old connections are removed
       
       // Extract components from parsed data
       this.components = this.dataExtractor.extractComponents(this.parsedData);
@@ -141,7 +171,7 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
       // Create renderer context
       const context: RendererContext = {
         svg: this.svg,
-        config: this.config
+        config: this.configService.canvas
       };
       
       // Render components
@@ -150,12 +180,21 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
       // Apply the layout
       this.applyCurrentLayout(componentNodes);
       
-      // Extract and render connections
+      // Extract and render connections AFTER layout is applied
       this.connections = this.connectionService.extractConnections(this.parsedData, this.components);
-      this.connectionService.renderConnections(context, this.components, this.connections);
       
-      // Setup interactions
-      this.interactionHandler.setupInteractions(componentNodes);
+      // Debug logging
+      console.log(`Rendering ${this.connections.length} connections`);
+      
+      if (this.connections.length > 0) {
+        this.connectionService.renderConnections(context, this.components, this.connections);
+      }
+      
+      // Setup interactions based on config
+      const interactionConfig = this.configService.interaction;
+      if (interactionConfig.draggableComponents && interactionConfig.selectableComponents) {
+        this.interactionHandler.setupInteractions(componentNodes);
+      }
       
       // Update simulation state if running
       this.handleSimulationStateChange();
@@ -166,20 +205,22 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
   }
   
   private applyCurrentLayout(nodes?: d3.Selection<any, ComponentData, any, any>) {
-    if (!this.svg || !nodes) return;
+    if (!this.svg || !this.components.length) return;
     
     const context: RendererContext = {
       svg: this.svg,
-      config: this.config
+      config: this.configService.canvas
     };
     
-    const layoutOptions: LayoutOptions = {
-      type: this.layoutType,
-      padding: 30,
-      enableDragging: true
-    };
+    // Get layout options from config service
+    const layoutConfig = this.configService.layout;
     
-    this.layoutService.applyLayout(context, nodes, layoutOptions);
+    this.layoutService.applyLayout(context, nodes || this.svg.selectAll('.component'), {
+      type: layoutConfig.type,
+      padding: layoutConfig.padding,
+      enableDragging: layoutConfig.enableDragging,
+      // Additional layout-specific options can be passed here
+    });
     
     // Update connections after layout change
     if (this.connections.length > 0) {
