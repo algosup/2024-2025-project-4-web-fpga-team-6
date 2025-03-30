@@ -61,84 +61,238 @@ export class ConnectionService implements OnDestroy {
   
   extractConnections(designData: any, components: ComponentData[]): ConnectionData[] {
     const connections: ConnectionData[] = [];
+    let missingConnections = 0;
     
-    // Check if we have connections in the design data
-    if (designData && designData.connections) {
-      designData.connections.forEach((conn: any, index: number) => {
-        // Find source and target components
-        const sourceComponent = components.find(c => c.id === conn.source.component);
-        const targetComponent = components.find(c => c.id === conn.target.component);
+    // Special handling for this JSON format with interconnects
+    if (designData && designData.interconnects) {
+      console.log(`Processing ${designData.interconnects.length} interconnects from JSON`);
+      
+      for (const interconnect of designData.interconnects) {
+        // Find the actual components for this connection
+        const sourceId = interconnect.connections.input;
+        const targetId = interconnect.connections.output;
         
-        if (sourceComponent && targetComponent) {
-          // Get templates for the components
-          const sourceTemplate = ComponentTemplates.getTemplateForComponent(sourceComponent);
-          const targetTemplate = ComponentTemplates.getTemplateForComponent(targetComponent);
-          
-          // Find matching pins
-          const sourcePin = sourceTemplate.pins.find(p => p.id === conn.source.pin);
-          const targetPin = targetTemplate.pins.find(p => p.id === conn.target.pin);
-          
-          if (sourcePin && targetPin) {
-            connections.push({
-              id: `conn-${index}`,
-              source: {
-                component: sourceComponent,
-                pin: sourcePin
-              },
-              target: {
-                component: targetComponent,
-                pin: targetPin
-              },
-              type: conn.type || 'data'
-            });
-          }
+        console.log(`Mapping interconnect: ${interconnect.name} (${sourceId} → ${targetId})`);
+        
+        // Look for the actual components and pins
+        const source = this.findComponentAndPin(sourceId, components);
+        const target = this.findComponentAndPin(targetId, components);
+        
+        if (source && target) {
+          connections.push({
+            id: interconnect.name,
+            source: source,
+            target: target,
+            type: this.determineConnectionType(sourceId, targetId)
+          });
+          console.log(`✓ Created connection: ${sourceId} → ${targetId}`);
+        } else {
+          missingConnections++;
+          console.warn(`✗ Failed to create connection: ${sourceId} → ${targetId}`);
+          if (!source) console.warn(`  - Could not find source: ${sourceId}`);
+          if (!target) console.warn(`  - Could not find target: ${targetId}`);
         }
-      });
-    } else {
-      // If no connections data, create some example connections
-      // In a real app, you'd extract this from the actual data structure
+      }
+      
+      console.log(`Created ${connections.length} connections, ${missingConnections} failed`);
+    }
+    
+    // If no connections found via interconnects, try original approach
+    if (connections.length === 0 && designData.connections) {
+      // Original connection extraction...
+    }
+    
+    // If still no connections, create example connections
+    if (connections.length === 0) {
       this.createExampleConnections(components, connections);
     }
     
     return connections;
   }
   
+  // Helper to find component and pin from a connection ID
+  private findComponentAndPin(connectionId: string, components: ComponentData[]): 
+      {component: ComponentData, pin: Pin} | null {
+    
+    // CASE 1: External wire handling (e.g., ext_input_D)
+    const externalWire = components.find(c => 
+      c.id === connectionId && c.type.toLowerCase().includes('wire'));
+    
+    if (externalWire) {
+      const template = ComponentTemplates.getTemplateForComponent(externalWire);
+      // For input wires, use their output pin; for output wires, use their input pin
+      const pin = externalWire.type.toLowerCase().includes('input') ?
+        template.pins.find(p => p.type === 'output') :
+        template.pins.find(p => p.type === 'input');
+        
+      if (pin) return { component: externalWire, pin };
+      return null;
+    }
+    
+    // CASE 2: Cell endpoint handling (e.g., dff_1_D, lut_k_2_in_0)
+    // First check if the connection point belongs to a DFF
+    if (connectionId.includes('dff_')) {
+      // Extract the DFF component name (e.g., "dff_1" from "dff_1_D")
+      const dffName = connectionId.match(/(dff_\d+)/)?.[1];
+      const pinName = connectionId.replace(`${dffName}_`, '');
+      
+      if (dffName) {
+        const dff = components.find(c => c.id === dffName);
+        if (dff) {
+          const template = ComponentTemplates.getTemplateForComponent(dff);
+          // Map pin names: D→input, Q→output, clock→clock
+          let pinId: string;
+          switch (pinName.toLowerCase()) {
+            case 'd': pinId = 'D'; break;
+            case 'q': pinId = 'Q'; break;
+            case 'clock': pinId = 'CLK'; break;
+            default: pinId = pinName;
+          }
+          const pin = template.pins.find(p => p.id === pinId);
+          if (pin) return { component: dff, pin };
+        }
+      }
+    }
+    
+    // CASE 3: LUT endpoint handling (e.g., lut_k_1_out, lut_k_2_in_0)
+    if (connectionId.includes('lut_k_')) {
+      // Extract the LUT component name (e.g., "lut_k_1" from "lut_k_1_out")
+      const lutName = connectionId.match(/(lut_k_\d+)/)?.[1];
+      const pinPart = connectionId.replace(`${lutName}_`, '');
+      
+      if (lutName) {
+        const lut = components.find(c => c.id === lutName);
+        if (lut) {
+          const template = ComponentTemplates.getTemplateForComponent(lut);
+          // Map pin names: in_0..in_N→input pins, out→output pin
+          let pin: Pin | undefined;
+          if (pinPart === 'out') {
+            pin = template.pins.find(p => p.type === 'output');
+          } else if (pinPart.startsWith('in_')) {
+            // Find the corresponding input pin by index
+            const inputIndex = parseInt(pinPart.replace('in_', ''), 10);
+            // Get all input pins and select the one at the correct index
+            const inputPins = template.pins.filter(p => p.type === 'input');
+            pin = inputPins[inputIndex];
+          }
+          if (pin) return { component: lut, pin };
+        }
+      }
+    }
+    
+    // CASE 4: Fall back to general component_pin pattern
+    const parts = connectionId.split('_');
+    
+    if (parts.length >= 2) {
+      const pinName = parts[parts.length - 1];
+      const componentId = parts.slice(0, -1).join('_');
+      
+      const component = components.find(c => c.id === componentId);
+      if (component) {
+        const template = ComponentTemplates.getTemplateForComponent(component);
+        const pin = template.pins.find(p => p.id === pinName || p.name === pinName);
+        if (pin) return { component, pin };
+      }
+    }
+    
+    console.warn(`Could not find component and pin for connection ID: ${connectionId}`);
+    return null;
+  }
+  
+  // Determine connection type based on names
+  private determineConnectionType(sourceId: string, targetId: string): string {
+    // Check if this is a clock connection
+    if (sourceId.toLowerCase().includes('clk') || 
+        sourceId.toLowerCase().includes('clock') ||
+        targetId.toLowerCase().includes('clock')) {
+      return 'clock';
+    }
+    
+    // Check if this is a reset connection
+    if (sourceId.toLowerCase().includes('reset') ||
+        sourceId.toLowerCase().includes('async_reset') ||
+        targetId.toLowerCase().includes('reset')) {
+      return 'control';
+    }
+    
+    // Regular data connection
+    return 'data';
+  }
+  
   private createExampleConnections(components: ComponentData[], connections: ConnectionData[]): void {
-    // Find LUTs and DFFs for example connections
+    // Find LUTs, DFFs, GPIOs, and external wires
     const luts = components.filter(c => c.type.toLowerCase().includes('lut'));
     const dffs = components.filter(c => c.type.toLowerCase().includes('dff') || c.type.toLowerCase().includes('ff'));
     const gpios = components.filter(c => c.type.toLowerCase().includes('gpio'));
+    const wires = components.filter(c => c.type.toLowerCase().includes('wire'));
     
-    // Connect some LUTs to DFFs
-    luts.forEach((lut, i) => {
-      const dff = dffs[i % dffs.length];
-      if (dff) {
+    // Connect input wires to LUTs
+    const inputWires = wires.filter(w => w.type.toLowerCase().includes('input'));
+    inputWires.forEach((wire, i) => {
+      const lut = luts[i % luts.length];
+      if (lut) {
+        const wireTemplate = ComponentTemplates.getTemplateForComponent(wire);
         const lutTemplate = ComponentTemplates.getTemplateForComponent(lut);
-        const dffTemplate = ComponentTemplates.getTemplateForComponent(dff);
         
-        // Find output pin from LUT
-        const outputPin = lutTemplate.pins.find(p => p.type === 'output');
-        // Find input pin on DFF (D)
-        const inputPin = dffTemplate.pins.find(p => p.id === 'D');
+        // Get output from wire and first input of LUT
+        const wireOut = wireTemplate.pins.find(p => p.type === 'output');
+        const lutIn = lutTemplate.pins.find(p => p.type === 'input');
         
-        if (outputPin && inputPin) {
+        if (wireOut && lutIn) {
           connections.push({
-            id: `conn-lut-dff-${i}`,
-            source: {
-              component: lut,
-              pin: outputPin
-            },
-            target: {
-              component: dff,
-              pin: inputPin
-            },
+            id: `conn-wire-lut-${i}`,
+            source: { component: wire, pin: wireOut },
+            target: { component: lut, pin: lutIn },
             type: 'data'
           });
         }
       }
     });
     
-    // Connect some DFFs to GPIOs
+    // Connect some LUTs to DFFs (as you already have)
+    luts.forEach((lut, i) => {
+      const dff = dffs[i % dffs.length];
+      if (dff) {
+        const lutTemplate = ComponentTemplates.getTemplateForComponent(lut);
+        const dffTemplate = ComponentTemplates.getTemplateForComponent(dff);
+        
+        const outputPin = lutTemplate.pins.find(p => p.type === 'output');
+        const inputPin = dffTemplate.pins.find(p => p.id === 'D');
+        
+        if (outputPin && inputPin) {
+          connections.push({
+            id: `conn-lut-dff-${i}`,
+            source: { component: lut, pin: outputPin },
+            target: { component: dff, pin: inputPin },
+            type: 'data'
+          });
+        }
+      }
+    });
+    
+    // Connect DFFs to output wires
+    const outputWires = wires.filter(w => w.type.toLowerCase().includes('output'));
+    dffs.forEach((dff, i) => {
+      const wire = outputWires[i % outputWires.length];
+      if (wire) {
+        const dffTemplate = ComponentTemplates.getTemplateForComponent(dff);
+        const wireTemplate = ComponentTemplates.getTemplateForComponent(wire);
+        
+        const dffOut = dffTemplate.pins.find(p => p.id === 'Q');
+        const wireIn = wireTemplate.pins.find(p => p.type === 'input');
+        
+        if (dffOut && wireIn) {
+          connections.push({
+            id: `conn-dff-wire-${i}`,
+            source: { component: dff, pin: dffOut },
+            target: { component: wire, pin: wireIn },
+            type: 'data'
+          });
+        }
+      }
+    });
+    
+    // Your existing connections (DFFs to GPIOs)
     dffs.forEach((dff, i) => {
       const gpio = gpios[i % gpios.length];
       if (gpio) {
@@ -248,5 +402,64 @@ export class ConnectionService implements OnDestroy {
     // Cast to CustomEvent to access detail property
     const customEvent = event as CustomEvent<{component: ComponentData}>;
     console.log('Component moved, connections need to be redrawn:', customEvent.detail.component);
+  }
+
+  // Add a method to extract cell internal connections
+  private extractCellConnections(components: ComponentData[]): ConnectionData[] {
+    const connections: ConnectionData[] = [];
+    const signalMap = new Map<string, {component: ComponentData, pin: Pin}>();
+    
+    // First pass: map all connection points to components and pins
+    components.forEach(component => {
+      if (component.data.connections) {
+        const template = ComponentTemplates.getTemplateForComponent(component);
+        
+        for (const [pinId, signalName] of Object.entries(component.data.connections)) {
+          // Find the matching template pin
+          const pin = template.pins.find(p => p.id === pinId);
+          if (pin && typeof signalName === 'string') {
+            signalMap.set(signalName, {component, pin});
+          }
+        }
+      }
+    });
+    
+    // Second pass: create connections
+    components.forEach(component => {
+      if (component.data.connections) {
+        const template = ComponentTemplates.getTemplateForComponent(component);
+        
+        for (const [pinId, signalName] of Object.entries(component.data.connections)) {
+          if (typeof signalName !== 'string') continue;
+          
+          // Find the matching template pin
+          const pin = template.pins.find(p => p.id === pinId);
+          
+          // Skip if pin not found
+          if (!pin) continue;
+          
+          // Look through all other components to find connections to this signal
+          signalMap.forEach((endpoint, sigName) => {
+            if (sigName === signalName && !(endpoint.component === component && endpoint.pin === pin)) {
+              // Determine direction based on pin types
+              const isSource = pin.type === 'output';
+              const isTarget = endpoint.pin.type === 'input';
+              
+              if (isSource && isTarget) {
+                connections.push({
+                  id: `conn-${component.id}-${pinId}-to-${endpoint.component.id}-${endpoint.pin.id}`,
+                  source: {component, pin},
+                  target: endpoint,
+                  type: this.determineConnectionType(pinId, endpoint.pin.id)
+                });
+              }
+              // If both are inputs or both are outputs, we skip this connection
+            }
+          });
+        }
+      }
+    });
+    
+    return connections;
   }
 }

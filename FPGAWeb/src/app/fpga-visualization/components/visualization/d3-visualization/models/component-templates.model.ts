@@ -220,6 +220,71 @@ export class ComponentTemplates {
     };
   }
   
+  // External Wire/Port Template - Paper tag style with rounded corners
+  static getExternalWireTemplate(direction: 'input' | 'output' | 'inout' = 'input', name: string = 'WIRE'): ComponentTemplate {
+    const width = 80;
+    const height = 30;
+    const tipRadius = 10; // Radius for the rounded tip
+    
+    const pins: Pin[] = [];
+    
+    // For input wires, the connection point is on the right side
+    if (direction === 'input' || direction === 'inout') {
+      pins.push({
+        id: 'out',
+        name: '',
+        type: 'output',
+        position: { x: width, y: height / 2 },
+        side: 'right'
+      });
+    }
+    
+    // For output wires, the connection point is on the left side
+    if (direction === 'output' || direction === 'inout') {
+      pins.push({
+        id: 'in',
+        name: '',
+        type: 'input',
+        position: { x: 0, y: height / 2 },
+        side: 'left'
+      });
+    }
+    
+    return {
+      type: 'WIRE',
+      width,
+      height,
+      pins,
+      renderShape: (g, fillColor) => {
+        // Create paper tag shape - rounded rectangle with extra rounded tip on one side
+        const path = g.append('path')
+          .attr('d', `
+            M ${tipRadius},0
+            A ${tipRadius},${tipRadius} 0 0,0 0,${height/2}
+            A ${tipRadius},${tipRadius} 0 0,0 ${tipRadius},${height}
+            L ${width-tipRadius},${height}
+            A ${tipRadius},${tipRadius} 0 0,0 ${width},${height/2}
+            A ${tipRadius},${tipRadius} 0 0,0 ${width-tipRadius},0
+            Z
+          `)
+          .attr('fill', fillColor)
+          .attr('stroke', '#0B3D91')
+          .attr('stroke-width', 1);
+        
+        // Add wire name label
+        g.append('text')
+          .attr('x', width / 2)
+          .attr('y', height / 2)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', '#ffffff')
+          .attr('font-weight', 'bold')
+          .attr('font-size', '12px')
+          .text(name);
+      }
+    };
+  }
+  
   // Get template by component type
   static getTemplateForComponent(component: any): ComponentTemplate {
     const type = component.type?.toLowerCase() || '';
@@ -243,6 +308,17 @@ export class ComponentTemplates {
         direction = 'output';
       }
       return this.getGpioTemplate(direction as any);
+    }
+    
+    // Check for external wires, ports, or nets
+    if (type.includes('wire') || type.includes('port') || type.includes('net')) {
+      let direction = 'input';
+      if (type.includes('out')) {
+        direction = 'output';
+      } else if (type.includes('inout')) {
+        direction = 'inout';
+      }
+      return this.getExternalWireTemplate(direction as any, component.name);
     }
     
     // Default to LUT template
