@@ -325,32 +325,30 @@ export class LayoutService {
   }
   
   private enableDragging(nodes: d3.Selection<any, ComponentData, any, any>): void {
-    // Track the original component being dragged
-    let draggedComponentId: string | null = null;
+    // Store a reference to the currently dragged element for reliable selection
+    let draggedElement: Element | null = null;
     
     const drag = d3.drag<any, ComponentData>()
-      .on('start', (event, d) => {
-        // Store the ID of the component we started dragging
-        draggedComponentId = d.id;
+      .on('start', function(event, d) {
+        // Store the actual SVG element being dragged
+        draggedElement = this;
         
-        // Stop propagation to prevent other elements from receiving the event
-        if (event.sourceEvent) {
-          event.sourceEvent.stopPropagation();
-        }
+        // Make this element appear on top of others
+        d3.select(this).raise();
+        
+        // Prevent event from propagating to parent elements
+        event.sourceEvent.stopPropagation();
         
         // Initialize position if not set
         if (!d.position) d.position = { x: 0, y: 0 };
         
-        // Add a class to indicate active dragging (for CSS)
-        d3.select(event.sourceEvent.target.closest('.component'))
-          .classed('dragging', true);
-        
-        // Add a class to the document body to indicate dragging is happening
+        // Mark as dragging for CSS
+        d3.select(this).classed('dragging', true);
         document.body.classList.add('dragging-active');
       })
-      .on('drag', (event, d) => {
-        // Only proceed if this is the component we started dragging
-        if (d.id !== draggedComponentId) return;
+      .on('drag', function(event, d) {
+        // Make sure we're only moving the component that started the drag
+        if (this !== draggedElement) return;
         
         // Make sure position is initialized
         if (!d.position) d.position = { x: 0, y: 0 };
@@ -359,35 +357,50 @@ export class LayoutService {
         d.position.x += event.dx;
         d.position.y += event.dy;
         
-        // Update transform - explicitly use the component ID to ensure we're moving the right element
-        d3.select(`#component-${d.id}`)
-          .attr('transform', `translate(${d.position.x}, ${d.position.y})`);
-          
-        // Notify that connections need to be redrawn
+        // Move the actual SVG element
+        d3.select(this).attr('transform', `translate(${d.position.x}, ${d.position.y})`);
+        
+        // Notify connection service to update connections
         const customEvent = new CustomEvent('component-moved', {
           detail: { component: d }
         });
         document.dispatchEvent(customEvent);
       })
-      .on('end', (event, d) => {
-        // Reset tracking variables
-        draggedComponentId = null;
+      .on('end', function(event, d) {
+        // Clear the dragged element reference
+        draggedElement = null;
         
-        // Remove the dragging class
-        d3.select(event.sourceEvent.target.closest('.component'))
-          .classed('dragging', false);
-        
-        // Remove the dragging class from the body
+        // Remove dragging classes
+        d3.select(this).classed('dragging', false);
         document.body.classList.remove('dragging-active');
       });
-      
+
+    // Apply drag behavior to all nodes
     nodes.call(drag);
     
-    // Add CSS to prevent pointer events on internal elements during drag
-    d3.select('head').append('style').html(`
-      .component.dragging * {
-        pointer-events: none !important;
-      }
-    `);
+    // Add CSS for proper dragging behavior if not already added
+    if (!document.getElementById('drag-style')) {
+      const styleElem = document.createElement('style');
+      styleElem.id = 'drag-style';
+      styleElem.textContent = `
+        .component.dragging {
+          z-index: 1000;
+          cursor: grabbing !important;
+        }
+        
+        .component {
+          cursor: grab;
+        }
+        
+        body.dragging-active .component:not(.dragging) {
+          pointer-events: none;
+        }
+        
+        .connections {
+          pointer-events: none;
+        }
+      `;
+      document.head.appendChild(styleElem);
+    }
   }
 }
