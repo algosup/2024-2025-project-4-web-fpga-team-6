@@ -1,6 +1,4 @@
-import { Injectable } from '@angular/core';
 import * as d3 from 'd3';
-import { FPGATheme, ComponentShapes } from '../../theme/fpga-theme';
 
 export interface Pin {
   id: string;
@@ -10,6 +8,7 @@ export interface Pin {
   side?: 'left' | 'top' | 'right' | 'bottom';
 }
 
+// Update the ComponentTemplate interface to include the component name in renderShape
 export interface ComponentTemplate {
   type: string;
   width: number;
@@ -19,126 +18,15 @@ export interface ComponentTemplate {
 }
 
 export class ComponentTemplates {
-  /**
-   * Get template based on component type
-   * Returns the appropriate rendering template for the given component
-   */
-  static getTemplateForComponent(component: any): ComponentTemplate {
-    // Extract the component type from either the type field or the id
-    const type = (component.type || component.id || '').toLowerCase();
-    
-    // Determine the appropriate template based on the component type
-    if (type.includes('dff') || type.includes('ff') || type.includes('flop')) {
-      return this.getDffTemplate();
-    } else if (type.includes('lut')) {
-      // Extract input count if available, default to 4
-      const inputMatch = type.match(/(\d+)/);
-      const inputCount = inputMatch ? parseInt(inputMatch[1], 10) : 4;
-      return this.getLutTemplate(inputCount);
-    } else if (type.includes('gpio') || type.includes('io')) {
-      // Determine the GPIO direction
-      if (type.includes('in') && !type.includes('out')) {
-        return this.getGpioTemplate('input');
-      } else if (type.includes('out') && !type.includes('in')) {
-        return this.getGpioTemplate('output');
-      } else {
-        return this.getGpioTemplate('bidirectional');
-      }
-    } else if (type.includes('wire') || type.includes('port') || type.includes('net') || type.includes('ext_')) {
-      // Determine if it's an input or output wire
-      if (type.includes('in') && !type.includes('out')) {
-        return this.getExternalWireTemplate('input', component.name || component.id || 'INPUT');
-      } else if (type.includes('out') && !type.includes('in')) {
-        return this.getExternalWireTemplate('output', component.name || component.id || 'OUTPUT');
-      } else if (type.includes('inout')) {
-        return this.getExternalWireTemplate('inout', component.name || component.id || 'IO');
-      } else {
-        // Default to input wire if direction isn't clear
-        return this.getExternalWireTemplate('input', component.name || component.id || 'WIRE');
-      }
-    }
-    
-    // Default to LUT template if no match is found
-    return this.getLutTemplate();
-  }
-
-  /**
-   * DFF Template - D Flip-Flop
-   * Rectangle with a clock signal indicator
-   */
-  static getDffTemplate(): ComponentTemplate {
-    const theme = FPGATheme;
-    const width = theme.dimensions.dff.width;
-    const height = theme.dimensions.dff.height;
-    const cornerRadius = theme.dimensions.dff.cornerRadius;
-    
-    return {
-      type: 'DFF',
-      width,
-      height,
-      pins: [
-        {
-          id: 'D',
-          name: 'D',
-          type: 'input',
-          position: { x: 0, y: height / 3 },
-          side: 'left'
-        },
-        {
-          id: 'CLK',
-          name: 'CLK',
-          type: 'clock',
-          position: { x: 0, y: 2 * height / 3 },
-          side: 'left'
-        },
-        {
-          id: 'Q',
-          name: 'Q',
-          type: 'output',
-          position: { x: width, y: height / 2 },
-          side: 'right'
-        }
-      ],
-      renderShape: (g, fillColor, name = 'DFF') => {
-        // DFF is a rectangle with rounded corners
-        g.append('path')
-          .attr('d', ComponentShapes.dff.path(width, height, cornerRadius))
-          .attr('fill', fillColor)
-          .attr('stroke', theme.colors.primary)
-          .attr('stroke-width', 1);
-        
-        // Add DFF label with provided name
-        g.append('text')
-          .attr('x', width / 2)
-          .attr('y', height / 2)
-          .attr('text-anchor', 'middle')
-          .attr('dominant-baseline', 'middle')
-          .attr('fill', theme.colors.text.light)
-          .attr('font-weight', 'bold')
-          .attr('font-size', `${theme.dimensions.dff.textSize}px`)
-          .text(name);
-          
-        // Add clock symbol (triangle)
-        const clockX = theme.dimensions.dff.clockSymbol.offsetX;
-        const clockY = 2 * height / 3;
-        const clockSize = theme.dimensions.dff.clockSymbol.size;
-        
-        g.append('path')
-          .attr('d', ComponentShapes.dff.clockSymbol(clockX, clockY, clockSize))
-          .attr('fill', theme.colors.text.light);
-      }
-    };
-  }
-
-  /**
-   * LUT Template - Look-Up Table
-   * Trapezoid with wider base on left, narrower top on right
-   */
+  
+  // LUT Template - Pronounced trapezoid with wider base on left, much narrower top on right
   static getLutTemplate(inputs: number = 4): ComponentTemplate {
-    const theme = FPGATheme;
-    const width = theme.dimensions.lut.width;
-    const height = theme.dimensions.lut.height;
-    const rightHeightRatio = theme.dimensions.lut.rightHeightRatio;
+    const width = 100;
+    const height = 60;
+    
+    // Make the right side much shorter to create a more dramatic trapezoid effect
+    const rightHeight = height * 0.4; // Only 40% of the full height
+    const topOffset = (height - rightHeight) / 2;
     
     // Generate input pins based on input count
     const pins: Pin[] = [];
@@ -175,36 +63,105 @@ export class ComponentTemplates {
       height,
       pins,
       renderShape: (g, fillColor, name = 'LUT') => {
-        // Draw LUT as a trapezoid with the path from our theme
-        g.append('path')
-          .attr('d', ComponentShapes.lut.path(width, height, rightHeightRatio))
+        // LUT is a dramatic trapezoid with wider base on left
+        const path = g.append('path')
+          .attr('d', `
+            M 0,0
+            L ${width},${topOffset}
+            L ${width},${topOffset + rightHeight}
+            L 0,${height}
+            Z
+          `)
           .attr('fill', fillColor)
-          .attr('stroke', theme.colors.primary)
+          .attr('stroke', '#0B3D91')
           .attr('stroke-width', 1);
           
         // Add LUT label with the provided name
         g.append('text')
-          .attr('x', width * 0.4) // Position text slightly left of center
+          .attr('x', width * 0.4)
           .attr('y', height / 2)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
-          .attr('fill', theme.colors.text.light)
+          .attr('fill', '#ffffff')
           .attr('font-weight', 'bold')
-          .attr('font-size', `${theme.dimensions.lut.textSize}px`)
+          .attr('font-size', '12px')
           .text(name);
       }
     };
   }
   
-  /**
-   * GPIO Template - General Purpose I/O
-   * Tag-like shape for input/output pins
-   */
+  // DFF Template - Rectangular with clock, D input, and Q output
+  static getDffTemplate(): ComponentTemplate {
+    const width = 80;
+    const height = 60;
+    
+    return {
+      type: 'DFF',
+      width,
+      height,
+      pins: [
+        {
+          id: 'D',
+          name: 'D',
+          type: 'input',
+          position: { x: 0, y: height / 3 },
+          side: 'left'
+        },
+        {
+          id: 'CLK',
+          name: 'CLK',
+          type: 'clock',
+          position: { x: 0, y: 2 * height / 3 },
+          side: 'left'
+        },
+        {
+          id: 'Q',
+          name: 'Q',
+          type: 'output',
+          position: { x: width, y: height / 2 }, // Centered the Q output vertically
+          side: 'right'
+        }
+        // Removed the QN pin as requested
+      ],
+      renderShape: (g, fillColor, name = 'DFF') => {
+        // DFF is a rectangle
+        g.append('rect')
+          .attr('width', width)
+          .attr('height', height)
+          .attr('fill', fillColor)
+          .attr('stroke', '#0B3D91')
+          .attr('stroke-width', 1)
+          .attr('rx', 5)
+          .attr('ry', 5);
+        
+        // Add DFF label with provided name
+        g.append('text')
+          .attr('x', width / 2)
+          .attr('y', height / 2)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('fill', '#ffffff')
+          .attr('font-weight', 'bold')
+          .attr('font-size', '12px')
+          .text(name);
+          
+        // Add clock symbol (triangle)
+        g.append('path')
+          .attr('d', `
+            M ${15},${2 * height / 3 - 7}
+            L ${15},${2 * height / 3 + 7}
+            L ${25},${2 * height / 3}
+            Z
+          `)
+          .attr('fill', '#ffffff');
+      }
+    };
+  }
+  
+  // GPIO Template - Tag-like shape
   static getGpioTemplate(direction: 'input' | 'output' | 'bidirectional' = 'bidirectional'): ComponentTemplate {
-    const theme = FPGATheme;
-    const width = theme.dimensions.gpio.width;
-    const height = theme.dimensions.gpio.height;
-    const radius = theme.dimensions.gpio.cornerRadius;
+    const width = 90;
+    const height = 40;
     
     const pins: Pin[] = [];
     
@@ -235,10 +192,18 @@ export class ComponentTemplates {
       pins,
       renderShape: (g, fillColor, name = `GPIO ${direction.toUpperCase()}`) => {
         // GPIO is a tag-like shape
-        g.append('path')
-          .attr('d', ComponentShapes.gpio.path(width, height, radius))
+        const radius = height / 4;
+        const path = g.append('path')
+          .attr('d', `
+            M ${radius},0
+            L ${width - radius},0
+            A ${radius},${radius} 0 0,1 ${width - radius},${height}
+            L ${radius},${height}
+            A ${radius},${radius} 0 0,1 ${radius},0
+            Z
+          `)
           .attr('fill', fillColor)
-          .attr('stroke', theme.colors.primary)
+          .attr('stroke', '#0B3D91')
           .attr('stroke-width', 1);
         
         // Add GPIO label
@@ -247,22 +212,19 @@ export class ComponentTemplates {
           .attr('y', height / 2)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
-          .attr('fill', theme.colors.text.light)
+          .attr('fill', '#ffffff')
           .attr('font-weight', 'bold')
-          .attr('font-size', `${theme.dimensions.gpio.textSize}px`)
+          .attr('font-size', '12px')
           .text(name);
       }
     };
   }
   
-  /**
-   * External Wire/Port Template - Paper tag style with rounded corners
-   */
+  // External Wire/Port Template - Paper tag style with rounded corners
   static getExternalWireTemplate(direction: 'input' | 'output' | 'inout' = 'input', defaultName: string = 'WIRE'): ComponentTemplate {
-    const theme = FPGATheme;
-    const width = theme.dimensions.wire.width;
-    const height = theme.dimensions.wire.height;
-    const tipRadius = theme.dimensions.wire.tipRadius;
+    const width = 80;
+    const height = 30;
+    const tipRadius = 10; // Radius for the rounded tip
     
     const pins: Pin[] = [];
     
@@ -295,10 +257,18 @@ export class ComponentTemplates {
       pins,
       renderShape: (g, fillColor, name = defaultName) => {
         // Create paper tag shape - rounded rectangle with extra rounded tip on one side
-        g.append('path')
-          .attr('d', ComponentShapes.wire.path(width, height, tipRadius))
+        const path = g.append('path')
+          .attr('d', `
+            M ${tipRadius},0
+            A ${tipRadius},${tipRadius} 0 0,0 0,${height/2}
+            A ${tipRadius},${tipRadius} 0 0,0 ${tipRadius},${height}
+            L ${width-tipRadius},${height}
+            A ${tipRadius},${tipRadius} 0 0,0 ${width},${height/2}
+            A ${tipRadius},${tipRadius} 0 0,0 ${width-tipRadius},0
+            Z
+          `)
           .attr('fill', fillColor)
-          .attr('stroke', theme.colors.primary)
+          .attr('stroke', '#0B3D91')
           .attr('stroke-width', 1);
         
         // Add wire name label with the provided name
@@ -307,11 +277,51 @@ export class ComponentTemplates {
           .attr('y', height / 2)
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle')
-          .attr('fill', theme.colors.text.light)
+          .attr('fill', '#ffffff')
           .attr('font-weight', 'bold')
-          .attr('font-size', `${theme.dimensions.wire.textSize}px`)
+          .attr('font-size', '12px')
           .text(name);
       }
     };
+  }
+  
+  // Get template by component type
+  static getTemplateForComponent(component: any): ComponentTemplate {
+    const type = component.type?.toLowerCase() || '';
+    
+    if (type.includes('lut')) {
+      // Extract input count if available, default to 4
+      const inputMatch = type.match(/(\d+)/);
+      const inputCount = inputMatch ? parseInt(inputMatch[1], 10) : 4;
+      return this.getLutTemplate(inputCount);
+    }
+    
+    if (type.includes('ff') || type.includes('flop') || type.includes('dff')) {
+      return this.getDffTemplate();
+    }
+    
+    if (type.includes('gpio') || type.includes('io')) {
+      let direction = 'bidirectional';
+      if (type.includes('in') && !type.includes('out')) {
+        direction = 'input';
+      } else if (type.includes('out') && !type.includes('in')) {
+        direction = 'output';
+      }
+      return this.getGpioTemplate(direction as any);
+    }
+    
+    // Check for external wires, ports, or nets
+    if (type.includes('wire') || type.includes('port') || type.includes('net')) {
+      let direction = 'input';
+      if (type.includes('out')) {
+        direction = 'output';
+      } else if (type.includes('inout')) {
+        direction = 'inout';
+      }
+      return this.getExternalWireTemplate(direction as any, component.name);
+    }
+    
+    // Default to LUT template
+    return this.getLutTemplate();
   }
 }
