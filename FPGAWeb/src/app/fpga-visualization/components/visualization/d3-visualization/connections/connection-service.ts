@@ -2,6 +2,7 @@ import { Injectable, OnDestroy } from '@angular/core';
 import * as d3 from 'd3';
 import { ComponentData, RendererContext } from '../models/visualization.model';
 import { ComponentTemplate, ComponentTemplates, Pin } from '../models/component-templates.model';
+import { FPGATheme } from '../../theme/fpga-theme';
 
 // Declare custom event to TypeScript
 declare global {
@@ -363,26 +364,41 @@ export class ConnectionService implements OnDestroy {
       .attr('class', `connection ${connection.type}`)
       .attr('d', path)
       .attr('fill', 'none')
-      .attr('stroke', style.stroke)         // Set stroke directly as attribute
-      .attr('stroke-width', style.strokeWidth)  // Set width directly
-      .attr('stroke-opacity', 0.8);         // Set opacity directly
+      .attr('stroke', style.stroke)
+      .attr('stroke-width', style.strokeWidth)
+      .attr('stroke-opacity', FPGATheme.connections.opacity.default);
       
     // Add dasharray only if needed
     if (style.strokeDasharray) {
       pathElement.attr('stroke-dasharray', style.strokeDasharray);
     }
+
+    // Setup connection events
+    this.setupConnectionEvents(pathElement, connection.type);
   }
   
   // Keep this method to provide default styles as attributes
   private getConnectionStyle(connectionType: string): { stroke: string; strokeWidth: number; strokeDasharray: string } {
     switch (connectionType) {
       case 'clock':
-        return { stroke: '#FF9800', strokeWidth: 2, strokeDasharray: '5,3' };
+        return { 
+          stroke: FPGATheme.colors.connections.clock, 
+          strokeWidth: FPGATheme.connections.strokeWidths.clock, 
+          strokeDasharray: FPGATheme.connections.dashPatterns.clock 
+        };
       case 'control':
-        return { stroke: '#9C27B0', strokeWidth: 2.5, strokeDasharray: '2,2' };
+        return { 
+          stroke: FPGATheme.colors.connections.control, 
+          strokeWidth: FPGATheme.connections.strokeWidths.control, 
+          strokeDasharray: FPGATheme.connections.dashPatterns.control 
+        };
       case 'data':
       default:
-        return { stroke: '#2196F3', strokeWidth: 2, strokeDasharray: '' };
+        return { 
+          stroke: FPGATheme.colors.connections.data, 
+          strokeWidth: FPGATheme.connections.strokeWidths.data, 
+          strokeDasharray: FPGATheme.connections.dashPatterns.data 
+        };
     }
   }
   
@@ -398,40 +414,61 @@ export class ConnectionService implements OnDestroy {
   }
   
   private createPath(source: { x: number; y: number }, target: { x: number; y: number }): string {
-    // Determine control points for a curved path
     const dx = target.x - source.x;
     const dy = target.y - source.y;
-    const midX = source.x + dx / 2;
-    const midY = source.y + dy / 2;
+    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
     
-    // Use different curve styles based on placement and direction
-    if (Math.abs(dx) > Math.abs(dy) * 2) {
-      // Horizontal dominant connection - S curve
+    // Use theme's curve control settings
+    const horizontalOffset = FPGATheme.connections.curveControl.horizontalOffset;
+    const verticalOffset = FPGATheme.connections.curveControl.verticalOffset;
+    const angleThreshold = FPGATheme.connections.curveControl.angleThreshold;
+    
+    // Apply different curve strategies based on angle
+    if (Math.abs(angle) < angleThreshold) {
+      // For near horizontal connections, use a simple curved path
+      const midX = source.x + dx * horizontalOffset;
+      const midY = source.y + dy * verticalOffset;
+      
       return `M ${source.x},${source.y} 
-              C ${midX},${source.y} 
-                ${midX},${target.y} 
-                ${target.x},${target.y}`;
-    } else if (Math.abs(dy) > Math.abs(dx) * 2) {
-      // Vertical dominant connection - inverted S curve
-      return `M ${source.x},${source.y} 
-              C ${source.x},${midY} 
-                ${target.x},${midY} 
-                ${target.x},${target.y}`;
+              Q ${midX},${source.y} ${midX},${midY} 
+              T ${target.x},${target.y}`;
     } else {
-      // Diagonal or balanced - use a gentler curve
-      const controlPointOffset = Math.max(Math.abs(dx), Math.abs(dy)) * 0.5;
-      
-      // Determine control point directions based on relative positions
-      const cp1x = source.x + Math.sign(dx) * controlPointOffset;
-      const cp1y = source.y;
-      const cp2x = target.x - Math.sign(dx) * controlPointOffset;
-      const cp2y = target.y;
+      // For more vertical connections, use a different curve
+      const midX1 = source.x + dx * 0.2;
+      const midY1 = source.y + dy * 0.3;
+      const midX2 = source.x + dx * 0.8;
+      const midY2 = source.y + dy * 0.7;
       
       return `M ${source.x},${source.y} 
-              C ${cp1x},${cp1y} 
-                ${cp2x},${cp2y} 
-                ${target.x},${target.y}`;
+              C ${midX1},${midY1} ${midX2},${midY2} ${target.x},${target.y}`;
     }
+  }
+
+  // Modify connection events to use theme
+  private setupConnectionEvents(connection: d3.Selection<any, any, any, any>, type: string) {
+    const style = this.getConnectionStyle(type);
+    
+    connection
+      .on('mouseenter', function() {
+        d3.select(this)
+          .transition()
+          .duration(FPGATheme.animations.duration)
+          .attr('stroke-width', 
+            // Fix: Type-safe indexing with conditional check
+            type === 'data' ? FPGATheme.connections.hoverWidth.data :
+            type === 'clock' ? FPGATheme.connections.hoverWidth.clock :
+            type === 'control' ? FPGATheme.connections.hoverWidth.control :
+            style.strokeWidth * 1.5
+          )
+          .attr('stroke-opacity', FPGATheme.connections.opacity.hover);
+      })
+      .on('mouseleave', function() {
+        d3.select(this)
+          .transition()
+          .duration(FPGATheme.animations.duration)
+          .attr('stroke-width', style.strokeWidth)
+          .attr('stroke-opacity', FPGATheme.connections.opacity.default);
+      });
   }
   
   private handleComponentMoved(event: Event): void {

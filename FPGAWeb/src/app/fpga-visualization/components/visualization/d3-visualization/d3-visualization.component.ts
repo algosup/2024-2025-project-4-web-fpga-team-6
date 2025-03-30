@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, OnChanges, OnInit, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, OnInit, OnDestroy, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Design } from '../../../../services/design.service';
 import * as d3 from 'd3';
@@ -15,6 +15,7 @@ import { SimulationHandlerService } from './handlers/simulation-handler.service'
 // Import new services
 import { LayoutService, LayoutOptions } from './layout/layout-service';
 import { ConnectionService, ConnectionData } from './connections/connection-service';
+import { ThemeService } from '../theme/theme.service';
 
 @Component({
   selector: 'app-d3-visualization',
@@ -28,12 +29,16 @@ import { ConnectionService, ConnectionData } from './connections/connection-serv
     InteractionHandlerService,
     SimulationHandlerService,
     LayoutService,
-    ConnectionService
+    ConnectionService,
+    ThemeService // Add ThemeService here
   ],
   templateUrl: './d3-visualization.component.html',
-  styleUrls: ['./d3-visualization.component.css']
+  styleUrls: [
+    './d3-visualization.component.css',
+    '../theme/fpga-theme.css'  // Fix path to theme CSS
+  ]
 })
-export class D3VisualizationComponent implements OnInit, OnChanges {
+export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   @Input() design: Design | null = null;
   @Input() isRunning = false;
   @Input() layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
@@ -63,10 +68,14 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
     private interactionHandler: InteractionHandlerService,
     private simulationHandler: SimulationHandlerService,
     private layoutService: LayoutService,
-    private connectionService: ConnectionService
+    private connectionService: ConnectionService,
+    private themeService: ThemeService
   ) {}
 
   ngOnInit() {
+    // Apply theme when component initializes
+    this.themeService.applyTheme();
+    
     this.initializeSvg();
     if (this.design) {
       this.updateVisualization();
@@ -195,5 +204,15 @@ export class D3VisualizationComponent implements OnInit, OnChanges {
     } else {
       this.simulationHandler.stopSimulation(this.svg);
     }
+  }
+
+  // When determining component colors
+  private getComponentColor(component: ComponentData): string {
+    return this.themeService.getComponentColor(component.type);
+    // Replace any existing color determination logic
+  }
+
+  ngOnDestroy() {
+    // Cleanup logic if needed
   }
 }
