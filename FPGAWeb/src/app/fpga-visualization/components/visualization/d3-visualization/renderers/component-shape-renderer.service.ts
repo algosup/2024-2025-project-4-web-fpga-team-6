@@ -268,29 +268,7 @@ export class ComponentShapeRenderer {
       .attr('stroke-width', 1)
       .attr('fill', fillColor);
     
-    // Add direction indicator
-    let indicator = '';
-    if (direction === 'input') {
-      indicator = '→';
-    } else if (direction === 'output') {
-      indicator = '←';
-    } else if (direction === 'inout') {
-      indicator = '↔';
-    }
-    
-    if (indicator) {
-      const xPos = direction === 'input' ? tipWidth : width - tipWidth;
-      g.append('text')
-        .attr('x', xPos)
-        .attr('y', height / 2)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('fill', '#000')
-        .style('font-size', '14px')
-        .text(indicator);
-    }
-    
-    // Add the component name
+    // Add the component name (centered in the rectangular part)
     const nameX = direction === 'input' ? (width - tipWidth) / 2 : tipWidth + (width - tipWidth) / 2;
     g.append('text')
       .attr('x', nameX)

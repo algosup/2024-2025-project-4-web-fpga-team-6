@@ -157,7 +157,7 @@ export class ComponentTemplates {
     if (direction === 'input' || direction === 'inout') {
       pins.push({
         id: 'out',
-        name: 'O',
+        name: '', // Empty name instead of 'O'
         type: 'output',
         position: { x: width, y: height / 2 },
         side: 'right'
@@ -168,7 +168,7 @@ export class ComponentTemplates {
     if (direction === 'output' || direction === 'inout') {
       pins.push({
         id: 'in',
-        name: 'I',
+        name: '', // Empty name instead of 'I'
         type: 'input',
         position: { x: 0, y: height / 2 },
         side: 'left'
@@ -180,7 +180,7 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      shape: 'triangle-tipped',  // New shape type
+      shape: 'triangle-tipped',
       shapeData: {
         direction: direction,
         tipWidth: tipWidth
