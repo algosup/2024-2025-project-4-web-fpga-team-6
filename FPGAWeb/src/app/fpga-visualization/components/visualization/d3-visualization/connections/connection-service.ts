@@ -28,6 +28,11 @@ export interface ConnectionData {
 })
 export class ConnectionService implements OnDestroy {
   private connectionListener: any;
+  private currentContext: RendererContext | null = null;
+  private currentComponents: ComponentData[] = [];
+  private currentConnections: ConnectionData[] = [];
+  private rafId: number | null = null;
+  private pendingUpdate: boolean = false;
   
   constructor() {
     // Fix the custom event listener
@@ -37,6 +42,9 @@ export class ConnectionService implements OnDestroy {
   
   ngOnDestroy() {
     document.removeEventListener('component-moved', this.connectionListener as EventListener);
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+    }
   }
   
   renderConnections(
@@ -44,17 +52,34 @@ export class ConnectionService implements OnDestroy {
     components: ComponentData[],
     connections: ConnectionData[]
   ): void {
-    const { svg } = context;
+    // Store current state for redrawing
+    this.currentContext = context;
+    this.currentComponents = components;
+    this.currentConnections = connections;
     
-    // Clear existing connections
-    svg.selectAll('.connection').remove();
+    this.doRenderConnections();
+  }
+  
+  private doRenderConnections(): void {
+    if (!this.currentContext || !this.currentComponents || !this.currentConnections) {
+      return;
+    }
     
-    // Create a group for connections (render below components)
-    const connectionGroup = svg.insert('g', ':first-child')
-      .attr('class', 'connections');
+    const { svg } = this.currentContext;
+    
+    // Create a group for connections if it doesn't exist yet
+    let connectionGroup: d3.Selection<any, unknown, null, undefined> = svg.select('.connections');
+    if (connectionGroup.empty()) {
+      // Add a type assertion to fix the incompatible selection type
+      connectionGroup = svg.insert('g', ':first-child')
+        .attr('class', 'connections') as unknown as d3.Selection<any, unknown, null, undefined>;
+    } else {
+      // Clear existing connections
+      connectionGroup.selectAll('*').remove();
+    }
       
     // Draw each connection
-    connections.forEach(connection => {
+    this.currentConnections.forEach(connection => {
       this.drawConnection(connectionGroup, connection);
     });
   }
@@ -330,17 +355,35 @@ export class ConnectionService implements OnDestroy {
     // Draw connection using curved path
     const path = this.createPath(source, target);
     
-    // Determine connection style based on type
-    const connectionStyle = this.getConnectionStyle(connection.type);
+    // Get styling based on connection type
+    const style = this.getConnectionStyle(connection.type);
     
-    // Draw the connection
-    group.append('path')
+    // Draw the connection with both CSS class and direct attributes
+    const pathElement = group.append('path')
       .attr('class', `connection ${connection.type}`)
       .attr('d', path)
       .attr('fill', 'none')
-      .attr('stroke', connectionStyle.stroke)
-      .attr('stroke-width', connectionStyle.strokeWidth)
-      .attr('stroke-dasharray', connectionStyle.strokeDasharray);
+      .attr('stroke', style.stroke)         // Set stroke directly as attribute
+      .attr('stroke-width', style.strokeWidth)  // Set width directly
+      .attr('stroke-opacity', 0.8);         // Set opacity directly
+      
+    // Add dasharray only if needed
+    if (style.strokeDasharray) {
+      pathElement.attr('stroke-dasharray', style.strokeDasharray);
+    }
+  }
+  
+  // Keep this method to provide default styles as attributes
+  private getConnectionStyle(connectionType: string): { stroke: string; strokeWidth: number; strokeDasharray: string } {
+    switch (connectionType) {
+      case 'clock':
+        return { stroke: '#FF9800', strokeWidth: 2, strokeDasharray: '5,3' };
+      case 'control':
+        return { stroke: '#9C27B0', strokeWidth: 2.5, strokeDasharray: '2,2' };
+      case 'data':
+      default:
+        return { stroke: '#2196F3', strokeWidth: 2, strokeDasharray: '' };
+    }
   }
   
   private getPinGlobalPosition(component: ComponentData, pin: Pin): { x: number; y: number } {
@@ -359,49 +402,51 @@ export class ConnectionService implements OnDestroy {
     const dx = target.x - source.x;
     const dy = target.y - source.y;
     const midX = source.x + dx / 2;
+    const midY = source.y + dy / 2;
     
-    // Use different curve styles based on horizontal distance and vertical separation
-    if (Math.abs(dx) > 100) {
-      // For longer horizontal distances, use a simple S curve
-      return `M ${source.x},${source.y} C ${midX},${source.y} ${midX},${target.y} ${target.x},${target.y}`;
-    } else {
-      // For shorter distances, use more vertical routing
-      const controlPointOffset = Math.max(Math.abs(dx), 30);
+    // Use different curve styles based on placement and direction
+    if (Math.abs(dx) > Math.abs(dy) * 2) {
+      // Horizontal dominant connection - S curve
       return `M ${source.x},${source.y} 
-              C ${source.x + controlPointOffset},${source.y} 
-                ${target.x - controlPointOffset},${target.y} 
+              C ${midX},${source.y} 
+                ${midX},${target.y} 
                 ${target.x},${target.y}`;
-    }
-  }
-  
-  private getConnectionStyle(type: string): { stroke: string; strokeWidth: number; strokeDasharray: string } {
-    switch (type) {
-      case 'clock':
-        return {
-          stroke: '#ff7700',
-          strokeWidth: 1.5,
-          strokeDasharray: '5,3'
-        };
-      case 'control':
-        return {
-          stroke: '#9900cc',
-          strokeWidth: 1.5,
-          strokeDasharray: '3,2'
-        };
-      case 'data':
-      default:
-        return {
-          stroke: '#0066cc',
-          strokeWidth: 1.5,
-          strokeDasharray: ''
-        };
+    } else if (Math.abs(dy) > Math.abs(dx) * 2) {
+      // Vertical dominant connection - inverted S curve
+      return `M ${source.x},${source.y} 
+              C ${source.x},${midY} 
+                ${target.x},${midY} 
+                ${target.x},${target.y}`;
+    } else {
+      // Diagonal or balanced - use a gentler curve
+      const controlPointOffset = Math.max(Math.abs(dx), Math.abs(dy)) * 0.5;
+      
+      // Determine control point directions based on relative positions
+      const cp1x = source.x + Math.sign(dx) * controlPointOffset;
+      const cp1y = source.y;
+      const cp2x = target.x - Math.sign(dx) * controlPointOffset;
+      const cp2y = target.y;
+      
+      return `M ${source.x},${source.y} 
+              C ${cp1x},${cp1y} 
+                ${cp2x},${cp2y} 
+                ${target.x},${target.y}`;
     }
   }
   
   private handleComponentMoved(event: Event): void {
     // Cast to CustomEvent to access detail property
     const customEvent = event as CustomEvent<{component: ComponentData}>;
-    console.log('Component moved, connections need to be redrawn:', customEvent.detail.component);
+    
+    // Use requestAnimationFrame to synchronize visual updates with the browser
+    if (!this.pendingUpdate) {
+      this.pendingUpdate = true;
+      this.rafId = requestAnimationFrame(() => {
+        this.doRenderConnections();
+        this.pendingUpdate = false;
+        this.rafId = null;
+      });
+    }
   }
 
   // Add a method to extract cell internal connections

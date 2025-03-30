@@ -325,14 +325,33 @@ export class LayoutService {
   }
   
   private enableDragging(nodes: d3.Selection<any, ComponentData, any, any>): void {
+    // Track the original component being dragged
+    let draggedComponentId: string | null = null;
+    
     const drag = d3.drag<any, ComponentData>()
       .on('start', (event, d) => {
-        this.draggedNode = event.sourceEvent.target;
+        // Store the ID of the component we started dragging
+        draggedComponentId = d.id;
+        
+        // Stop propagation to prevent other elements from receiving the event
+        if (event.sourceEvent) {
+          event.sourceEvent.stopPropagation();
+        }
         
         // Initialize position if not set
         if (!d.position) d.position = { x: 0, y: 0 };
+        
+        // Add a class to indicate active dragging (for CSS)
+        d3.select(event.sourceEvent.target.closest('.component'))
+          .classed('dragging', true);
+        
+        // Add a class to the document body to indicate dragging is happening
+        document.body.classList.add('dragging-active');
       })
       .on('drag', (event, d) => {
+        // Only proceed if this is the component we started dragging
+        if (d.id !== draggedComponentId) return;
+        
         // Make sure position is initialized
         if (!d.position) d.position = { x: 0, y: 0 };
         
@@ -340,8 +359,8 @@ export class LayoutService {
         d.position.x += event.dx;
         d.position.y += event.dy;
         
-        // Update transform
-        d3.select(event.sourceEvent.target.closest('.component'))
+        // Update transform - explicitly use the component ID to ensure we're moving the right element
+        d3.select(`#component-${d.id}`)
           .attr('transform', `translate(${d.position.x}, ${d.position.y})`);
           
         // Notify that connections need to be redrawn
@@ -351,9 +370,24 @@ export class LayoutService {
         document.dispatchEvent(customEvent);
       })
       .on('end', (event, d) => {
-        this.draggedNode = null;
+        // Reset tracking variables
+        draggedComponentId = null;
+        
+        // Remove the dragging class
+        d3.select(event.sourceEvent.target.closest('.component'))
+          .classed('dragging', false);
+        
+        // Remove the dragging class from the body
+        document.body.classList.remove('dragging-active');
       });
       
     nodes.call(drag);
+    
+    // Add CSS to prevent pointer events on internal elements during drag
+    d3.select('head').append('style').html(`
+      .component.dragging * {
+        pointer-events: none !important;
+      }
+    `);
   }
 }

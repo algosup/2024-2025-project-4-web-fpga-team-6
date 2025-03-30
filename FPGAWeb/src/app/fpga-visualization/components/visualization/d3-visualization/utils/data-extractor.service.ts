@@ -40,9 +40,18 @@ export class DataExtractorService {
     // Extract external wires (in this JSON format they're in external_wires array)
     if (data.external_wires) {
       for (const wire of data.external_wires) {
+        // Format name: remove ext_input_ or ext_output_ prefix and replace _ with spaces
+        let formattedName = wire.name || '';
+        formattedName = formattedName.replace(/^ext_(input|output)_/, '').replace(/_/g, ' ');
+        
+        // Capitalize first letter of each word for better readability
+        formattedName = formattedName.split(' ')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+        
         components.push({
-          id: wire.name,
-          name: wire.name,
+          id: wire.name, // Keep original ID for connections
+          name: formattedName, // Use formatted name for display
           type: `WIRE_${wire.type.toUpperCase()}`,
           data: wire
         });
@@ -52,9 +61,17 @@ export class DataExtractorService {
     // Extract cells (in this format they're directly in a cells array)
     if (data.cells) {
       for (const cell of data.cells) {
+        let formattedName = cell.name || '';
+        
+        // Format LUT names: e.g., "lut_k_1" becomes "LUT K 1"
+        if (formattedName.includes('lut_k_')) {
+          const instanceNum = formattedName.match(/lut_k_(\d+)/)?.[1];
+          formattedName = `LUT K ${instanceNum}`;
+        }
+        
         components.push({
-          id: cell.name,
-          name: cell.name,
+          id: cell.name, // Keep original ID for connections
+          name: formattedName, // Use formatted name for display
           type: this.identifyCellType(cell),
           data: cell
         });

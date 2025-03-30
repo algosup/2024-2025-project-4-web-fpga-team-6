@@ -8,13 +8,13 @@ export interface Pin {
   side?: 'left' | 'top' | 'right' | 'bottom';
 }
 
+// Update the ComponentTemplate interface to include the component name in renderShape
 export interface ComponentTemplate {
   type: string;
   width: number;
   height: number;
   pins: Pin[];
-  // More flexible type for renderShape
-  renderShape: (g: d3.Selection<any, any, any, any>, fillColor: string) => void;
+  renderShape: (g: d3.Selection<any, any, any, any>, fillColor: string, name?: string) => void;
 }
 
 export class ComponentTemplates {
@@ -62,7 +62,7 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      renderShape: (g, fillColor) => {
+      renderShape: (g, fillColor, name = 'LUT') => {
         // LUT is a dramatic trapezoid with wider base on left
         const path = g.append('path')
           .attr('d', `
@@ -76,7 +76,7 @@ export class ComponentTemplates {
           .attr('stroke', '#0B3D91')
           .attr('stroke-width', 1);
           
-        // Add LUT label
+        // Add LUT label with the provided name
         g.append('text')
           .attr('x', width * 0.4)
           .attr('y', height / 2)
@@ -84,8 +84,8 @@ export class ComponentTemplates {
           .attr('dominant-baseline', 'middle')
           .attr('fill', '#ffffff')
           .attr('font-weight', 'bold')
-          .attr('font-size', '14px')
-          .text('LUT');
+          .attr('font-size', '12px')
+          .text(name);
       }
     };
   }
@@ -123,7 +123,7 @@ export class ComponentTemplates {
         }
         // Removed the QN pin as requested
       ],
-      renderShape: (g, fillColor) => {
+      renderShape: (g, fillColor, name = 'DFF') => {
         // DFF is a rectangle
         g.append('rect')
           .attr('width', width)
@@ -134,7 +134,7 @@ export class ComponentTemplates {
           .attr('rx', 5)
           .attr('ry', 5);
         
-        // Add DFF label
+        // Add DFF label with provided name
         g.append('text')
           .attr('x', width / 2)
           .attr('y', height / 2)
@@ -142,8 +142,8 @@ export class ComponentTemplates {
           .attr('dominant-baseline', 'middle')
           .attr('fill', '#ffffff')
           .attr('font-weight', 'bold')
-          .attr('font-size', '14px')
-          .text('DFF');
+          .attr('font-size', '12px')
+          .text(name);
           
         // Add clock symbol (triangle)
         g.append('path')
@@ -190,7 +190,7 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      renderShape: (g, fillColor) => {
+      renderShape: (g, fillColor, name = `GPIO ${direction.toUpperCase()}`) => {
         // GPIO is a tag-like shape
         const radius = height / 4;
         const path = g.append('path')
@@ -215,13 +215,13 @@ export class ComponentTemplates {
           .attr('fill', '#ffffff')
           .attr('font-weight', 'bold')
           .attr('font-size', '12px')
-          .text(`GPIO ${direction.toUpperCase()}`);
+          .text(name);
       }
     };
   }
   
   // External Wire/Port Template - Paper tag style with rounded corners
-  static getExternalWireTemplate(direction: 'input' | 'output' | 'inout' = 'input', name: string = 'WIRE'): ComponentTemplate {
+  static getExternalWireTemplate(direction: 'input' | 'output' | 'inout' = 'input', defaultName: string = 'WIRE'): ComponentTemplate {
     const width = 80;
     const height = 30;
     const tipRadius = 10; // Radius for the rounded tip
@@ -255,7 +255,7 @@ export class ComponentTemplates {
       width,
       height,
       pins,
-      renderShape: (g, fillColor) => {
+      renderShape: (g, fillColor, name = defaultName) => {
         // Create paper tag shape - rounded rectangle with extra rounded tip on one side
         const path = g.append('path')
           .attr('d', `
@@ -271,7 +271,7 @@ export class ComponentTemplates {
           .attr('stroke', '#0B3D91')
           .attr('stroke-width', 1);
         
-        // Add wire name label
+        // Add wire name label with the provided name
         g.append('text')
           .attr('x', width / 2)
           .attr('y', height / 2)
