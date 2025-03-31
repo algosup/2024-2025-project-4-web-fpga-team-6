@@ -23,6 +23,8 @@ export class InteractionHandlerService {
   // Track position history for undo
   private positionHistory: {components: ComponentData[], positions: {id: string, x: number, y: number}[]}[] = [];
   private readonly MAX_HISTORY = 20; // Maximum number of history states to keep
+  // Add this property to the class
+  private originalStyles = new Map<string, {stroke: string, strokeWidth: string, filter: string}>();
 
   setupInteractions(selection: d3.Selection<any, ComponentData, any, any>): void {
     this.initializeTooltip();
@@ -300,7 +302,17 @@ export class InteractionHandlerService {
     componentElement
       .classed('selected', true)
       .raise(); // Move selected elements to front
-      
+    
+    // Store original styles for later restoration
+    if (!this.originalStyles.has(component.id)) {
+      // Store defaults if we don't already have them
+      this.originalStyles.set(component.id, {
+        stroke: '#000',
+        strokeWidth: '1',
+        filter: 'none'
+      });
+    }
+        
     // Highlight the component with a distinct visual style
     componentElement.selectAll('rect, path, circle')
       .attr('stroke', '#2196F3')
@@ -312,22 +324,20 @@ export class InteractionHandlerService {
     this.selectedComponents.delete(component.id);
     componentElement.classed('selected', false);
     
-    // Restore original styles
+    // Restore to default styles
     componentElement.selectAll('rect, path, circle')
-      .attr('stroke', null)
-      .attr('stroke-width', null)
-      .style('filter', null);
+      .attr('stroke', '#000') 
+      .attr('stroke-width', 1)
+      .style('filter', 'none');
   }
 
   private clearSelection(selection: d3.Selection<any, any, any, any>): void {
-    // Get currently selected components
-    const selectedElements = selection.filter('.selected');
-    
-    // Reset styles on all elements
-    selectedElements.selectAll('rect, path, circle')
-      .attr('stroke', null)
-      .attr('stroke-width', null)
-      .style('filter', null);
+    // Reset styles on all selected elements
+    selection.filter('.selected')
+      .selectAll('rect, path, circle')
+      .attr('stroke', '#000')
+      .attr('stroke-width', 1)
+      .style('filter', 'none');
     
     // Clear selection state
     this.selectedComponents.clear();
