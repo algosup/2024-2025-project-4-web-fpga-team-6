@@ -438,24 +438,41 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   private startClockAnimation() {
     console.log('Starting clock animation...');
     
-    // Stop any existing animation
-    this.stopClockAnimation();
-    
-    if (!this.clockComponent) {
-      console.warn('No clock component found for animation');
-      return;
+    // Reset state if needed
+    if (this.isRunning) {
+      this.stopClockAnimation();
     }
     
-    // Calculate clock interval based on frequency directly in Hz
-    const intervalMs = 1000 / this.clockFrequency;
+    if (!this.clockComponent) {
+      this.findClockComponent();
+      if (!this.clockComponent) {
+        console.warn('No clock component found for animation');
+        return;
+      }
+    }
     
-    console.log(`Starting clock animation with frequency ${this.clockFrequency} Hz (interval: ${intervalMs} ms)`);
+    // Show the clock indicator
+    this.showClock = true;
     
-    // Create and start the timer - ensure IntervalTimer is working properly
+    // Calculate interval based on frequency and simulation speed
+    const intervalMs = 1000 / this.clockFrequency * this.simulationSpeed;
+    
+    console.log(`Starting clock with frequency ${this.clockFrequency} Hz, slow factor ${this.simulationSpeed}x, interval: ${intervalMs} ms`);
+    
+    // Create and start the timer
     this.clockTimer = new IntervalTimer(() => {
-      console.log('Clock tick');
       this.toggleClockState();
     }, intervalMs);
+    
+    this.isRunning = true;
+    this.isPaused = false;
+    this.clockTimer.start(); // Make sure to explicitly start it
+    
+    // Also disable component selection during simulation
+    this.disableComponentSelection();
+    
+    // Add simulation-running class to svg for animations
+    this.svg?.classed('simulation-running', true);
   }
   
   private stopClockAnimation() {
@@ -469,20 +486,30 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     this.clockState = !this.clockState;
     console.log('Clock state toggled:', this.clockState);
     
-    // Update visual appearance
-    this.updateClockAppearance();
-    this.updateClockPins();
-    this.updateClockConnections();
-    
-    // Don't update connections here
-    // Instead, trigger DFF updates on clock transitions
-    if (this.clockState) {
-      // On rising edge of clock
-      this.updateDFFStates();
+    // Get the component ID and pin ID of the clock component
+    if (this.clockComponent) {
+      const clockComponentData = this.clockComponent.datum();
+      if (clockComponentData && clockComponentData.id) {
+        // Use the updatePinState method which will handle propagation with delays
+        this.updatePinState(
+          clockComponentData.id,
+          'out', // Assuming the output pin has ID 'out'
+          this.clockState ? 'HIGH' : 'LOW'
+        );
+      } else {
+        // Fallback to direct appearance update if no data is available
+        this.updateClockAppearance();
+      }
+    } else {
+      // Fallback if no clock component is found
+      this.updateClockAppearance();
     }
+    
+    // Note: DFF updates will happen through the connection propagation
+    // after the clock signal reaches them, rather than instantly here
   }
 
-  // Add this new method to handle DFF updates on clock transitions
+  // New method to handle DFF updates on clock transitions
   private updateDFFStates() {
     // This is where you would update the state of DFFs based on their inputs
     // For each DFF:
@@ -594,6 +621,11 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   private propagateSignalsWithDelays() {
     console.log('Propagating signals with delays based on slow factor');
     
+    if (!this.svg) { // Add explicit early return if svg is null
+      console.warn('Cannot propagate signals: SVG is not initialized');
+      return;
+    }
+    
     // Get all components that are directly connected to clock
     const clockDrivenComponents = this.getClockDrivenComponents();
     
@@ -655,12 +687,530 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     const adjustedTransitionMs = baseTransitionMs * this.simulationSpeed;
     
     // Update CSS variables or direct styles for signal animations
-    this.svg?.selectAll('.connection:not(.clock)')
-      .style('transition-duration', `${adjustedTransitionMs}ms`);
+    if (this.svg) { // Add null check here
+      this.svg.selectAll('.connection:not(.clock)')
+        .style('transition-duration', `${adjustedTransitionMs}ms`);
+    }
       
     // Schedule propagation of active signals
     if (this.isRunning && !this.isPaused) {
       this.propagateSignalsWithDelays();
+    }
+  }
+
+  /**
+   * Updates the state of a specific pin and propagates the signal to connections
+   */
+  public updatePinState(
+    componentId: string, 
+    pinId: string, 
+    state: 'HIGH' | 'LOW', 
+    propagate: boolean = true
+  ): void {
+    if (!this.svg) return;
+    
+    // Find the component
+    const component = this.svg.select(`.component[data-component-id="${componentId}"]`);
+    if (component.empty()) {
+      console.warn(`Component ${componentId} not found`);
+      return;
+    }
+    
+    // Find the pin
+    const pin = component.select(`.pin[data-pin-id="${pinId}"]`);
+    if (pin.empty()) {
+      console.warn(`Pin ${pinId} not found in component ${componentId}`);
+      return;
+    }
+    
+    // Get current state to check if it's actually changing
+    const currentState = pin.attr('data-pin-state') || 'LOW';
+    if (currentState === state) {
+      // No change, no need to update
+      return;
+    }
+    
+    // Update pin state attribute
+    pin.attr('data-pin-state', state);
+    
+    // Remove old state classes
+    pin.classed('high', false);
+    pin.classed('low', false);
+    
+    // Add new state class
+    pin.classed(state.toLowerCase(), true);
+    
+    // Update pin appearance
+    const pinType = pin.attr('data-pin-type');
+    const fillColor = state === 'HIGH' ? 
+      this.styleService.colors.activePin : 
+      this.styleService.getPinColor(pinType);
+    
+    // Update all shape elements inside the pin
+    pin.selectAll('path, circle, rect')
+      .transition()
+      .duration(150)
+      .attr('fill', fillColor);
+    
+    // Only propagate signals if requested and from output pins
+    if (propagate && (pinType === 'output' || pinType === 'clock')) {
+      this.propagateSignalFromPin(componentId, pinId, state);
+    }
+    
+    // If this is an input pin, we may need to update the component's internal state
+    // This would be specific to each component type (e.g., a gate would compute its output)
+    if (pinType === 'input') {
+      this.updateComponentInternalState(componentId);
+    }
+  }
+
+  /**
+   * Updates the state of a connection and animates signal propagation
+   * @param connectionId The ID of the connection
+   * @param state The new state (HIGH or LOW)
+   * @param animate Whether to animate the propagation
+   */
+  private updateConnectionState(connectionId: string, state: 'HIGH' | 'LOW', animate: boolean = true): void {
+    if (!this.svg) return;
+  
+    // Find the connection element
+    const connection = this.svg.select(`.connection[data-connection-id="${connectionId}"]`);
+    if (connection.empty()) {
+      console.warn(`Connection ${connectionId} not found`);
+      return;
+    }
+  
+    // Find the connection data
+    const connectionData = this.connections?.find(c => c.id === connectionId);
+    if (!connectionData) return;
+  
+    // Update connection state attribute
+    connection.attr('data-connection-state', state);
+    
+    // Define colors for states
+    const baseColor = this.styleService.getConnectionColor(connectionData.type);
+    const activeColor = this.styleService.colors.activeConnection || '#FF5252';
+  
+    // Get path length for animation
+    const pathLength = (connection.node() as SVGPathElement)?.getTotalLength() || 100;
+    
+    // Calculate animation duration based on propagation physics and slowing factor
+    const delay = this.calculateConnectionDelay(connectionData);
+    
+    if (animate) {
+      if (state === 'HIGH') {
+        // HIGH STATE ANIMATION - Progressive glow from source to target
+        
+        // Setup gradient animation using stroke-dasharray
+        connection
+          .classed('active', true)
+          .attr('stroke', activeColor)
+          .attr('stroke-width', 3)
+          .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
+          .attr('stroke-dashoffset', pathLength)
+          .style('transition', 'none')
+          .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
+        
+        // Force browser reflow
+        (connection.node() as SVGPathElement)?.getBoundingClientRect();
+        
+        // Animate the wire filling with signal
+        connection.transition()
+          .duration(delay) // Real propagation delay adjusted by slow factor
+          .ease(d3.easeLinear) // Constant speed (not easing)
+          .attr('stroke-dashoffset', 0)
+          .on('end', () => {
+            // When animation completes, update the target pin
+            this.updatePinState(
+              connectionData.target.component.id,
+              connectionData.target.pin.id,
+              state,
+              true // Keep propagating to downstream components
+            );
+            
+            // Keep glowing effect but remove dash animation properties
+            connection
+              .attr('stroke-dasharray', null)
+              .attr('stroke-dashoffset', null);
+          });
+      } else {
+        // LOW STATE ANIMATION - Progressive fade from active to inactive
+        
+        // Setup gradient animation for signal disappearing
+        connection
+          .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
+          .attr('stroke-dashoffset', 0)
+          .style('transition', 'none');
+        
+        // Force browser reflow
+        (connection.node() as SVGPathElement)?.getBoundingClientRect();
+        
+        // Animate the fade out
+        connection.transition()
+          .duration(delay) // Same delay as for HIGH signal
+          .ease(d3.easeLinear)
+          .attr('stroke-dashoffset', pathLength)
+          .style('filter', 'none')
+          .on('end', () => {
+            // When animation completes, turn off active class
+            connection.classed('active', false);
+            
+            // Update target pin to LOW
+            this.updatePinState(
+              connectionData.target.component.id,
+              connectionData.target.pin.id,
+              state,
+              true // Keep propagating LOW signal
+            );
+            
+            // Reset wire to inactive appearance
+            connection
+              .attr('stroke', baseColor)
+              .attr('stroke-width', 2)
+              .attr('stroke-opacity', 0.8)
+              .attr('stroke-dasharray', null)
+              .attr('stroke-dashoffset', null);
+          });
+      }
+    } else {
+      // No animation - immediate update
+      if (state === 'HIGH') {
+        connection.classed('active', true)
+          .attr('stroke', activeColor)
+          .attr('stroke-width', 3)
+          .attr('stroke-opacity', 1)
+          .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
+      } else {
+        connection.classed('active', false)
+          .attr('stroke', baseColor)
+          .attr('stroke-width', 2)
+          .attr('stroke-opacity', 0.8)
+          .style('filter', 'none');
+      }
+      
+      // Still update target pin
+      this.updatePinState(
+        connectionData.target.component.id,
+        connectionData.target.pin.id,
+        state,
+        true
+      );
+    }
+  }
+  
+  /**
+   * Calculates realistic propagation delay based on physics and slowing factor
+   */
+  private calculateConnectionDelay(connection: ConnectionData): number {
+    // Physical constants
+    const SPEED_OF_LIGHT = 299792458; // meters per second
+    const VELOCITY_FACTOR = 0.6; // Signal velocity in FPGA wires (60% of c)
+    const PIXELS_PER_MM = 5; // Visual scale factor
+    
+    // Get or calculate connection length in pixels
+    let lengthInPixels = connection.length;
+    if (lengthInPixels === undefined) {
+      if (this.svg) {
+        const pathEl = this.svg.select(`.connection[data-connection-id="${connection.id}"]`);
+        if (!pathEl.empty()) {
+          const pathNode = pathEl.node();
+          lengthInPixels = pathNode ? (pathNode as SVGPathElement).getTotalLength() : 100;
+        } else {
+          lengthInPixels = 100; // Default
+        }
+      } else {
+        // Calculate Euclidean distance as fallback
+        const sourceX = connection.source.component.x ?? 
+                        connection.source.component.position?.x ?? 0;
+        const sourceY = connection.source.component.y ?? 
+                        connection.source.component.position?.y ?? 0;
+        const targetX = connection.target.component.x ?? 
+                        connection.target.component.position?.x ?? 0;
+        const targetY = connection.target.component.y ?? 
+                        connection.target.component.position?.y ?? 0;
+        const dx = targetX - sourceX;
+        const dy = targetY - sourceY;
+        lengthInPixels = Math.sqrt(dx*dx + dy*dy);
+      }
+    }
+    
+    // Convert pixels to millimeters then to meters
+    const lengthInMeters = (lengthInPixels / PIXELS_PER_MM) / 1000;
+    
+    // Calculate actual propagation time in picoseconds
+    // t = distance / (speed * velocity factor)
+    const propagationTimeSeconds = lengthInMeters / (SPEED_OF_LIGHT * VELOCITY_FACTOR);
+    const propagationTimePicoseconds = propagationTimeSeconds * 1e12;
+    
+    // Set minimum propagation time to 1ps for very short wires
+    const minPropagationTime = Math.max(propagationTimePicoseconds, 1);
+    
+    // Apply slowing factor to convert picoseconds to visible milliseconds
+    // Example: 5ps * 10^10 slowing factor = 50ms visible delay
+    const visibleDelayMs = minPropagationTime * this.simulationSpeed;
+    
+    console.log(`Wire ${connection.id}: ${lengthInPixels}px (~${(lengthInMeters*1000).toFixed(2)}mm), ` + 
+                `${propagationTimePicoseconds.toFixed(2)}ps → ${visibleDelayMs.toFixed(2)}ms visual delay`);
+    
+    // Ensure minimum visible delay
+    return Math.max(visibleDelayMs, 50);
+  }
+
+  /**
+   * Propagates a signal from an output pin through connected wires
+   * @param componentId The component ID containing the source pin
+   * @param pinId The source pin ID
+   * @param state The signal state to propagate
+   */
+  private propagateSignalFromPin(componentId: string, pinId: string, state: 'HIGH' | 'LOW'): void {
+    if (!this.connections) return;
+    
+    // Find all connections originating from this pin
+    const outgoingConnections = this.connections.filter(conn => 
+      conn.source.component.id === componentId && conn.source.pin.id === pinId
+    );
+    
+    if (outgoingConnections.length === 0) return;
+    
+    console.log(`Propagating ${state} signal from ${componentId}.${pinId} to ${outgoingConnections.length} connections`);
+    
+    // Update each outgoing connection with animation
+    outgoingConnections.forEach(conn => {
+      // For HIGH state, use animated propagation
+      // For LOW state, immediately update without animation
+      this.updateConnectionState(conn.id, state, true);
+    });
+  }
+
+  /**
+   * Updates the animation duration when simulation speed changes
+   */
+  public updateSimulationSpeed(speed: number): void {
+    this.simulationSpeed = speed;
+    
+    // Apply the speed to CSS variables for animations
+    if (this.svg) {
+      this.svg.style('--signal-propagation-duration', `${50 * speed}ms`);
+    }
+    
+    console.log(`Simulation speed updated: ${speed}x`);
+  }
+
+  /**
+   * Resets all signal states in the circuit
+   */
+  public resetAllSignalStates(): void {
+    if (!this.svg) return;
+    
+    // Reset all pins
+    this.svg.selectAll('.pin')
+      .attr('data-pin-state', 'LOW')
+      .classed('high', false)
+      .classed('low', true)
+      .each((d, i, nodes) => {
+        const pin = d3.select(nodes[i]);
+        const pinType = pin.attr('data-pin-type');
+        const color = this.styleService.getPinColor(pinType);
+        
+        pin.selectAll('path, circle, rect')
+          .transition()
+          .duration(200)
+          .attr('fill', color);
+      });
+    
+    // Reset all connections
+    this.svg.selectAll('.connection')
+      .attr('data-connection-state', 'LOW')
+      .classed('active', false)
+      .each((d, i, nodes) => {
+        const connection = d3.select(nodes[i]);
+        const type = connection.attr('class').includes('clock') ? 'clock' : 
+                     connection.attr('class').includes('control') ? 'control' : 'data';
+        
+        connection.transition()
+          .duration(200)
+          .attr('stroke', this.styleService.getConnectionColor(type))
+          .attr('stroke-opacity', 0.8)
+          .attr('stroke-dasharray', null)
+          .attr('stroke-dashoffset', null);
+      });
+  }
+
+  /**
+   * Updates the simulation speed and recalculates propagation delays
+   * @param speed The new simulation speed
+   */
+  public setSimulationSpeed(speed: number): void {
+    // Update the slowing factor
+    this.simulationSpeed = speed;
+    
+    console.log(`Simulation speed updated: ${speed}x slowing factor`);
+    
+    // Update CSS custom property for animations
+    document.documentElement.style.setProperty('--signal-propagation-base', `${50 * speed}ms`);
+    
+    // Update clock speed if running
+    if (this.clockTimer) {
+      // Calculate new interval based on frequency and simulation speed
+      const newInterval = 1000 / this.clockFrequency * this.simulationSpeed;
+      console.log(`Updating clock interval to ${newInterval.toFixed(2)}ms (${this.clockFrequency}Hz × ${this.simulationSpeed}x)`);
+      
+      if (this.clockTimer.isRunning) {
+        // Stop and restart with new interval
+        this.clockTimer.stop();
+        this.clockTimer = new IntervalTimer(() => {
+          this.toggleClockState();
+        }, newInterval);
+        this.clockTimer.start();
+      } else {
+        // Just update the interval without starting
+        this.clockTimer = new IntervalTimer(() => {
+          this.toggleClockState();
+        }, newInterval);
+      }
+    }
+  }
+
+  /**
+   * Updates a component's internal logic based on its input pins
+   */
+  private updateComponentInternalState(componentId: string): void {
+    // Get the component data
+    const component = this.components?.find(c => c.id === componentId);
+    if (!component) return;
+    
+    // Process based on component type
+    switch (component.type) {
+      case 'AND':
+        this.processAndGate(component);
+        break;
+      case 'OR':
+        this.processOrGate(component);
+        break;
+      case 'NOT':
+        this.processNotGate(component);
+        break;
+      case 'DFF':
+        // DFFs are updated on clock transitions, not immediately
+        break;
+      // Add more component types as needed
+    }
+  }
+
+  /**
+   * Process AND gate logic
+   * @param component The AND gate component
+   */
+  private processAndGate(component: ComponentData): void {
+    if (!this.svg) return;
+
+    // Find the component element
+    const compElement = this.svg.select(`.component[data-component-id="${component.id}"]`);
+    if (compElement.empty()) return;
+    
+    // Get all input pins
+    const inputPins = compElement.selectAll('.pin[data-pin-type="input"]');
+    let allHigh = true;
+    
+    // Check if all inputs are HIGH
+    inputPins.each(function() {
+      const pin = d3.select(this);
+      const state = pin.attr('data-pin-state') || 'LOW';
+      if (state !== 'HIGH') {
+        allHigh = false;
+      }
+    });
+    
+    // Find output pin
+    const outputPin = compElement.select('.pin[data-pin-type="output"]');
+    if (outputPin.empty()) return;
+    
+    // Set output state based on AND logic
+    const outputPinId = outputPin.attr('data-pin-id');
+    if (outputPinId) {
+      // Only update if the state is changing
+      const currentOutState = outputPin.attr('data-pin-state') || 'LOW';
+      const newState = allHigh ? 'HIGH' : 'LOW';
+      
+      if (currentOutState !== newState) {
+        // Update the output pin using our global method, but avoid infinite recursion
+        // by not propagating from within the component logic
+        this.updatePinState(component.id, outputPinId, newState, true);
+      }
+    }
+  }
+
+  /**
+   * Process OR gate logic
+   * @param component The OR gate component
+   */
+  private processOrGate(component: ComponentData): void {
+    if (!this.svg) return;
+
+    // Find the component element
+    const compElement = this.svg.select(`.component[data-component-id="${component.id}"]`);
+    if (compElement.empty()) return;
+    
+    // Get all input pins
+    const inputPins = compElement.selectAll('.pin[data-pin-type="input"]');
+    let anyHigh = false;
+    
+    // Check if any input is HIGH
+    inputPins.each(function() {
+      const pin = d3.select(this);
+      const state = pin.attr('data-pin-state') || 'LOW';
+      if (state === 'HIGH') {
+        anyHigh = true;
+      }
+    });
+    
+    // Find output pin
+    const outputPin = compElement.select('.pin[data-pin-type="output"]');
+    if (outputPin.empty()) return;
+    
+    // Set output state based on OR logic
+    const outputPinId = outputPin.attr('data-pin-id');
+    if (outputPinId) {
+      const currentOutState = outputPin.attr('data-pin-state') || 'LOW';
+      const newState = anyHigh ? 'HIGH' : 'LOW';
+      
+      if (currentOutState !== newState) {
+        this.updatePinState(component.id, outputPinId, newState, true);
+      }
+    }
+  }
+
+  /**
+   * Process NOT gate logic
+   * @param component The NOT gate component
+   */
+  private processNotGate(component: ComponentData): void {
+    if (!this.svg) return;
+
+    // Find the component element
+    const compElement = this.svg.select(`.component[data-component-id="${component.id}"]`);
+    if (compElement.empty()) return;
+    
+    // Get input pin (NOT gate typically has 1 input)
+    const inputPin = compElement.select('.pin[data-pin-type="input"]');
+    if (inputPin.empty()) return;
+    
+    // Get input state
+    const inputState = inputPin.attr('data-pin-state') || 'LOW';
+    
+    // Find output pin
+    const outputPin = compElement.select('.pin[data-pin-type="output"]');
+    if (outputPin.empty()) return;
+    
+    // Set output state based on NOT logic (invert input)
+    const outputPinId = outputPin.attr('data-pin-id');
+    if (outputPinId) {
+      const currentOutState = outputPin.attr('data-pin-state') || 'LOW';
+      const newState = inputState === 'HIGH' ? 'LOW' : 'HIGH';
+      
+      if (currentOutState !== newState) {
+        this.updatePinState(component.id, outputPinId, newState, true);
+      }
     }
   }
 }

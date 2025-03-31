@@ -28,6 +28,7 @@ export interface ColorPalette {
   active: string; // Color for active components
   activeConnection: string; // Color for active connections
   activeClockPin: string; // Color for active clock pins
+  activePin: string;  // Add this line for active pin state color
 }
 
 export interface VisualDimensions {
@@ -99,7 +100,8 @@ export class VisualizationStyleService {
     // Active state colors
     active: '#FF1744',  // Bright red for active state
     activeConnection: '#FF1744', // Same bright red for active connections
-    activeClockPin: '#FF1744'  // Same bright red for active clock pins
+    activeClockPin: '#FF1744',  // Same bright red for active clock pins
+    activePin: '#FF1744'  // Add this line
   };
 
   // Dark palette (match the pattern)
@@ -130,7 +132,8 @@ export class VisualizationStyleService {
     // Active state colors
     active: '#FF1744',  // Same bright red
     activeConnection: '#FF1744', // Same bright red
-    activeClockPin: '#FF1744'  // Same bright red
+    activeClockPin: '#FF1744',  // Same bright red
+    activePin: '#FF1744'  // Add this line
   };
   
   private _dimensions: VisualDimensions = {

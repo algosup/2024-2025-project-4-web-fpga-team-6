@@ -71,7 +71,10 @@ export class UnifiedComponentRendererService {
     // Add each pin
     pins.forEach(pin => {
       const pinG = pinsGroup.append('g')
-        .attr('class', `pin ${pin.type}`)
+        .attr('class', `pin ${pin.type} ${pin.state === 'HIGH' ? 'high' : ''}`)
+        .attr('data-pin-id', pin.id)
+        .attr('data-pin-type', pin.type)
+        .attr('data-pin-state', pin.state || 'LOW')
         .attr('transform', `translate(${pin.position.x}, ${pin.position.y})`);
       
       // Draw pin based on its type
@@ -103,7 +106,7 @@ export class UnifiedComponentRendererService {
     });
   }
   
-  // Enhanced clock pin rendering
+  // Enhanced pin rendering with state
   private renderPinByType(
     g: d3.Selection<any, any, any, any>,
     pin: Pin
@@ -118,17 +121,26 @@ export class UnifiedComponentRendererService {
     // Add class based on pin type for easier selection later
     g.classed(pin.type, true);
     
+    // Add class based on state
+    g.classed('high', pin.state === 'HIGH');
+    g.classed('low', pin.state !== 'HIGH');
+    
+    // Get the appropriate color based on pin state and type
+    const fillColor = pin.state === 'HIGH' ? 
+      this.styleService.colors.activePin : 
+      this.styleService.getPinColor(pin.type);
+    
     switch(pin.type) {
       case 'input':
         g.append('path')
           .attr('d', `M ${-directionX * symbolSize},0 L 0,${-symbolSize * 0.6} L 0,${symbolSize * 0.6} Z`)
-          .attr('fill', this.styleService.getPinColor('input'));
+          .attr('fill', fillColor);
         break;
       
       case 'output':
         g.append('circle')
           .attr('r', pinRadius)
-          .attr('fill', this.styleService.getPinColor('output'));
+          .attr('fill', fillColor);
         break;
       
       case 'clock':
@@ -141,13 +153,13 @@ export class UnifiedComponentRendererService {
             L ${-directionX * symbolSize},${directionY * symbolSize * 0.8}
             Z
           `)
-          .attr('fill', this.styleService.getPinColor('clock'))
+          .attr('fill', fillColor)
           .attr('class', 'clock-pin-symbol');
 
         // Add a small circle at the center for better visibility
         g.append('circle')
           .attr('r', pinRadius * 0.6)
-          .attr('fill', this.styleService.getPinColor('clock'))
+          .attr('fill', fillColor)
           .attr('class', 'clock-pin-center');
         break;
       
@@ -157,7 +169,7 @@ export class UnifiedComponentRendererService {
           .attr('y', -symbolSize * 0.6)
           .attr('width', symbolSize * 1.2)
           .attr('height', symbolSize * 1.2)
-          .attr('fill', this.styleService.getPinColor('control'));
+          .attr('fill', fillColor);
         break;
     }
     

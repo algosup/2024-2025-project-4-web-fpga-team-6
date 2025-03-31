@@ -6,6 +6,7 @@ export interface Pin {
   type: 'input' | 'output' | 'clock' | 'control';
   position: { x: number; y: number };
   side?: 'left' | 'top' | 'right' | 'bottom';
+  state?: 'HIGH' | 'LOW'; // Add this line for pin state
 }
 
 // Remove the renderShape function from ComponentTemplate

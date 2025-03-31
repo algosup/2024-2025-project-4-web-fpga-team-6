@@ -5,8 +5,10 @@ export interface ComponentData {
   id: string;
   type: string;
   name?: string;
+  x?: number;  // Make sure this exists in your interface
+  y?: number;  // Make sure this exists in your interface
+  position?: { x: number; y: number }; // Some places use this format
   data: any;
-  position?: { x: number; y: number }; // Add position property
 }
 
 export interface RendererContext {

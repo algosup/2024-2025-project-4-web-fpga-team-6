@@ -50,7 +50,12 @@ svg {
 }
 
 .connection {
-  transition: stroke 0.3s, stroke-opacity 0.3s;
+  transition: stroke 0.3s ease, stroke-width 0.3s ease, filter 0.3s ease;
+}
+
+.connection.active {
+  stroke-opacity: 1 !important;
+  filter: drop-shadow(0 0 2px rgba(255, 82, 82, 0.5));
 }
 
 /* Define styles for hover states and animations */
@@ -267,4 +272,78 @@ body.dragging-active .component:not(.dragging):not(.selected) {
 
 .simulation-running .component.active rect {
   animation: clock-pulse 0.5s infinite;
+}
+
+/* Pin states styling */
+.pin.high path,
+.pin.high circle,
+.pin.high rect {
+  fill: var(--active-color, #FF1744) !important;
+  filter: drop-shadow(0 0 2px rgba(255, 23, 68, 0.6));
+  transition: fill 0.15s ease, filter 0.15s ease;
+}
+
+.pin.high text {
+  fill: var(--active-text-color, #FF1744) !important;
+  font-weight: bold;
+}
+
+/* Animation for high state */
+@keyframes pulse-high {
+  0% { filter: drop-shadow(0 0 2px rgba(255, 23, 68, 0.3)); }
+  50% { filter: drop-shadow(0 0 4px rgba(255, 23, 68, 0.7)); }
+  100% { filter: drop-shadow(0 0 2px rgba(255, 23, 68, 0.3)); }
+}
+
+.simulation-running .pin.high path,
+.simulation-running .pin.high circle,
+.simulation-running .pin.high rect {
+  animation: pulse-high 1s infinite;
+}
+
+/* Glowing effect for active pins */
+.pin.high path,
+.pin.high circle,
+.pin.high rect {
+  filter: drop-shadow(0 0 2px rgba(255, 82, 82, 0.7));
+}
+
+/* Blinking effect for active pins in simulation mode */
+@keyframes pin-pulse {
+  0% { filter: drop-shadow(0 0 1px rgba(255, 23, 68, 0.7)); }
+  50% { filter: drop-shadow(0 0 3px rgba(255, 23, 68, 0.9)); }
+  100% { filter: drop-shadow(0 0 1px rgba(255, 23, 68, 0.7)); }
+}
+
+.simulation-running .pin.high path,
+.simulation-running .pin.high circle,
+.simulation-running .pin.high rect {
+  animation: pin-pulse 1.5s infinite;
+}
+
+/* Signal propagation styles */
+.connection {
+  transition: stroke 0.3s ease, stroke-width 0.3s ease, filter 0.3s ease;
+}
+
+.connection.active {
+  stroke-opacity: 1 !important;
+  filter: drop-shadow(0 0 2px rgba(255, 82, 82, 0.5));
+}
+
+.simulation-running .connection.active {
+  animation: pulse-connection 2s infinite;
+}
+
+@keyframes pulse-connection {
+  0% { filter: drop-shadow(0 0 1px rgba(255, 82, 82, 0.5)); }
+  50% { filter: drop-shadow(0 0 3px rgba(255, 82, 82, 0.8)); }
+  100% { filter: drop-shadow(0 0 1px rgba(255, 82, 82, 0.5)); }
+}
+
+/* Pin style when active */
+.pin.high path,
+.pin.high circle,
+.pin.high rect {
+  filter: drop-shadow(0 0 2px rgba(255, 82, 82, 0.7));
 }

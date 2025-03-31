@@ -22,6 +22,9 @@ export interface ConnectionData {
     pin: Pin;
   };
   type: string;
+  state?: 'HIGH' | 'LOW';  // Current state of the connection
+  length?: number;         // Length for delay calculation (in pixels)
+  delay?: number;          // Propagation delay in picoseconds
 }
 
 @Injectable({
@@ -368,16 +371,30 @@ export class ConnectionService implements OnDestroy {
     // Draw the connection with both CSS class and direct attributes
     const pathElement = group.append('path')
       .attr('class', `connection ${connection.type}`)
+      .attr('data-connection-id', connection.id)
+      .attr('data-source-component', connection.source.component.id)
+      .attr('data-source-pin', connection.source.pin.id)
+      .attr('data-target-component', connection.target.component.id)
+      .attr('data-target-pin', connection.target.pin.id)
+      .attr('data-connection-state', connection.state || 'LOW')
       .attr('d', path)
       .attr('fill', 'none')
       .attr('stroke', style.stroke)
       .attr('stroke-width', style.strokeWidth)
       .attr('stroke-opacity', 0.8);
       
-    // Add dasharray only if needed
+    // Add dash array if specified in style
     if (style.strokeDasharray) {
       pathElement.attr('stroke-dasharray', style.strokeDasharray);
     }
+    
+    // Calculate and store the path length for delay calculations
+    setTimeout(() => {
+      const pathNode = pathElement.node();
+      if (pathNode) {
+        connection.length = pathNode.getTotalLength();
+      }
+    }, 0);
   }
   
   // Keep this method to provide default styles as attributes
