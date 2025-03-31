@@ -112,6 +112,33 @@ svg {
   50% { stroke-opacity: 1; }
 }
 
+/* Enhanced styles for clock pins */
+.pin.clock .clock-pin-symbol,
+.pin.clock .clock-pin-center {
+  transition: fill 0.15s ease;
+}
+
+/* Add animation for active clock connections */
+.simulation-running .connection.clock.active {
+  animation: pulse-active-clock 0.5s infinite alternate;
+  stroke-width: 3px !important;
+}
+
+@keyframes pulse-active-clock {
+  0% { stroke-opacity: 0.7; }
+  100% { stroke-opacity: 1; }
+}
+
+/* Add animation for active clock component */
+.simulation-running .component[data-component-type="WIRE_INPUT"].active rect {
+  animation: pulse-active-component 0.5s infinite alternate;
+}
+
+@keyframes pulse-active-component {
+  0% { fill-opacity: 0.8; }
+  100% { fill-opacity: 1; }
+}
+
 /* Components should be draggable */
 .component {
   cursor: grab;
@@ -218,4 +245,26 @@ body.dragging-active .component:not(.dragging):not(.selected) {
   100% {
     opacity: 0.6;
   }
+}
+
+/* Add styles for simulation visualization */
+.simulation-running .component {
+  cursor: default !important;
+  pointer-events: none;
+}
+
+/* Allow clock component to still have visual feedback */
+.simulation-running .component[data-component-type="WIRE_INPUT"] {
+  pointer-events: all;
+}
+
+/* Add pulse animation for active clock */
+@keyframes clock-pulse {
+  0% { fill-opacity: 0.7; }
+  50% { fill-opacity: 1; }
+  100% { fill-opacity: 0.7; }
+}
+
+.simulation-running .component.active rect {
+  animation: clock-pulse 0.5s infinite;
 }

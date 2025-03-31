@@ -18,23 +18,25 @@
       <!-- Design List Component (renamed from Example List) -->
       <app-design-list
         [designs]="designs"
-        [currentDesignId]="currentDesign"
+        [currentDesignId]="currentDesign || ''"
         [expandedDesignId]="expandedDesignId"
         (selectDesign)="selectDesign($event)"
         (toggleDescription)="toggleDescription($event)"
       ></app-design-list>
 
-      <!-- Controls Component -->
+      <!-- Updated Controls Component -->
       <app-controls
         [isRunning]="isRunning"
         [isPaused]="isPaused"
         [speed]="speed"
+        [clockFrequency]="clockFrequency"
         [hasSelection]="!!currentDesign"
         (play)="playSimulation()"
         (pause)="pauseSimulation()"
         (resume)="resumeSimulation()"
-        (step)="stepSimulation()"
+        (reset)="resetSimulation()"
         (speedChange)="changeSpeed($event)"
+        (clockFrequencyChange)="changeClockFrequency($event)"
       ></app-controls>
     </div>
 
@@ -60,8 +62,13 @@
           
           <!-- D3 Visualization Component instead of JSON Viewer -->
           <app-d3-visualization 
-            [design]="selectedDesign"
+            [design]="getDesignObject(currentDesign)"
             [isRunning]="isRunning"
+            [isPaused]="isPaused"
+            [layoutType]="layoutType"
+            [darkMode]="darkMode"
+            [clockFrequency]="clockFrequency"
+            [simulationSpeed]="speed"
           ></app-d3-visualization>
           
           <div class="fpga-footer">

@@ -1,12 +1,21 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { Design } from '../../../../services/design.service';
-import { RouterLink } from '@angular/router';
+
+// Add this pipe to safely display HTML content
+import { DomSanitizer } from '@angular/platform-browser';
+
+// Define and export the event interface
+export interface DesignDescriptionEvent {
+  designId: string;
+  event: Event;
+}
 
 @Component({
   selector: 'app-design-list',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterModule],
   templateUrl: './design-list.component.html',
   styleUrls: ['./design-list.component.css']
 })
@@ -18,12 +27,22 @@ export class DesignListComponent {
   @Output() selectDesign = new EventEmitter<string>();
   @Output() toggleDescription = new EventEmitter<{designId: string, event: Event}>();
   
-  onSelectDesign(designId: string): void {
-    this.selectDesign.emit(designId);
+  constructor(private sanitizer: DomSanitizer) {}
+  
+  // Method to safely interpret HTML content
+  getSafeHtml(htmlContent: string) {
+    return this.sanitizer.bypassSecurityTrustHtml(htmlContent);
   }
   
   onToggleDescription(designId: string, event: Event): void {
-    event.stopPropagation(); // Prevent triggering selectDesign
-    this.toggleDescription.emit({designId, event});
+    // Emit the complex object with both the ID and the event
+    this.toggleDescription.emit({ designId, event });
+    
+    // Prevent the click from triggering the design selection
+    event.stopPropagation();
+  }
+  
+  onSelectDesign(designId: string): void {
+    this.selectDesign.emit(designId);
   }
 }

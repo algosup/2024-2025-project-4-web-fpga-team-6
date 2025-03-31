@@ -23,6 +23,11 @@ export interface ColorPalette {
   dataConnection: string;
   clockConnection: string;
   resetConnection: string;
+
+  // Active state colors
+  active: string; // Color for active components
+  activeConnection: string; // Color for active connections
+  activeClockPin: string; // Color for active clock pins
 }
 
 export interface VisualDimensions {
@@ -64,52 +69,68 @@ export class VisualizationStyleService {
     animatedConnections: false
   };
   
+  // Update color palette for more contrast
+
+  // Light palette (active colors)
   private _lightPalette: ColorPalette = {
+    // Existing colors
     background: '#ffffff',
-    grid: '#e0e0e0',
+    grid: '#f0f0f0',
     text: '#333333',
-    componentStroke: '#0B3D91',
+    componentStroke: '#000000',
     
-    // Component colors
-    lut: '#2212F4',    // Blue for LUTs
-    dff: '#EA4335',    // Red for DFFs  
-    gpio: '#34A853',   // Green for GPIOs
-    wire: '#FBBC05',   // Yellow for wires
+    // Component fill colors
+    lut: '#2196F3', // Blue
+    dff: '#FF5722', // Orange
+    gpio: '#4CAF50', // Green
+    wire: '#FFC107', // Amber
     
-    // Pin colors
-    inputPin: '#2196F3',  // Blue for inputs
-    outputPin: '#FF5722', // Orange for outputs
-    clockPin: '#9C27B0',  // Purple for clocks
-    controlPin: '#4CAF50',// Green for control pins
+    // Pin colors by type
+    inputPin: '#64b5f6',
+    outputPin: '#ff8a65',
+    clockPin: '#ba68c8',
+    controlPin: '#4CAF50',
     
     // Connection colors
     dataConnection: '#555555',  // Dark gray
     clockConnection: '#9C27B0', // Purple
-    resetConnection: '#F44336'  // Red
+    resetConnection: '#F44336',  // Red
+
+    // Active state colors
+    active: '#FF1744',  // Bright red for active state
+    activeConnection: '#FF1744', // Same bright red for active connections
+    activeClockPin: '#FF1744'  // Same bright red for active clock pins
   };
-  
+
+  // Dark palette (match the pattern)
   private _darkPalette: ColorPalette = {
+    // Existing colors
     background: '#121212',
-    grid: '#333333',
+    grid: '#252525',
     text: '#e0e0e0',
-    componentStroke: '#4285F4',
+    componentStroke: '#555555',
     
-    // Component colors - brighter for dark mode
-    lut: '#5c9cff',
-    dff: '#ff6b5c',
-    gpio: '#4cd964',
-    wire: '#ffce38',
+    // Component fill colors
+    lut: '#1565C0', // Darker blue
+    dff: '#D84315', // Darker orange
+    gpio: '#2E7D32', // Darker green
+    wire: '#FFA000', // Darker amber
     
-    // Pin colors
-    inputPin: '#64b5f6',
-    outputPin: '#ff8a65',
-    clockPin: '#ba68c8',
-    controlPin: '#81c784',
+    // Pin colors by type
+    inputPin: '#42A5F5',
+    outputPin: '#FF7043',
+    clockPin: '#AB47BC',
+    controlPin: '#66BB6A',
     
     // Connection colors
-    dataConnection: '#aaaaaa',
-    clockConnection: '#ce93d8',
-    resetConnection: '#ef9a9a'
+    dataConnection: '#9E9E9E',  // Light gray
+    clockConnection: '#BA68C8', // Light purple
+    resetConnection: '#EF5350',  // Light red
+
+    // Active state colors
+    active: '#FF1744',  // Same bright red
+    activeConnection: '#FF1744', // Same bright red
+    activeClockPin: '#FF1744'  // Same bright red
   };
   
   private _dimensions: VisualDimensions = {
@@ -155,6 +176,10 @@ export class VisualizationStyleService {
   getComponentColor(componentType: string): string {
     const type = componentType.toLowerCase();
     
+    // First check for special state types
+    if (type === 'active') return this.colors.active;
+    
+    // Then check for component types
     if (type.includes('lut')) return this.colors.lut;
     if (type.includes('ff') || type.includes('flop') || type.includes('dff')) return this.colors.dff;
     if (type.includes('gpio') || type.includes('io')) return this.colors.gpio;
@@ -203,6 +228,19 @@ export class VisualizationStyleService {
         return defaultStyle;
       default:
         return defaultStyle;
+    }
+  }
+
+  getConnectionColor(type: string): string {
+    // Get the active color palette
+    const colors = this._options.darkMode ? this._darkPalette : this._lightPalette;
+    
+    switch(type.toLowerCase()) {
+      case 'active': return colors.activeConnection;
+      case 'clock': return colors.clockConnection;
+      case 'reset': return colors.resetConnection;
+      case 'data':
+      default: return colors.dataConnection;
     }
   }
 }

@@ -3,21 +3,39 @@
     <h2>Available Designs</h2>
     <a [routerLink]="['/teacher']" class="add-design">+</a>
   </div>
+  
   <div class="design-list">
-    <div *ngFor="let design of designs" 
-          class="design-item" 
-          [class.selected]="currentDesignId === design.id">
-      <div class="design-header" (click)="onSelectDesign(design.id)">
-        <span class="design-name">{{ design.name }}</span>
-        <button class="expand-button" 
-                [class.expanded]="expandedDesignId === design.id"
-                (click)="onToggleDescription(design.id, $event)">
-          ▼
-        </button>
-      </div>
-      <div class="design-description" 
-            *ngIf="expandedDesignId === design.id"
-            [innerHTML]="design.description">
+    <div class="design-items">
+      <div 
+        *ngFor="let design of designs" 
+        class="design-item"
+        [class.active]="design.id === currentDesignId"
+      >
+        <div class="design-header">
+          <button 
+            class="design-title" 
+            (click)="onSelectDesign(design.id)"
+          >
+            {{ design.name }}
+          </button>
+          
+          <button 
+            class="toggle-description" 
+            (click)="onToggleDescription(design.id, $event)"
+            [attr.aria-expanded]="expandedDesignId === design.id"
+          >
+            <span class="icon">
+              {{ expandedDesignId === design.id ? '▼' : '►' }}
+            </span>
+          </button>
+        </div>
+        
+        <div 
+          class="design-description" 
+          *ngIf="expandedDesignId === design.id"
+          [innerHTML]="getSafeHtml(design.description)"
+        >
+        </div>
       </div>
     </div>
   </div>

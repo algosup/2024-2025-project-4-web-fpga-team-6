@@ -103,38 +103,25 @@ export class UnifiedComponentRendererService {
     });
   }
   
-  // Consistent pin rendering by type
+  // Enhanced clock pin rendering
   private renderPinByType(
     g: d3.Selection<any, any, any, any>,
     pin: Pin
   ): void {
-    // Calculate direction based on pin side
-    let directionX = 0;
-    let directionY = 0;
-    
-    switch(pin.side) {
-      case 'left':
-        directionX = -1;
-        break;
-      case 'right':
-        directionX = 1;
-        break;
-      case 'top':
-        directionY = -1;
-        break;
-      case 'bottom':
-        directionY = 1;
-        break;
-    }
-    
     const pinRadius = this.styleService.dimensions.pinRadius;
     const symbolSize = this.styleService.dimensions.pinSymbolSize;
     
-    // Use style service for consistent colors
+    // Calculate direction based on pin side
+    const directionX = pin.side === 'left' ? 1 : (pin.side === 'right' ? -1 : 0);
+    const directionY = pin.side === 'top' ? 1 : (pin.side === 'bottom' ? -1 : 0);
+    
+    // Add class based on pin type for easier selection later
+    g.classed(pin.type, true);
+    
     switch(pin.type) {
       case 'input':
-        g.append('circle')
-          .attr('r', pinRadius)
+        g.append('path')
+          .attr('d', `M ${-directionX * symbolSize},0 L 0,${-symbolSize * 0.6} L 0,${symbolSize * 0.6} Z`)
           .attr('fill', this.styleService.getPinColor('input'));
         break;
       
@@ -145,25 +132,49 @@ export class UnifiedComponentRendererService {
         break;
       
       case 'clock':
+        // Improved clock pin with more noticeable shape
+        // Triangle pointing inward for clock pins
         g.append('path')
           .attr('d', `
-            M ${-directionX * symbolSize},${-directionY * symbolSize * 0.6}
-            L ${directionX * 0},0
-            L ${-directionX * symbolSize},${directionY * symbolSize * 0.6}
+            M ${-directionX * symbolSize},${-directionY * symbolSize * 0.8}
+            L ${directionX * symbolSize * 0.5},0
+            L ${-directionX * symbolSize},${directionY * symbolSize * 0.8}
             Z
           `)
-          .attr('fill', this.styleService.getPinColor('clock'));
+          .attr('fill', this.styleService.getPinColor('clock'))
+          .attr('class', 'clock-pin-symbol');
+
+        // Add a small circle at the center for better visibility
+        g.append('circle')
+          .attr('r', pinRadius * 0.6)
+          .attr('fill', this.styleService.getPinColor('clock'))
+          .attr('class', 'clock-pin-center');
         break;
       
       case 'control':
-        const halfSize = symbolSize / 2;
         g.append('rect')
-          .attr('x', -halfSize)
-          .attr('y', -halfSize)
-          .attr('width', symbolSize)
-          .attr('height', symbolSize)
+          .attr('x', -symbolSize * 0.6)
+          .attr('y', -symbolSize * 0.6)
+          .attr('width', symbolSize * 1.2)
+          .attr('height', symbolSize * 1.2)
           .attr('fill', this.styleService.getPinColor('control'));
         break;
+    }
+    
+    // Add pin label if available
+    if (pin.name) {
+      const labelOffset = this.styleService.dimensions.pinLabelOffset;
+      const labelX = pin.side === 'right' ? labelOffset : (pin.side === 'left' ? -labelOffset : 0);
+      const labelY = pin.side === 'bottom' ? labelOffset : (pin.side === 'top' ? -labelOffset : 0);
+      
+      g.append('text')
+        .attr('x', labelX)
+        .attr('y', labelY)
+        .attr('text-anchor', pin.side === 'right' ? 'start' : (pin.side === 'left' ? 'end' : 'middle'))
+        .attr('dominant-baseline', pin.side === 'bottom' ? 'hanging' : (pin.side === 'top' ? 'auto' : 'central'))
+        .attr('font-size', '10px')
+        .attr('fill', this.styleService.colors.text)
+        .text(pin.name);
     }
   }
 }

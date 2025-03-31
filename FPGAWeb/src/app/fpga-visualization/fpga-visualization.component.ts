@@ -7,6 +7,8 @@ import { ControlsComponent } from './components/sidebar/controls/controls.compon
 // Import the D3 visualization component instead of json-viewer
 import { D3VisualizationComponent } from './components/visualization/d3-visualization/d3-visualization.component';
 import { FpgaHeaderComponent } from './components/visualization/fpga-header/fpga-header.component';
+// Import the event interface from the design-list component
+import { DesignDescriptionEvent } from './components/sidebar/design-list/design-list.component';
 
 @Component({
   selector: 'app-fpga-visualization',
@@ -20,89 +22,94 @@ import { FpgaHeaderComponent } from './components/visualization/fpga-header/fpga
     FpgaHeaderComponent
   ],
   templateUrl: './fpga-visualization.component.html',
-  styleUrl: './fpga-visualization.component.css'
+  styleUrls: ['./fpga-visualization.component.css']
 })
 export class FpgaVisualizationComponent implements OnInit {
-  title = 'FPGA Visualization';
+  title = 'FPGA Visualization Platform';
+  
+  // Design selection
+  designs: Design[] = [];
+  currentDesign: string | null = null; // Changed to string ID, not Design object
+  expandedDesignId: string | null = null;
+
+  // Simulation state
   isRunning = false;
   isPaused = false;
   speed = 1;
-  currentDesign = '';
-  designs: Design[] = [];
-  selectedDesign: Design | null = null;
-  expandedDesignId: string | null = null;
-
+  clockFrequency = 1; // MHz
+  
+  // Visualization options
+  layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
+  darkMode = false;
+  
   constructor(private designService: DesignService) {}
 
-  ngOnInit(): void {
-    // Subscribe to designs updates
+  ngOnInit() {
+    // Load designs from service
     this.designService.getDesigns().subscribe(designs => {
       this.designs = designs;
     });
   }
 
-  selectDesign(designId: string): void {
-    const design = this.designs.find(d => d.id === designId);
-    if (design) {
-      this.selectedDesign = design;
-      this.currentDesign = designId;
-      this.isRunning = false;
-      this.isPaused = false;
-      console.log('Selected design:', design.name);
-      if (design.jsonContent) {
-        console.log('Loading design:', design.name);
-      }
-    }
+  selectDesign(designId: string) {
+    this.currentDesign = designId;
+    this.stopSimulation(); // Reset simulation when changing design
   }
 
-  playSimulation(): void {
-    if (!this.currentDesign) {
-      alert('Please select a design first');
-      return;
-    }
+  // Update to handle the complex event object
+  toggleDescription(event: DesignDescriptionEvent): void {
+    const designId = event.designId;
+    this.expandedDesignId = this.expandedDesignId === designId ? null : designId;
+  }
+
+  getDesignName(designId: string | null): string {
+    if (!designId) return 'No Design Selected';
+    
+    const design = this.designs.find(d => d.id === designId);
+    return design ? design.name : 'Unknown Design';
+  }
+
+  getDesignObject(designId: string | null): Design | null {
+    if (!designId) return null;
+    return this.designs.find(d => d.id === designId) || null;
+  }
+
+  // Simulation control methods
+  playSimulation() {
     this.isRunning = true;
     this.isPaused = false;
-    console.log(`Starting simulation at speed x${this.speed}`);
+    console.log(`Playing simulation at ${this.speed}x speed`);
   }
 
-  pauseSimulation(): void {
-    if (this.isRunning) {
-      this.isPaused = true;
-      this.isRunning = false;
-      console.log('Simulation paused');
-    }
+  pauseSimulation() {
+    this.isPaused = true;
+    console.log('Simulation paused');
   }
 
-  resumeSimulation(): void {
-    if (this.isPaused) {
-      this.isPaused = false;
-      this.isRunning = true;
-      console.log(`Resuming simulation at speed x${this.speed}`);
-    }
+  resumeSimulation() {
+    this.isPaused = false;
+    console.log(`Resuming simulation at ${this.speed}x speed`);
   }
 
-  stepSimulation(): void {
-    if (!this.currentDesign) {
-      alert('Please select a design first');
-      return;
-    }
-    console.log('Simulation stepped forward');
+  resetSimulation() {
+    this.isRunning = false;
+    this.isPaused = false;
+    console.log('Simulation reset');
   }
 
-  changeSpeed(newSpeed: number): void {
+  changeSpeed(newSpeed: number) {
     this.speed = newSpeed;
-    if (this.isRunning) {
-      console.log(`Changed simulation speed to x${this.speed}`);
-    }
+    console.log(`Changed simulation speed to ${this.speed}x`);
   }
 
-  toggleDescription(event: {designId: string, event: Event}): void {
-    this.expandedDesignId = this.expandedDesignId === event.designId ? null : event.designId;
+  changeClockFrequency(newFrequency: number) {
+    this.clockFrequency = newFrequency;
+    console.log(`Changed clock frequency to ${this.clockFrequency} MHz`);
   }
 
-  // Helper method to get design name
-  getDesignName(designId: string): string {
-    const design = this.designs.find(d => d.id === designId);
-    return design ? design.name : '';
+  // Added for simulation stop
+  stopSimulation() {
+    this.isRunning = false;
+    this.isPaused = false;
   }
 }

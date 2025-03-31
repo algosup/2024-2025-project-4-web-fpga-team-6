@@ -25,6 +25,23 @@ export class InteractionHandlerService {
   private readonly MAX_HISTORY = 20; // Maximum number of history states to keep
   // Add this property to the class
   private originalStyles = new Map<string, {stroke: string, strokeWidth: string, filter: string}>();
+  // Add this property to track whether selection is enabled
+  private selectionEnabled: boolean = true;
+  
+  // Add this method to enable/disable selection
+  setSelectionEnabled(enabled: boolean): void {
+    this.selectionEnabled = enabled;
+    
+    // If disabling selection, clear any current selection
+    if (!enabled && this.selectedComponents.size > 0) {
+      const allComponents = d3.selectAll('.component');
+      this.clearSelection(allComponents);
+    }
+    
+    // Update cursor style for all components
+    d3.selectAll('.component')
+      .style('cursor', enabled ? 'grab' : 'default');
+  }
 
   setupInteractions(selection: d3.Selection<any, ComponentData, any, any>): void {
     this.initializeTooltip();
@@ -44,6 +61,9 @@ export class InteractionHandlerService {
     
     // Create selection area on mouse down
     svgContainer.on('mousedown', (event) => {
+      // Skip if selection is disabled
+      if (!this.selectionEnabled) return;
+
       // Only start selection if not clicking on a component
       if (event.target === svg || event.target.classList.contains('svg-container')) {
         // Don't interfere with pan/zoom
@@ -131,7 +151,11 @@ export class InteractionHandlerService {
 
     // Add click selection for components
     selection.on('click', (event, d) => {
+      // Stop event propagation to prevent other handlers from firing
       event.stopPropagation();
+      
+      // Skip if selection is disabled
+      if (!this.selectionEnabled) return;
       
       const componentEl = d3.select(event.currentTarget);
       
@@ -164,6 +188,9 @@ export class InteractionHandlerService {
   private setupGroupDragging(selection: d3.Selection<any, ComponentData, any, any>): void {
     const dragBehavior = d3.drag<any, ComponentData>()
       .on('start', (event, d) => {
+        // Skip if selection is disabled
+        if (!this.selectionEnabled) return;
+
         // Don't initiate drag on right click
         if (event.sourceEvent.button !== 0) return;
         

@@ -27,25 +27,65 @@
     </button>
     
     <button 
-      (click)="onStep()" 
-      [disabled]="isRunning || !hasSelection"
-      class="control-button step"
+      (click)="onReset()" 
+      [disabled]="!hasSelection"
+      class="control-button reset"
     >
-      <span class="icon">⏭</span> Step
+      <span class="icon">⟲</span> Reset
     </button>
   </div>
-
+  
   <div class="speed-controls">
     <h3>Simulation Speed</h3>
-    <div class="speed-buttons">
-      <button 
-        *ngFor="let s of speedOptions" 
-        (click)="onSpeedChange(s)" 
-        [class.active]="speed === s"
-        class="speed-button"
+    <div class="slider-container">
+      <input 
+        type="range" 
+        min="{{ minSpeed }}" 
+        max="{{ maxSpeed }}" 
+        step="0.1" 
+        [(ngModel)]="speed"
+        (input)="onSpeedChange($event)" 
+        class="speed-slider"
       >
-        x{{ s }}
-      </button>
+      <div class="input-with-label">
+        <input 
+          type="number" 
+          [(ngModel)]="speed" 
+          (change)="onSpeedChange($event)"
+          min="{{ minSpeed }}" 
+          max="{{ maxSpeed }}" 
+          step="0.1"
+          class="speed-input"
+        >
+        <span class="speed-label">x</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="frequency-controls">
+    <h3>Clock Frequency</h3>
+    <div class="slider-container">
+      <input 
+        type="range" 
+        min="{{ minFrequency }}" 
+        max="{{ maxFrequency }}" 
+        step="0.1" 
+        [(ngModel)]="clockFrequency"
+        (input)="onClockFrequencyChange($event)" 
+        class="frequency-slider"
+      >
+      <div class="input-with-label">
+        <input 
+          type="number" 
+          [(ngModel)]="clockFrequency" 
+          (change)="onClockFrequencyChange($event)"
+          min="{{ minFrequency }}" 
+          max="{{ maxFrequency }}" 
+          step="0.1"
+          class="frequency-input"
+        >
+        <span class="frequency-label">MHz</span>
+      </div>
     </div>
   </div>
 </div>
