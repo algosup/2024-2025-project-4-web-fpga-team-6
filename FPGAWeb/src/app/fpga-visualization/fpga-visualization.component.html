@@ -56,8 +56,9 @@
           <app-fpga-header
             [title]="getDesignName(currentDesign)"
             [isRunning]="isRunning"
-            [isPaused]="isPaused"
+            [isPaused]="isPaused" 
             [speed]="speed"
+            [clockFrequency]="clockFrequency"
           ></app-fpga-header>
           
           <!-- D3 Visualization Component instead of JSON Viewer -->

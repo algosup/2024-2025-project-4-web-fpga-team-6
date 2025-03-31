@@ -1,7 +1,15 @@
-<div class="d3-container">
-  <div #svgContainer class="svg-container"></div>
-  
-  <div *ngIf="!design?.jsonContent" class="no-data">
-    <p>No design data available to visualize.</p>
+<div class="d3-container" [class.dark-mode]="darkMode">
+  <div #svgContainer class="svg-container" [class.simulation-running]="isRunning">
+    <!-- Add the Clock Indicator Component -->
+    <app-clock-indicator 
+      *ngIf="showClock" 
+      [active]="clockState" 
+      [frequency]="clockFrequency">
+    </app-clock-indicator>
+    
+    <div *ngIf="!design" class="no-data">
+      <p>No data to visualize</p>
+      <p>Please select a design</p>
+    </div>
   </div>
 </div>

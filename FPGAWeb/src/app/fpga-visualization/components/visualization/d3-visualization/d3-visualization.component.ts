@@ -17,11 +17,12 @@ import { UnifiedComponentRendererService } from './renderers/unified-component-r
 import { VisualizationStyleService } from './styles/visualization-style.service';
 import { VisualizationConfigService, LayoutConfig } from './config/visualization-config.service';
 import { IntervalTimer } from '../../../../utils/interval-timer';
+import { ClockIndicatorComponent } from '../clock-indicator/clock-indicator.component';
 
 @Component({
   selector: 'app-d3-visualization',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ClockIndicatorComponent],
   providers: [
     DataExtractorService,
     GridRendererService,
@@ -43,12 +44,12 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   @Input() layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
   @Input() darkMode: boolean = false;
   
-  // Use private fields with public getters/setters
-  private _clockFrequency: number = 1; // Hz (not MHz)
+  // Private backing fields with public properties
   private _simulationSpeed: number = 1; // Slow factor
+  private _clockFrequency: number = 1; // Hz (not MHz)
   
-  // Add a property to track the clock state
-  private clockState: boolean = false;
+  // Change from private to public so it can be accessed in the template
+  public clockState: boolean = false;
   private clockTimer: IntervalTimer | null = null;
   private clockComponent: d3.Selection<any, any, any, any> | null = null;
   
@@ -58,6 +59,9 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   private components: ComponentData[] = [];
   private connections: ConnectionData[] = [];
   private parsedData: any = null;
+
+  // Add a public property to expose clock state to the template
+  public showClock: boolean = false;
   
   constructor(
     private dataExtractor: DataExtractorService,
@@ -295,9 +299,11 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         } else {
           this.startSimulation();
         }
+        this.showClock = true;
       }
     } else {
       this.stopSimulation();
+      this.showClock = false;
     }
   }
   

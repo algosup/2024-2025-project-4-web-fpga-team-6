@@ -46,6 +46,15 @@
   color: var(--cnes-dark-gray);
 }
 
+.clock-indicator {
+  font-size: 0.9rem;
+  color: var(--cnes-dark-gray);
+  background-color: var(--cnes-light-gray);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
 @media (max-width: 992px) {
   .fpga-header {
     flex-direction: column;
