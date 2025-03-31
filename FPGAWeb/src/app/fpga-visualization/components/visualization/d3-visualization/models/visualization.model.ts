@@ -9,6 +9,14 @@ export interface ComponentData {
   y?: number;  // Make sure this exists in your interface
   position?: { x: number; y: number }; // Some places use this format
   data: any;
+  // Add these properties for control signal handling
+  isControlSignal?: boolean;
+  controlType?: 'clock' | 'reset';
+  connections?: Record<string, any>;
+  controlConnections?: {
+    clock?: any;
+    reset?: any;
+  };
 }
 
 export interface RendererContext {
