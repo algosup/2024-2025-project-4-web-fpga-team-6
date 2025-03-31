@@ -114,13 +114,15 @@ svg {
 
 /* Components should be draggable */
 .component {
-  cursor: move;
+  cursor: grab;
+  pointer-events: all;
 }
 
 /* Prevent other components from capturing events during active drag */
 .component.dragging {
   z-index: 1000; /* Bring to front during drag */
   pointer-events: all !important;
+  cursor: grabbing !important;
 }
 
 .component:not(.dragging) {
@@ -130,4 +132,30 @@ svg {
 /* While any component is being dragged, ignore pointer events on other components */
 body.dragging-active .component:not(.dragging) {
   pointer-events: none;
+}
+
+body.dragging-active .component:not(.dragging):not(.selected) {
+  opacity: 0.6;
+}
+
+/* Selection styling */
+.component.selected rect,
+.component.selected path {
+  stroke: #2196F3;
+  stroke-width: 2px;
+  stroke-dasharray: 3,3;
+}
+
+.component.selected {
+  z-index: 10;
+}
+
+.selection-rect {
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Ensure components have component IDs as attributes */
+.component {
+  pointer-events: all;
 }

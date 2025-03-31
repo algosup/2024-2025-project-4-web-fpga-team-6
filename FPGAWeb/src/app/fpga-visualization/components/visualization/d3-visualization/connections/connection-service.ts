@@ -7,6 +7,7 @@ import { ComponentTemplate, ComponentTemplates, Pin } from '../models/component-
 declare global {
   interface DocumentEventMap {
     'component-moved': CustomEvent<{component: ComponentData}>;
+    'components-position-changed': CustomEvent<{components: ComponentData[], isUndo?: boolean}>;
   }
 }
 
@@ -28,6 +29,7 @@ export interface ConnectionData {
 })
 export class ConnectionService implements OnDestroy {
   private connectionListener: any;
+  private multiComponentsListener: any;
   private currentContext: RendererContext | null = null;
   private currentComponents: ComponentData[] = [];
   private currentConnections: ConnectionData[] = [];
@@ -35,13 +37,18 @@ export class ConnectionService implements OnDestroy {
   private pendingUpdate: boolean = false;
   
   constructor() {
-    // Fix the custom event listener
+    // Listen for single component moved events (legacy)
     this.connectionListener = this.handleComponentMoved.bind(this);
     document.addEventListener('component-moved', this.connectionListener as EventListener);
+    
+    // Listen for multi-component movement events (new)
+    this.multiComponentsListener = this.handleMultiComponentsMoved.bind(this);
+    document.addEventListener('components-position-changed', this.multiComponentsListener as EventListener);
   }
   
   ngOnDestroy() {
     document.removeEventListener('component-moved', this.connectionListener as EventListener);
+    document.removeEventListener('components-position-changed', this.multiComponentsListener as EventListener);
     if (this.rafId !== null) {
       cancelAnimationFrame(this.rafId);
     }
@@ -705,6 +712,22 @@ export class ConnectionService implements OnDestroy {
   private handleComponentMoved(event: Event): void {
     // Cast to CustomEvent to access detail property
     const customEvent = event as CustomEvent<{component: ComponentData}>;
+    
+    // Use requestAnimationFrame to synchronize visual updates with the browser
+    if (!this.pendingUpdate) {
+      this.pendingUpdate = true;
+      this.rafId = requestAnimationFrame(() => {
+        this.doRenderConnections();
+        this.pendingUpdate = false;
+        this.rafId = null;
+      });
+    }
+  }
+
+  // Add a method to handle multi-component movements
+  private handleMultiComponentsMoved(event: Event): void {
+    // Cast to CustomEvent to access detail property
+    const customEvent = event as CustomEvent<{components: ComponentData[], isUndo?: boolean}>;
     
     // Use requestAnimationFrame to synchronize visual updates with the browser
     if (!this.pendingUpdate) {

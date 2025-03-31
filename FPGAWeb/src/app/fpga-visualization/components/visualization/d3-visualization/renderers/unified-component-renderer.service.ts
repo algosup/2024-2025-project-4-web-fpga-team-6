@@ -25,7 +25,8 @@ export class UnifiedComponentRendererService {
       .enter()
       .append('g')
       .attr('class', 'component')
-      .attr('id', d => `component-${d.id}`);
+      .attr('id', d => `component-${d.id}`)
+      .attr('data-component-id', d => d.id);  // Add this line for selection
     
     // Draw each component using its template and the style service
     nodes.each((d, i, nodeElements) => {
