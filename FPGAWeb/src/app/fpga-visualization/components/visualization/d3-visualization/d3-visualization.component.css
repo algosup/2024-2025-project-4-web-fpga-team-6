@@ -116,6 +116,7 @@ svg {
 .component {
   cursor: grab;
   pointer-events: all;
+  transition: filter 0.2s ease;
 }
 
 /* Prevent other components from capturing events during active drag */
@@ -123,6 +124,46 @@ svg {
   z-index: 1000; /* Bring to front during drag */
   pointer-events: all !important;
   cursor: grabbing !important;
+}
+
+/* Selected component highlighting */
+.component.selected {
+  filter: drop-shadow(0 0 3px rgba(0, 123, 255, 0.7));
+  z-index: 10;
+}
+
+.component.selected rect, 
+.component.selected path,
+.component.selected circle {
+  stroke: #2196F3;
+  stroke-width: 2px;
+}
+
+/* Add a highlight border around selected components */
+.component.selected::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border: 2px dashed #2196F3;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+/* Make currently dragged component more prominent */
+.component.dragging {
+  z-index: 1000;
+}
+
+/* Improve component interaction indicators */
+.component:hover {
+  filter: brightness(1.1);
+}
+
+.component:hover:not(.selected) {
+  filter: brightness(1.1);
 }
 
 .component:not(.dragging) {
@@ -158,4 +199,23 @@ body.dragging-active .component:not(.dragging):not(.selected) {
 /* Ensure components have component IDs as attributes */
 .component {
   pointer-events: all;
+}
+
+/* Enhanced selection styles */
+.selection-indicator {
+  animation: pulse 2s infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.6;
+  }
 }

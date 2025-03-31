@@ -42,14 +42,14 @@ export class InteractionHandlerService {
     
     // Create selection area on mouse down
     svgContainer.on('mousedown', (event) => {
-      // Only start selection if not clicking on a component and if Shift isn't pressed
+      // Only start selection if not clicking on a component
       if (event.target === svg || event.target.classList.contains('svg-container')) {
         // Don't interfere with pan/zoom
         if (event.button !== 0) return; // Only left mouse button
         
         event.preventDefault();
         
-        // If not holding shift, clear current selection
+        // If not holding shift, clear current selection when clicking on empty space
         if (!event.shiftKey) {
           this.clearSelection(selection);
         }
@@ -149,6 +149,14 @@ export class InteractionHandlerService {
 
     // Setup multi-component dragging
     this.setupGroupDragging(selection);
+    
+    // Add a click handler on the SVG background to clear selection
+    d3.select(svg).on('click', (event) => {
+      // Only clear if clicking directly on SVG background (not on components)
+      if (event.target === svg) {
+        this.clearSelection(selection);
+      }
+    });
   }
 
   private setupGroupDragging(selection: d3.Selection<any, ComponentData, any, any>): void {
@@ -166,7 +174,7 @@ export class InteractionHandlerService {
           this.selectComponent(componentEl, d);
         }
         
-        // Store starting positions for history
+        // Store starting positions for undo history
         const startPositions = Array.from(this.selectedComponents).map(id => {
           const component = this.findComponentById(selection, id);
           if (component) {
@@ -181,7 +189,8 @@ export class InteractionHandlerService {
         
         // Save for undo
         this.addToPositionHistory(
-          Array.from(this.selectedComponents).map(id => this.findComponentById(selection, id)).filter(Boolean) as ComponentData[],
+          Array.from(this.selectedComponents).map(id => this.findComponentById(selection, id))
+            .filter(Boolean) as ComponentData[],
           startPositions
         );
 
@@ -198,7 +207,8 @@ export class InteractionHandlerService {
         const dx = event.x - this.lastMousePosition.x;
         const dy = event.y - this.lastMousePosition.y;
         
-        // Move all selected components
+        // Move all selected components together (simpler behavior)
+        // When any selected component is dragged, move all selected components
         this.selectedComponents.forEach(id => {
           const component = this.findComponentById(selection, id);
           if (component) {
@@ -209,7 +219,7 @@ export class InteractionHandlerService {
             component.position.y += dy;
             
             // Update component visual position
-            const componentElement = selection.filter((d) => d.id === id);
+            const componentElement = selection.filter((comp) => comp.id === id);
             componentElement.attr('transform', `translate(${component.position.x}, ${component.position.y})`);
           }
         });
@@ -220,7 +230,7 @@ export class InteractionHandlerService {
         // Notify connection service
         this.notifyComponentsMoved();
       })
-      .on('end', () => {
+      .on('end', (event) => {
         // Reset state
         this.lastMousePosition = null;
         
@@ -290,14 +300,36 @@ export class InteractionHandlerService {
     componentElement
       .classed('selected', true)
       .raise(); // Move selected elements to front
+      
+    // Highlight the component with a distinct visual style
+    componentElement.selectAll('rect, path, circle')
+      .attr('stroke', '#2196F3')
+      .attr('stroke-width', 2)
+      .style('filter', 'drop-shadow(0 0 5px rgba(33, 150, 243, 0.7))');
   }
 
   private deselectComponent(componentElement: d3.Selection<any, any, any, any>, component: ComponentData): void {
     this.selectedComponents.delete(component.id);
     componentElement.classed('selected', false);
+    
+    // Restore original styles
+    componentElement.selectAll('rect, path, circle')
+      .attr('stroke', null)
+      .attr('stroke-width', null)
+      .style('filter', null);
   }
 
   private clearSelection(selection: d3.Selection<any, any, any, any>): void {
+    // Get currently selected components
+    const selectedElements = selection.filter('.selected');
+    
+    // Reset styles on all elements
+    selectedElements.selectAll('rect, path, circle')
+      .attr('stroke', null)
+      .attr('stroke-width', null)
+      .style('filter', null);
+    
+    // Clear selection state
     this.selectedComponents.clear();
     selection.classed('selected', false);
   }
@@ -324,10 +356,11 @@ export class InteractionHandlerService {
   private notifyComponentsMoved(): void {
     // Collect all selected components
     const components: ComponentData[] = [];
+    
     this.selectedComponents.forEach(id => {
-      const componentElement = d3.select(`[data-component-id="${id}"]`);
-      const component = componentElement.datum() as ComponentData;  // Explicit cast to ComponentData
-      if (component && component.id) { // Verify it has at least an id property
+      // We need to find the component with the right type
+      const component = this.findComponentById(d3.selectAll('.component') as d3.Selection<any, ComponentData, any, any>, id);
+      if (component) {
         components.push(component);
       }
     });
