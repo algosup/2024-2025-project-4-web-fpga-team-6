@@ -1,0 +1,138 @@
+.visualization-container {
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 1rem;
+  font-family: 'Roboto', sans-serif;
+  color: var(--cnes-dark-gray);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid rgba(11, 61, 145, 0.2);
+  padding-bottom: 1rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.cnes-logo-small {
+  margin-right: 1rem;
+}
+
+.cnes-logo-small-img {
+  height: 30px;
+  width: auto;
+  object-fit: contain;
+}
+
+header h1 {
+  font-size: 1.8rem;
+  color: var(--cnes-blue);
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.back-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.teacher-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+.main-content {
+  display: flex;
+  gap: 2rem;
+  flex-grow: 1;
+}
+
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+}
+
+.visualization {
+  flex: 1;
+  background-color: var(--cnes-white);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  min-height: 700px;
+  display: flex;
+  flex-direction: column;
+}
+
+.no-selection {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.cnes-satellite-placeholder {
+  margin-bottom: 2rem;
+}
+
+.cnes-blue-logo {
+  width: auto;
+  height: 250px;
+  object-fit: contain;
+  overflow: hidden;
+}
+
+.no-selection p {
+  color: var(--cnes-dark-gray);
+  font-size: 1.2rem;
+}
+
+.fpga-view {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.fpga-placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+}
+
+.fpga-footer {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--cnes-dark-gray);
+}
+
+@media (max-width: 992px) {
+  .main-content {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+  }
+
+  .visualization {
+    min-height: 500px;
+  }
+}

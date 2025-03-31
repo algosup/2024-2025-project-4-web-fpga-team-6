@@ -1,0 +1,324 @@
+.controls {
+  background-color: var(--cnes-white);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.2rem;
+  border-top: 3px solid var(--cnes-accent);
+}
+
+.controls h2 {
+  font-size: 1.3rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--cnes-blue);
+  font-weight: 500;
+}
+
+.control-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.control-button {
+  flex: 1;
+  min-width: 80px;
+  padding: 0.7rem 0.5rem;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--cnes-blue);
+  color: var(--cnes-white);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+.control-button:hover:not(:disabled) {
+  filter: brightness(110%);
+}
+
+.control-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  font-size: 0.9rem;
+}
+
+.play, .resume {
+  background-color: var(--cnes-blue);
+}
+
+.pause {
+  background-color: var(--cnes-accent);
+}
+
+.reset {
+  background-color: var(--cnes-light-blue);
+}
+
+.speed-controls,
+.frequency-controls {
+  margin-bottom: 1.5rem;
+}
+
+.speed-controls h3,
+.frequency-controls h3 {
+  font-size: 1rem;
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  color: var(--cnes-dark-gray);
+  font-weight: normal;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 10px;
+}
+
+.speed-slider,
+.frequency-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e0e0e0;
+  outline: none;
+  border-radius: 3px;
+}
+
+.speed-slider::-webkit-slider-thumb,
+.frequency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cnes-blue);
+  cursor: pointer;
+}
+
+.speed-slider::-moz-range-thumb,
+.frequency-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cnes-blue);
+  cursor: pointer;
+  border: none;
+}
+
+.input-with-label {
+  display: flex;
+  align-items: center;
+  width: 80px;
+}
+
+.speed-input,
+.frequency-input {
+  width: 50px;
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.speed-label,
+.frequency-label {
+  margin-left: 4px;
+  color: var(--cnes-dark-gray);
+  font-size: 0.9rem;
+}
+
+.speed-display,
+.frequency-display {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--cnes-dark-gray);
+  margin-top: 0.5rem;
+  font-weight: bold;
+}
+
+.speed-explanation {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--cnes-mid-gray);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* Make the slider more user-friendly with tick marks */
+.speed-slider {
+  background: linear-gradient(to right, #e0e0e0, #e0e0e0),
+              repeating-linear-gradient(to right, 
+                #e0e0e0 0%, #e0e0e0 8.33%, 
+                var(--cnes-blue) 8.33%, var(--cnes-blue) 8.5%,
+                #e0e0e0 8.5%, #e0e0e0 16.67%, 
+                var(--cnes-blue) 16.67%, var(--cnes-blue) 16.84%,
+                #e0e0e0 16.84%, #e0e0e0 25%,
+                var(--cnes-blue) 25%, var(--cnes-blue) 25.17%,
+                #e0e0e0 25.17%, #e0e0e0 33.33%,
+                var(--cnes-blue) 33.33%, var(--cnes-blue) 33.5%,
+                #e0e0e0 33.5%, #e0e0e0 41.67%,
+                var(--cnes-blue) 41.67%, var(--cnes-blue) 41.84%,
+                #e0e0e0 41.84%, #e0e0e0 50%,
+                var(--cnes-blue) 50%, var(--cnes-blue) 50.17%,
+                #e0e0e0 50.17%, #e0e0e0 58.33%,
+                var(--cnes-blue) 58.33%, var(--cnes-blue) 58.5%,
+                #e0e0e0 58.5%, #e0e0e0 66.67%,
+                var(--cnes-blue) 66.67%, var(--cnes-blue) 66.84%,
+                #e0e0e0 66.84%, #e0e0e0 75%,
+                var(--cnes-blue) 75%, var(--cnes-blue) 75.17%,
+                #e0e0e0 75.17%, #e0e0e0 83.33%,
+                var(--cnes-blue) 83.33%, var(--cnes-blue) 83.5%,
+                #e0e0e0 83.5%, #e0e0e0 91.67%,
+                var(--cnes-blue) 91.67%, var(--cnes-blue) 91.84%,
+                #e0e0e0 91.84%, #e0e0e0 100%);
+}
+
+/* Update the frequency slider styles to make it visible */
+.frequency-slider {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+  border-radius: 3px;
+  margin: 10px 0;
+  position: relative;
+  background: linear-gradient(to right, var(--cnes-blue), var(--cnes-blue));
+  background-size: 100% 100%;
+}
+
+.frequency-slider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(to right, 
+    var(--cnes-blue) 0%, var(--cnes-blue) 0.5%,
+    transparent 0.5%, transparent 8.33%,
+    var(--cnes-blue) 8.33%, var(--cnes-blue) 8.83%,
+    transparent 8.83%, transparent 16.67%,
+    var(--cnes-blue) 16.67%, var(--cnes-blue) 17.17%,
+    transparent 17.17%, transparent 25%,
+    var(--cnes-blue) 25%, var(--cnes-blue) 25.5%,
+    transparent 25.5%, transparent 33.33%,
+    var(--cnes-blue) 33.33%, var(--cnes-blue) 33.83%,
+    transparent 33.83%, transparent 41.67%,
+    var(--cnes-blue) 41.67%, var(--cnes-blue) 42.17%,
+    transparent 42.17%, transparent 50%,
+    var(--cnes-red) 50%, var(--cnes-red) 50.5%,
+    transparent 50.5%, transparent 58.33%,
+    var(--cnes-blue) 58.33%, var(--cnes-blue) 58.83%,
+    transparent 58.83%, transparent 66.67%,
+    var(--cnes-blue) 66.67%, var(--cnes-blue) 67.17%,
+    transparent 67.17%, transparent 75%,
+    var(--cnes-blue) 75%, var(--cnes-blue) 75.5%,
+    transparent 75.5%, transparent 83.33%,
+    var(--cnes-blue) 83.33%, var(--cnes-blue) 83.83%,
+    transparent 83.83%, transparent 91.67%,
+    var(--cnes-blue) 91.67%, var(--cnes-blue) 92.17%,
+    transparent 92.17%, transparent 100%
+  );
+  pointer-events: none;
+}
+
+.frequency-slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: #e0e0e0;
+  border-radius: 3px;
+}
+
+.frequency-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  cursor: pointer;
+  background: #e0e0e0;
+  border-radius: 3px;
+}
+
+.frequency-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cnes-blue);
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  margin-top: -5px;
+}
+
+.frequency-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--cnes-blue);
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  border: none;
+}
+
+.frequency-slider::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  background: var(--cnes-red);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.frequency-controls {
+  position: relative;
+}
+
+.frequency-center-label {
+  position: absolute;
+  top: 43px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: var(--cnes-red);
+  pointer-events: none;
+}
+
+.frequency-center-mark {
+  position: absolute;
+  top: 41px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 10px;
+  background-color: var(--cnes-red);
+}
+
+/* Remove arrows from number inputs */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}

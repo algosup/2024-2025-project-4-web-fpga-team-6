@@ -1,0 +1,82 @@
+<div class="visualization-container">
+  <header>
+    <div class="header-left">
+      <!-- CNES logo -->
+      <div class="cnes-logo-small">
+        <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img">
+      </div>
+      <h1>{{ title }}</h1>
+    </div>
+    <div class="header-actions">
+      <a [routerLink]="['/teacher']" class="cnes-button accent teacher-button">Teacher Interface</a>
+      <a [routerLink]="['/']" class="cnes-button secondary back-button">Back to Home</a>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="sidebar">
+      <!-- Design List Component (renamed from Example List) -->
+      <app-design-list
+        [designs]="designs"
+        [currentDesignId]="currentDesign || ''"
+        [expandedDesignId]="expandedDesignId"
+        (selectDesign)="selectDesign($event)"
+        (toggleDescription)="toggleDescription($event)"
+      ></app-design-list>
+
+      <!-- Updated Controls Component -->
+      <app-controls
+        [isRunning]="isRunning"
+        [isPaused]="isPaused"
+        [speed]="speed"
+        [clockFrequency]="clockFrequency"
+        [hasSelection]="!!currentDesign"
+        (play)="playSimulation()"
+        (pause)="pauseSimulation()"
+        (resume)="resumeSimulation()"
+        (reset)="resetSimulation()"
+        (speedChange)="changeSpeed($event)"
+        (clockFrequencyChange)="changeClockFrequency($event)"
+      ></app-controls>
+    </div>
+
+    <div class="visualization">
+      <!-- No selection state -->
+      <div *ngIf="!currentDesign" class="no-selection">
+        <div class="cnes-satellite-placeholder">
+          <img src="/assets/3000px_Bleu.jpg" alt="CNES Blue Logo" class="cnes-blue-logo">
+        </div>
+        <p>Please select a design from the sidebar to start</p>
+      </div>
+
+      <!-- FPGA visualization when a design is selected -->
+      <div *ngIf="currentDesign" class="fpga-view">
+        <div class="fpga-placeholder">
+          <!-- FPGA Header Component -->
+          <app-fpga-header
+            [title]="getDesignName(currentDesign)"
+            [isRunning]="isRunning"
+            [isPaused]="isPaused" 
+            [speed]="speed"
+            [clockFrequency]="clockFrequency"
+          ></app-fpga-header>
+          
+          <!-- D3 Visualization Component instead of JSON Viewer -->
+          <app-d3-visualization 
+            [design]="getDesignObject(currentDesign)"
+            [isRunning]="isRunning"
+            [isPaused]="isPaused"
+            [layoutType]="layoutType"
+            [darkMode]="darkMode"
+            [clockFrequency]="clockFrequency"
+            [simulationSpeed]="speed"
+          ></app-d3-visualization>
+          
+          <div class="fpga-footer">
+            <p>© CNES, 2024 - FPGA Visualization Platform</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
