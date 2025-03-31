@@ -1,7 +1,7 @@
 <div class="design-selection">
   <div class="section-header">
     <h2>Available Designs</h2>
-    <a [routerLink]="['/teacher']" class="add-design">+</a>
+    <a [routerLink]="['/teacher']" class="add-design" title="Add New Design">+</a>
   </div>
   
   <div class="design-list">
@@ -10,19 +10,18 @@
         *ngFor="let design of designs" 
         class="design-item"
         [class.active]="design.id === currentDesignId"
+        (click)="onSelectDesign(design.id)"
       >
         <div class="design-header">
-          <button 
-            class="design-title" 
-            (click)="onSelectDesign(design.id)"
-          >
+          <div class="design-title">
             {{ design.name }}
-          </button>
+          </div>
           
           <button 
             class="toggle-description" 
             (click)="onToggleDescription(design.id, $event)"
             [attr.aria-expanded]="expandedDesignId === design.id"
+            title="Toggle Description"
           >
             <span class="icon">
               {{ expandedDesignId === design.id ? '▼' : '►' }}

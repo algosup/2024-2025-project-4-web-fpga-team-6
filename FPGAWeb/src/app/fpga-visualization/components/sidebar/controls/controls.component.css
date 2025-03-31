@@ -139,6 +139,81 @@
   font-size: 0.9rem;
 }
 
+.speed-display,
+.frequency-display {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--cnes-dark-gray);
+  margin-top: 0.5rem;
+  font-weight: bold;
+}
+
+.speed-explanation {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--cnes-mid-gray);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* Make the slider more user-friendly with tick marks */
+.speed-slider {
+  background: linear-gradient(to right, #e0e0e0, #e0e0e0),
+              repeating-linear-gradient(to right, 
+                #e0e0e0 0%, #e0e0e0 8.33%, 
+                var(--cnes-blue) 8.33%, var(--cnes-blue) 8.5%,
+                #e0e0e0 8.5%, #e0e0e0 16.67%, 
+                var(--cnes-blue) 16.67%, var(--cnes-blue) 16.84%,
+                #e0e0e0 16.84%, #e0e0e0 25%,
+                var(--cnes-blue) 25%, var(--cnes-blue) 25.17%,
+                #e0e0e0 25.17%, #e0e0e0 33.33%,
+                var(--cnes-blue) 33.33%, var(--cnes-blue) 33.5%,
+                #e0e0e0 33.5%, #e0e0e0 41.67%,
+                var(--cnes-blue) 41.67%, var(--cnes-blue) 41.84%,
+                #e0e0e0 41.84%, #e0e0e0 50%,
+                var(--cnes-blue) 50%, var(--cnes-blue) 50.17%,
+                #e0e0e0 50.17%, #e0e0e0 58.33%,
+                var(--cnes-blue) 58.33%, var(--cnes-blue) 58.5%,
+                #e0e0e0 58.5%, #e0e0e0 66.67%,
+                var(--cnes-blue) 66.67%, var(--cnes-blue) 66.84%,
+                #e0e0e0 66.84%, #e0e0e0 75%,
+                var(--cnes-blue) 75%, var(--cnes-blue) 75.17%,
+                #e0e0e0 75.17%, #e0e0e0 83.33%,
+                var(--cnes-blue) 83.33%, var(--cnes-blue) 83.5%,
+                #e0e0e0 83.5%, #e0e0e0 91.67%,
+                var(--cnes-blue) 91.67%, var(--cnes-blue) 91.84%,
+                #e0e0e0 91.84%, #e0e0e0 100%);
+}
+
+/* Add tick marks to represent the logarithmic scale */
+.frequency-slider {
+  background: linear-gradient(to right, #e0e0e0, #e0e0e0),
+              repeating-linear-gradient(to right, 
+                #e0e0e0 0%, #e0e0e0 8.33%, 
+                var(--cnes-blue) 8.33%, var(--cnes-blue) 8.5%,
+                #e0e0e0 8.5%, #e0e0e0 16.67%, 
+                var(--cnes-blue) 16.67%, var(--cnes-blue) 16.84%,
+                #e0e0e0 16.84%, #e0e0e0 25%,
+                var(--cnes-blue) 25%, var(--cnes-blue) 25.17%,
+                #e0e0e0 25.17%, #e0e0e0 33.33%,
+                var(--cnes-blue) 33.33%, var(--cnes-blue) 33.5%,
+                #e0e0e0 33.5%, #e0e0e0 41.67%,
+                var(--cnes-blue) 41.67%, var(--cnes-blue) 41.84%,
+                #e0e0e0 41.84%, #e0e0e0 50%,  /* middle = 1 Hz */
+                var(--cnes-red) 50%, var(--cnes-red) 50.5%,  /* highlight 1 Hz */
+                #e0e0e0 50.5%, #e0e0e0 58.33%,
+                var(--cnes-blue) 58.33%, var(--cnes-blue) 58.5%,
+                #e0e0e0 58.5%, #e0e0e0 66.67%,
+                var(--cnes-blue) 66.67%, var(--cnes-blue) 66.84%,
+                #e0e0e0 66.84%, #e0e0e0 75%,
+                var(--cnes-blue) 75%, var(--cnes-blue) 75.17%,
+                #e0e0e0 75.17%, #e0e0e0 83.33%,
+                var(--cnes-blue) 83.33%, var(--cnes-blue) 83.5%,
+                #e0e0e0 83.5%, #e0e0e0 91.67%,
+                var(--cnes-blue) 91.67%, var(--cnes-blue) 91.84%,
+                #e0e0e0 91.84%, #e0e0e0 100%);
+}
+
 /* Remove arrows from number inputs */
 input[type=number]::-webkit-inner-spin-button, 
 input[type=number]::-webkit-outer-spin-button { 

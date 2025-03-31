@@ -25,7 +25,7 @@ import { IntervalTimer } from '../../../../utils/interval-timer';
   providers: [
     DataExtractorService,
     GridRendererService,
-    UnifiedComponentRendererService, // Replace the two services with the unified one
+    UnifiedComponentRendererService,
     InteractionHandlerService,
     SimulationHandlerService,
     LayoutService,
@@ -42,8 +42,10 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isPaused = false;
   @Input() layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
   @Input() darkMode: boolean = false;
-  @Input() clockFrequency: number = 1; // MHz
-  @Input() simulationSpeed: number = 1;
+  
+  // Use private fields with public getters/setters
+  private _clockFrequency: number = 1; // Hz (not MHz)
+  private _simulationSpeed: number = 1; // Slow factor
   
   // Add a property to track the clock state
   private clockState: boolean = false;
@@ -60,14 +62,43 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private dataExtractor: DataExtractorService,
     private gridRenderer: GridRendererService,
-    private componentRenderer: UnifiedComponentRendererService, // Update the type
+    private componentRenderer: UnifiedComponentRendererService,
     private interactionHandler: InteractionHandlerService,
     private simulationHandler: SimulationHandlerService,
     private layoutService: LayoutService,
     private connectionService: ConnectionService,
     private styleService: VisualizationStyleService,
-    private configService: VisualizationConfigService // Add config service
+    private configService: VisualizationConfigService
   ) {}
+
+  // Input setters and getters - make getters public with same accessibility as setters
+  @Input() 
+  set simulationSpeed(value: number) {
+    this._simulationSpeed = value;
+    // Only update signal propagation delays, not clock frequency
+    if (this.isRunning && !this.isPaused) {
+      this.updateSignalPropagationDelays();
+    }
+  }
+  
+  // Must be public (same as setter)
+  get simulationSpeed(): number {
+    return this._simulationSpeed;
+  }
+  
+  @Input() 
+  set clockFrequency(value: number) {
+    this._clockFrequency = value;
+    // Update clock animation timing when frequency changes
+    if (this.isRunning && !this.isPaused) {
+      this.updateClockFrequency();
+    }
+  }
+  
+  // Must be public (same as setter)
+  get clockFrequency(): number {
+    return this._clockFrequency;
+  }
 
   ngOnInit() {
     this.initializeSvg();
@@ -83,8 +114,13 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     // Check if clockFrequency or simulationSpeed has changed
-    if (changes['clockFrequency'] || changes['simulationSpeed']) {
-      this.updateClockFrequency();
+    if ((changes['clockFrequency'] || changes['simulationSpeed']) && this.isRunning && !this.isPaused) {
+      if (changes['clockFrequency']) {
+        this.updateClockFrequency();
+      }
+      if (changes['simulationSpeed']) {
+        this.updateSignalPropagationDelays();
+      }
     }
     
     // Handle other changes like design, darkMode, etc.
@@ -102,16 +138,6 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       // Update dark mode in config service
       this.configService.updateStyleConfig({ darkMode: this.darkMode });
       this.updateVisualization(); // Re-render with new style
-    }
-
-    // Handle clock frequency changes
-    if (changes['clockFrequency'] && this.isRunning && !this.isPaused) {
-      this.updateClockFrequency();
-    }
-    
-    // Handle simulation state changes
-    if ((changes['isRunning'] || changes['isPaused']) && this.svg && this.parsedData) {
-      this.handleSimulationStateChange();
     }
   }
 
@@ -259,14 +285,18 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   }
   
   private handleSimulationStateChange(): void {
-    if (this.isRunning && !this.isPaused) {
-      // Start simulation
-      this.startSimulation();
-    } else if (this.isRunning && this.isPaused) {
-      // Pause simulation
-      this.pauseSimulation();
+    if (this.isRunning) {
+      if (this.isPaused) {
+        this.pauseSimulation();
+      } else {
+        // Starting or resuming
+        if (this.clockTimer) {
+          this.resumeSimulation();
+        } else {
+          this.startSimulation();
+        }
+      }
     } else {
-      // Stop simulation
       this.stopSimulation();
     }
   }
@@ -324,9 +354,11 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   }
   
   private updateClockFrequency(): void {
-    // Calculate new interval based on frequency and speed
+    // Calculate new interval based on frequency only (not affected by slow factor)
     if (this.clockTimer && this.isRunning && !this.isPaused) {
-      const intervalMs = 1000 / (this.clockFrequency * this.simulationSpeed);
+      // Use clockFrequency directly in Hz (not MHz)
+      const intervalMs = 1000 / this.clockFrequency;
+      console.log(`Updating clock timer interval to ${intervalMs} ms (${this.clockFrequency} Hz)`);
       this.clockTimer.setInterval(intervalMs);
     }
   }
@@ -365,27 +397,15 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     // Stop any existing animation
     this.stopClockAnimation();
     
-    // Calculate clock interval based on frequency and simulation speed
-    const intervalMs = 1000 / (this.clockFrequency * this.simulationSpeed);
+    // Calculate clock interval based on frequency directly in Hz
+    const intervalMs = 1000 / this.clockFrequency;
+    
+    console.log(`Starting clock animation with frequency ${this.clockFrequency} Hz (interval: ${intervalMs} ms)`);
     
     // Create and start the timer
     this.clockTimer = new IntervalTimer(() => {
       this.toggleClockState();
     }, intervalMs);
-    
-    this.clockTimer.startTimer(); // Changed from start() to startTimer()
-  }
-  
-  private pauseClockAnimation() {
-    if (this.clockTimer) {
-      this.clockTimer.pause();
-    }
-  }
-  
-  private resumeClockAnimation() {
-    if (this.clockTimer) {
-      this.clockTimer.resume();
-    }
   }
   
   private stopClockAnimation() {
@@ -396,35 +416,58 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   }
   
   private toggleClockState() {
-    // Toggle the state
     this.clockState = !this.clockState;
     
-    // Update visualizations
+    // Update only the visual appearance
     this.updateClockAppearance();
-    this.updateClockConnections();
+    this.updateClockPins();
+    this.updateClockConnections(); // Also update connections visually
+    
+    // Don't update connections here
+    // Instead, trigger DFF updates on clock transitions
+    if (this.clockState) {
+      // On rising edge of clock
+      this.updateDFFStates();
+    }
+  }
+
+  // Add this new method to handle DFF updates on clock transitions
+  private updateDFFStates() {
+    // This is where you would update the state of DFFs based on their inputs
+    // For each DFF:
+    // 1. Check the D input
+    // 2. Update the Q output (with appropriate delay)
+    // 3. Update any connections from Q
+    
+    // Implementation would depend on your DFF model and simulation logic
   }
   
   private updateClockAppearance() {
     if (!this.clockComponent) return;
     
-    // Get colors
+    // Get colors from style service
     const activeColor = this.styleService.getComponentColor('active');
     const inactiveColor = this.styleService.getComponentColor('wire');
     
-    // Update entire clock component
-    this.clockComponent
-      .transition()
-      .duration(50)
-      .attr('fill', this.clockState ? activeColor : inactiveColor);
+    // Update the GPIO component representing the clock
+    this.clockComponent.classed('active', this.clockState);
     
-    // Also update the rectangle inside the component
-    this.clockComponent.selectAll('rect')
+    // Find the clock GPIO component by its type
+    this.clockComponent
+      .selectAll('rect')
       .transition()
       .duration(50)
       .attr('fill', this.clockState ? activeColor : inactiveColor);
       
-    // Get all components with clock pins and update them
-    this.updateClockPins();
+    // Find the output pin of the clock GPIO component
+    const clockPinSelector = this.clockComponent.selectAll('.pin[data-pin-id="out"]');
+    if (!clockPinSelector.empty()) {
+      // Update the pin color
+      clockPinSelector.selectAll('path, circle')
+        .transition()
+        .duration(50)
+        .attr('fill', this.clockState ? activeColor : this.styleService.getPinColor('output'));
+    }
   }
   
   private updateClockConnections() {
@@ -446,8 +489,8 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     // Find all pin elements with class 'clock'
     const clockPins = this.svg.selectAll('.pin.clock');
     
-    // Get colors - use getComponentColor to work around the direct access error
-    const activeColor = this.styleService.getComponentColor('active'); // Use active color instead
+    // Get colors for active and inactive states
+    const activeColor = this.styleService.getComponentColor('active');
     const inactiveColor = this.styleService.getPinColor('clock');
     
     // Update pin colors
@@ -471,6 +514,12 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       .transition()
       .duration(200)
       .attr('stroke', this.styleService.getConnectionColor('clock'));
+    
+    // Reset clock pins
+    this.svg?.selectAll('.pin.clock path, .pin.clock circle')
+      .transition()
+      .duration(200)
+      .attr('fill', this.styleService.getPinColor('clock'));
   }
   
   // Methods for toggling selection capability
@@ -488,5 +537,79 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     
     // Remove the simulation running class
     this.svg?.classed('simulation-running', false);
+  }
+
+  // New method to handle signal propagation with delays
+  private propagateSignalsWithDelays() {
+    console.log('Propagating signals with delays based on slow factor');
+    
+    // Get all components that are directly connected to clock
+    const clockDrivenComponents = this.getClockDrivenComponents();
+    
+    // For each component, schedule updates based on slow factor
+    clockDrivenComponents.forEach(component => {
+      const delay = this.calculatePropagationDelay(component);
+      setTimeout(() => {
+        this.updateComponentState(component);
+      }, delay);
+    });
+  }
+
+  // Helper method to find components directly connected to clock
+  private getClockDrivenComponents(): any[] {
+    // This is a placeholder implementation
+    // You should implement logic to find components connected to clock
+    if (!this.svg) return [];
+    
+    // Find components with clock pins
+    const clockComponents = this.svg.selectAll('.component')
+      .filter(function() {
+        return d3.select(this).selectAll('.pin.clock').size() > 0;
+      });
+    
+    return clockComponents.nodes();
+  }
+
+  // Helper method to calculate propagation delay based on component distance and slow factor
+  private calculatePropagationDelay(component: any): number {
+    // Example implementation - could be more sophisticated based on
+    // distance from clock, number of hops, etc.
+    const baseDelay = 50; // Base delay in ms
+    return baseDelay * this.simulationSpeed;
+  }
+
+  // Helper method to update a component's visual state
+  private updateComponentState(component: any) {
+    // This is a placeholder implementation
+    // You should implement logic to update component states
+    // based on their inputs and the simulation model
+    const componentEl = d3.select(component);
+    
+    // Example: Toggle active state for demonstration
+    const isActive = componentEl.classed('active');
+    componentEl.classed('active', !isActive);
+    
+    // Example: Update output pins
+    componentEl.selectAll('.pin[data-pin-type="output"]')
+      .classed('active', !isActive);
+  }
+
+  // Add this method that's being referenced but missing
+  private updateSignalPropagationDelays(): void {
+    // Apply slow factor to all signal propagation animations
+    console.log(`Updating signal propagation delays with slow factor ${this.simulationSpeed}x`);
+    
+    // Example implementation:
+    const baseTransitionMs = 100; // Base transition time in ms
+    const adjustedTransitionMs = baseTransitionMs * this.simulationSpeed;
+    
+    // Update CSS variables or direct styles for signal animations
+    this.svg?.selectAll('.connection:not(.clock)')
+      .style('transition-duration', `${adjustedTransitionMs}ms`);
+      
+    // Schedule propagation of active signals
+    if (this.isRunning && !this.isPaused) {
+      this.propagateSignalsWithDelays();
+    }
   }
 }

@@ -35,8 +35,8 @@ export class FpgaVisualizationComponent implements OnInit {
   // Simulation state
   isRunning = false;
   isPaused = false;
-  speed = 1;
-  clockFrequency = 1; // MHz
+  speed = 1;  // Slow factor (1x) for signal propagation
+  clockFrequency = 1; // Default 1 Hz (middle of log scale)
   
   // Visualization options
   layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
@@ -99,12 +99,22 @@ export class FpgaVisualizationComponent implements OnInit {
 
   changeSpeed(newSpeed: number) {
     this.speed = newSpeed;
-    console.log(`Changed simulation speed to ${this.speed}x`);
+    console.log(`Changed signal propagation slow factor to ${this.speed}x`);
   }
 
   changeClockFrequency(newFrequency: number) {
     this.clockFrequency = newFrequency;
-    console.log(`Changed clock frequency to ${this.clockFrequency} MHz`);
+    const formattedValue = this.formatClockFrequency(newFrequency);
+    console.log(`Changed clock frequency to ${formattedValue}`);
+  }
+
+  // Helper to format frequency values with appropriate units
+  private formatClockFrequency(value: number): string {
+    if (value < 1) return `${value.toFixed(3)} Hz`;
+    if (value < 1000) return `${value.toFixed(1)} Hz`;
+    if (value < 1000000) return `${(value/1000).toFixed(1)} kHz`;
+    if (value < 1000000000) return `${(value/1000000).toFixed(1)} MHz`;
+    return `${(value/1000000000).toFixed(1)} GHz`;
   }
 
   // Added for simulation stop

@@ -31,6 +31,7 @@ export class DesignListComponent {
   
   // Method to safely interpret HTML content
   getSafeHtml(htmlContent: string) {
+    if (!htmlContent) return '';
     return this.sanitizer.bypassSecurityTrustHtml(htmlContent);
   }
   
