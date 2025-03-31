@@ -17,6 +17,7 @@ export interface ComponentData {
     clock?: any;
     reset?: any;
   };
+  tags?: string[]; 
 }
 
 export interface RendererContext {

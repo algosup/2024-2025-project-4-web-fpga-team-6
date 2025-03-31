@@ -75,17 +75,17 @@ export class VisualizationConfigService {
       } // Update to match the new type
     },
     layout: {
-      type: 'grid',
+      type: 'grid', // Ensure default layout is set to grid
       padding: 30,
-      componentSpacing: 20,
+      componentSpacing: 50, // Updated spacing
       enableDragging: true,
-      connectionStyle: 'curved', // Default to curved connections
+      connectionStyle: 'orthogonal', // Updated default connection style
       // Force layout defaults
       forceLinkDistance: 100,
       forceCharge: -300,
       // Grid layout defaults
-      gridRows: 0, // Auto calculate
-      gridColumns: 0, // Auto calculate
+      gridRows: 8, // Updated default rows
+      gridColumns: 12, // Updated default columns
       // Hierarchical layout defaults
       hierarchicalDirection: 'TB'
     },
@@ -159,7 +159,12 @@ export class VisualizationConfigService {
   }
   
   updateLayoutConfig(config: Partial<LayoutConfig>): void {
-    this._currentConfig.layout = {...this._currentConfig.layout, ...config};
+    // Always enforce grid layout regardless of input
+    this._currentConfig.layout = {
+      ...this._currentConfig.layout,
+      ...config,
+      type: 'grid' // Force grid layout type
+    };
     this.configSubject.next(this._currentConfig);
   }
   
