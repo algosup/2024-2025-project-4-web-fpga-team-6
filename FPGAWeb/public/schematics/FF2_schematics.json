@@ -1,0 +1,195 @@
+{
+    "type": "module",
+    "name": "FF2",
+    "external_wires": [
+        {
+            "name": "ext_input_D",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_clk",
+            "type": "input"
+        },
+        {
+            "name": "ext_input_async_reset",
+            "type": "input"
+        },
+        {
+            "name": "ext_output_Q",
+            "type": "output"
+        }
+    ],
+    "cells": [
+        {
+            "type": "DFF",
+            "name": "dff_1",
+            "connections": {
+                "D": "dff_1_D",
+                "Q": "dff_1_Q",
+                "clock": "dff_1_clock"
+            },
+            "initial_state": "0",
+            "D_stability_delay": "-46",
+            "Q_update_delay": "303"
+        },
+        {
+            "type": "DFF",
+            "name": "dff_2",
+            "connections": {
+                "D": "dff_2_D",
+                "Q": "dff_2_Q",
+                "clock": "dff_2_clock"
+            },
+            "initial_state": "0",
+            "D_stability_delay": "-46",
+            "Q_update_delay": "303"
+        },
+        {
+            "type": "LUT_K",
+            "name": "lut_k_1",
+            "K": 5,
+            "mask": "00000000000000000000000000000000",
+            "connections": {
+                "in_4": "0",
+                "in_3": "0",
+                "in_2": "0",
+                "in_1": "0",
+                "in_0": "0",
+                "out": "lut_k_1_out"
+            },
+            "in_out_delays": {
+                "in_0": "152",
+                "in_2": "150",
+                "in_4": "118"
+            }
+        },
+        {
+            "type": "LUT_K",
+            "name": "lut_k_2",
+            "K": 5,
+            "mask": "00000000001100100000000000000010",
+            "connections": {
+                "in_4": "lut_k_2_in_4",
+                "in_3": "0",
+                "in_2": "lut_k_2_in_2",
+                "in_1": "0",
+                "in_0": "lut_k_2_in_0",
+                "out": "lut_k_2_out"
+            },
+            "in_out_delays": {
+                "in_0": "152",
+                "in_2": "150",
+                "in_4": "118"
+            }
+        },
+        {
+            "type": "LUT_K",
+            "name": "lut_k_3",
+            "K": 5,
+            "mask": "00000000000000000101000001000100",
+            "connections": {
+                "in_4": "0",
+                "in_3": "lut_k_3_in_3",
+                "in_2": "lut_k_3_in_2",
+                "in_1": "lut_k_3_in_1",
+                "in_0": "0",
+                "out": "lut_k_3_out"
+            },
+            "in_out_delays": {
+                "in_0": "152",
+                "in_2": "150",
+                "in_4": "118"
+            }
+        }
+    ],
+    "interconnects": [
+        {
+            "name": "route_ext_input_D_TO_lut_k_2_in_0",
+            "connections": {
+                "input": "ext_input_D",
+                "output": "lut_k_2_in_0"
+            },
+            "propagation_delay": "315.405"
+        },
+        {
+            "name": "route_ext_input_clk_TO_dff_1_clock",
+            "connections": {
+                "input": "ext_input_clk",
+                "output": "dff_1_clock"
+            },
+            "propagation_delay": "10"
+        },
+        {
+            "name": "route_ext_input_clk_TO_dff_2_clock",
+            "connections": {
+                "input": "ext_input_clk",
+                "output": "dff_2_clock"
+            },
+            "propagation_delay": "10"
+        },
+        {
+            "name": "route_ext_input_async_reset_TO_lut_k_2_in_2",
+            "connections": {
+                "input": "ext_input_async_reset",
+                "output": "lut_k_2_in_2"
+            },
+            "propagation_delay": "926.544"
+        },
+        {
+            "name": "route_ext_input_async_reset_TO_lut_k_3_in_3",
+            "connections": {
+                "input": "ext_input_async_reset",
+                "output": "lut_k_3_in_3"
+            },
+            "propagation_delay": "618.322"
+        },
+        {
+            "name": "route_dff_2_Q_TO_lut_k_3_in_2",
+            "connections": {
+                "input": "dff_2_Q",
+                "output": "lut_k_3_in_2"
+            },
+            "propagation_delay": "0"
+        },
+        {
+            "name": "route_dff_2_Q_TO_ext_output_Q",
+            "connections": {
+                "input": "dff_2_Q",
+                "output": "ext_output_Q"
+            },
+            "propagation_delay": "777.738"
+        },
+        {
+            "name": "route_lut_k_1_out_TO_lut_k_2_in_4",
+            "connections": {
+                "input": "lut_k_1_out",
+                "output": "lut_k_2_in_4"
+            },
+            "propagation_delay": "203"
+        },
+        {
+            "name": "route_lut_k_3_out_TO_dff_2_D",
+            "connections": {
+                "input": "lut_k_3_out",
+                "output": "dff_2_D"
+            },
+            "propagation_delay": "96"
+        },
+        {
+            "name": "route_lut_k_2_out_TO_dff_1_D",
+            "connections": {
+                "input": "lut_k_2_out",
+                "output": "dff_1_D"
+            },
+            "propagation_delay": "96"
+        },
+        {
+            "name": "route_dff_1_Q_TO_lut_k_3_in_1",
+            "connections": {
+                "input": "dff_1_Q",
+                "output": "lut_k_3_in_1"
+            },
+            "propagation_delay": "0"
+        }
+    ]
+}

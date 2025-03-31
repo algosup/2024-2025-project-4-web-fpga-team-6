@@ -7,6 +7,13 @@ This document provides a detailed technical specification for the FPGA Simulator
 
 - [Technical Specification: FPGA Simulator Web Interface](#technical-specification-fpga-simulator-web-interface)
   - [Table of Contents](#table-of-contents)
+  - [Document Tracking and Version (Revision History)](#document-tracking-and-version-revision-history)
+  - [Points of Contact](#points-of-contact)
+  - [Terminology Standardization](#terminology-standardization)
+  - [Assumptions and Constraints](#assumptions-and-constraints)
+    - [Assumptions](#assumptions)
+    - [Constraints](#constraints)
+  - [Risk Assessment](#risk-assessment)
   - [1. Introduction](#1-introduction)
     - [1.1 Purpose](#11-purpose)
     - [1.2 Scope](#12-scope)
@@ -44,6 +51,75 @@ This document provides a detailed technical specification for the FPGA Simulator
 
 ---
 
+## Document Tracking and Version (Revision History)
+| Version | Author       | Date       |
+|---------|--------------|------------|
+| 1.4.3   | Axel DAVID   | 2025-03-25 |
+
+---
+
+| Role                | Name            | Signature | Date       |
+|---------------------|-----------------|-----------|------------|
+| Project Manager     | Manech LAGUENS | ✅         | 2025-03-25 |
+| Program Manager     | Elon DELLILE   | ✅         | 2025-03-25 |
+| Technical Leader    | Axel DAVID     | ✅         | 2025-03-25 |
+| Software Engineer   | Thomas PLANCHAD| ✅         | 2025-03-25 |
+| Software Engineer   | Evan UHRING    | ✅         | 2025-03-25 |
+| Quality Assurance   | Rémy Charles   | ✅         | 2025-03-25 |
+| Technical Writer    | Benoît de Keyn | ✅         | 2025-03-25 |
+
+---
+
+## Points of Contact
+| Role | Name | Picture and links |
+| --- | --- | --- |
+| Project Manager   | Manech LAGUENS  | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJQY4YNT-b9fc406d8169-50">](https://github.com/Manech-Laguens)   |
+| Program Manager   | Elon DELLILE    | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SJR05FL7-464fe5ab420c-50">](https://github.com/HiNett)           |
+| Technical Leader  | Axel DAVID      | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U07D74Y2FN3-c49f70489f3b-50">](https://github.com/Fus1onAxel)       |
+| Software Engineer | Thomas PLANCHAD | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U02EY24GTT8-d1e0d5d26fcb-50">](https://github.com/thomas-planchard) |
+| Software Engineer | Evan UHRING     | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SZB90074-d12b12264117-50">](https://github.com/Evan-UHRING)      |
+| Quality Assurance | Rémy Charles    | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U0338M4B32R-c0f60ab9ca33-50">](https://github.com/RemyCHARLES)      |
+| Technical Writer  | Benoît de Keyn  | [<img src="https://ca.slack-edge.com/T019N8PRR7W-U05SZ8EGZLK-4aa6205b5986-50">](https://github.com/benoitdekeyn)     |
+
+---
+
+## Terminology Standardization
+
+To ensure clarity, the term **"application"** refers to a Verilog design/testbench package. This term will be used consistently throughout the document to avoid confusion with **"simulation"**, which refers to the execution of a Verilog design within the platform.
+
+- **Application**: Refers to the design/testbench code written in Verilog. It includes the hardware description (modules, logic, etc.) and testbenches used to verify the design. It is essentially the input to the simulation process.
+
+- **Simulation**: Refers to the execution of the Verilog code using a simulator (e.g., ModelSim, Icarus Verilog). It involves running the design and testbench to observe the behavior of the hardware, verify functionality, and analyze timing or logic.
+
+In short, the application is the static code, while the simulation is the dynamic process of running and analyzing that code.
+
+---
+
+## Assumptions and Constraints
+
+### Assumptions
+- Users have basic knowledge of Verilog and FPGA concepts.
+- The backend tools (e.g., Yosys, ModelSim) are stable and compatible with the system.
+- The platform will primarily be used in educational environments.
+
+### Constraints
+- The system is limited to simulation and visualization; it does not replace physical FPGA hardware.
+- The platform must support scalability for concurrent users but is not designed for industrial-scale deployment.
+- The project must adhere to the timeline and resource limitations defined by the team.
+
+---
+
+## Risk Assessment
+
+| Risk                     | Mitigation Strategy                     |
+|--------------------------|------------------------------------------|
+| Security vulnerabilities | Implement JWT-based authentication and input validation. |
+| Performance bottlenecks  | Optimize backend processing pipelines and use caching mechanisms. |
+| Compatibility issues     | Conduct thorough testing across supported environments. |
+| Limited resources         | Prioritize critical features and maintain regular communication with stakeholders. |
+
+---
+
 ## 1. Introduction
 
 ### 1.1 Purpose
@@ -51,10 +127,10 @@ The FPGA Simulator Web Interface is envisioned as a state-of-the-art educational
 
 ### 1.2 Scope
 The scope of this project encompasses several key functionalities:
-- **Simulation and Visualization:** Users can upload Verilog-based designs, execute simulations, and view real-time signal propagation on an interactive 2D grid that represents the FPGA layout.
+- **Simulation and Visualization:** Users can upload Verilog-based applications, execute simulations, and view real-time signal propagation on an interactive 2D grid that represents the FPGA layout.
 - **User Interaction:** The platform supports various simulation controls including starting, pausing, stepping through the simulation, and adjusting simulation speeds. This interactivity is central to the learning process.
-- **File Management:** Teachers are provided with an interface to upload and manage Verilog files and testbenches, allowing them to curate educational content and assignments.
-- **Backend Processing:** The system incorporates a robust backend that validates, parses, and processes Verilog and SDF files, transforming them into JSON schematic representations that can be used for visualization.
+- **File Management:** Teachers are provided with an interface to upload and manage Verilog applications and testbenches, allowing them to curate educational content and assignments.
+- **Backend Processing:** The system incorporates a robust backend that validates, parses, and processes Verilog applications, transforming them into JSON schematic representations that can be used for simulation and visualization.
 - **Server-Side Rendering:** Using Angular Universal, the application renders pages on the server to improve performance and search engine optimization (SEO).
 
 The platform is designed for educational purposes and does not intend to replace physical FPGA hardware; rather, it serves as a simulation tool that enhances theoretical learning with practical insights.
@@ -110,7 +186,7 @@ Key architectural elements include:
 
 #### 3.1.1 Interactive 2D Visualization
 The simulation visualization panel is one of the most crucial components of the student interface. It provides:
-- **A Graphical FPGA Floorplan:** The panel displays a 2D grid representing the FPGA's physical layout, highlighting Basic Elements (BELs) and the interconnections between them.
+- **A Graphical FPGA Floorplan:** The panel displays a 2D grid representing the FPGA's physical layout, highlighting Basic Elements of Logic (BELs) and the interconnections between them.
 - **Real-Time Signal Updates:** As the simulation runs, active signals and propagating paths are dynamically highlighted, allowing students to visually track the behavior of their circuit.
 - **Intuitive Navigation:** Features such as zoom and pan enable students to explore different sections of the FPGA layout in detail, improving the overall user experience and understanding.
 
@@ -124,17 +200,17 @@ To facilitate an interactive learning environment, the simulation controls inclu
 
 #### 3.2.1 Application Management
 The teacher interface is designed to support educators in managing simulation content effectively:
-- **File Upload and Management:** Teachers can upload Verilog and testbench files using an intuitive form. The interface displays the name, description, and a list of associated files, allowing for easy management and categorization.
+- **File Upload and Management:** Teachers can upload Verilog applications and testbenches using an intuitive form. The interface displays the name, description, and a list of associated files, allowing for easy management and categorization.
 - **Metadata Handling:** Teachers can provide descriptive metadata for each application, which aids in organizing and retrieving simulation resources.
-- **Deletion and Updates:** The interface allows teachers to delete outdated or incorrect files, ensuring that only valid and up-to-date simulation content is available for student use.
+- **Deletion and Updates:** The interface allows teachers to delete outdated or incorrect applications, ensuring that only valid and up-to-date Verilog applications are available for simulation.
 
 #### 3.2.2 Automated Backend Processing
 To streamline the simulation process, the backend performs several automated tasks:
-- **File Validation:** Uploaded Verilog files are automatically validated for syntax errors and structural integrity, reducing the chances of simulation failures.
-- **Schematic Generation:** The system parses Verilog and SDF files to extract circuit details and timing information, converting them into JSON schematics that are used for visualization.
-- **Seamless Integration:** This automated processing ensures that once files are uploaded, the necessary simulation data is immediately available to the frontend for display.
+- **File Validation:** Uploaded Verilog applications are automatically validated for syntax errors and structural integrity, reducing the chances of simulation failures.
+- **Schematic Generation:** The system parses Verilog applications to extract circuit details and timing information, converting them into JSON schematics that are used for simulation and visualization.
+- **Seamless Integration:** This automated processing ensures that once applications are uploaded, the necessary simulation data is immediately available to the frontend for display.
 
-more information about functional Specification in the [functional specification](../Functional/functionalSpecification.md).
+more information about functional Specification in the [functional specification](../Functional_Specifications/functionalSpecification.md).
 
 ---
 
@@ -174,10 +250,10 @@ These endpoints ensure that the frontend can efficiently request simulation data
 - **File Storage:** Uploaded Verilog files and generated JSON schematics are stored in a dedicated file storage system. This could be on a local server or cloud storage such as AWS S3, ensuring that files are securely maintained and easily accessible.
 
 ### 5.3 Simulation Engine and Processing
-The simulation engine is a critical component that converts uploaded Verilog designs into actionable simulation data:
-- **Verilog Parsing:** A specialized parser (`parser.ts`) reads Verilog and SDF files, extracting key information such as module definitions, port assignments, cell connections, and timing delays.
+The simulation engine is a critical component that converts uploaded Verilog applications into actionable simulation data:
+- **Verilog Parsing:** A specialized parser (`parser.ts`) reads Verilog applications and SDF files, extracting key information such as module definitions, port assignments, cell connections, and timing delays.
 - **Schematic Generation:** The parser transforms the extracted data into a JSON schematic format that can be rendered by the frontend visualization component.
-- **Integration with Simulation Tools:** External tools like Yosys, ModelSim, or Icarus Verilog are integrated into the backend process to synthesize and simulate the Verilog designs. This ensures that the simulation results are accurate and reflective of real-world FPGA behavior.
+- **Integration with Simulation Tools:** External tools like Yosys, ModelSim, or Icarus Verilog are integrated into the backend process to synthesize and simulate the Verilog applications. This ensures that the simulation results are accurate and reflective of real-world FPGA behavior.
 
 ---
 
@@ -215,7 +291,7 @@ A comprehensive testing and debugging strategy is in place to ensure system reli
 - **SSR and Routing Tests:** Special attention is given to ensure that server-side rendering and lazy loading of routes function correctly across different environments.
 - **Logging and Monitoring:** Both the frontend and backend incorporate logging mechanisms to capture errors and performance metrics, enabling rapid debugging and continuous improvement.
 
-more information about tests in the [test plan](../TestPlan/testPlan.md).
+more information about tests in the [test plan](../Test_Plan/testPlan.md).
 
 ---
 
@@ -237,8 +313,8 @@ The following enhancements are planned to extend the capabilities of the FPGA Si
 | **SDF**         | Standard Delay Format, a file format for specifying timing information.|
 | **Yosys**       | An open-source framework for Verilog synthesis and optimization.|
 | **ModelSim**    | A simulation tool for verifying Verilog designs.               |
-| **Icarus Verilog** | A widely used Verilog simulation and synthesis tool.          |
 | **Angular SSR** | Server-Side Rendering in Angular, which improves performance and SEO. |
+| **BELs**        | Basic Elements of Logic, the fundamental building blocks of FPGA circuits.|
 
 ---
 

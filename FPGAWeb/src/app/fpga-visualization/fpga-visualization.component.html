@@ -3,7 +3,7 @@
     <div class="header-left">
       <!-- CNES logo -->
       <div class="cnes-logo-small">
-        <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img" width="30" height="30">
+        <img src="/assets/P41908_Vignette.jpg" alt="CNES Logo" class="cnes-logo-small-img">
       </div>
       <h1>{{ title }}</h1>
     </div>
@@ -15,166 +15,66 @@
 
   <div class="main-content">
     <div class="sidebar">
-      <div class="example-selection">
-        <div class="section-header">
-          <h2>Available Designs</h2>
-          <a [routerLink]="['/teacher']" class="add-design">+</a>
-        </div>
-        <div class="example-list">
-          <div *ngFor="let design of designs" 
-               class="example-item" 
-               [class.selected]="currentExample === design.id">
-            <div class="example-header" (click)="selectExample(design.id)">
-              <span class="example-name">{{ design.name }}</span>
-              <button class="expand-button" 
-                      [class.expanded]="expandedDesignId === design.id"
-                      (click)="toggleDescription(design.id, $event)">
-                ▼
-              </button>
-            </div>
-            <div class="example-description" 
-                 *ngIf="expandedDesignId === design.id"
-                 [innerHTML]="design.description">
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Design List Component (renamed from Example List) -->
+      <app-design-list
+        [designs]="designs"
+        [currentDesignId]="currentDesign || ''"
+        [expandedDesignId]="expandedDesignId"
+        (selectDesign)="selectDesign($event)"
+        (toggleDescription)="toggleDescription($event)"
+      ></app-design-list>
 
-      <div class="controls">
-        <h2>Simulation Controls</h2>
-        <div class="control-buttons">
-          <button 
-            (click)="playSimulation()" 
-            [disabled]="isRunning || !currentExample"
-            class="control-button play"
-          >
-            <span class="icon">▶</span> Play
-          </button>
-          
-          <button 
-            *ngIf="!isPaused"
-            (click)="pauseSimulation()" 
-            [disabled]="!isRunning"
-            class="control-button pause"
-          >
-            <span class="icon">⏸</span> Pause
-          </button>
-          
-          <button 
-            *ngIf="isPaused"
-            (click)="resumeSimulation()" 
-            class="control-button resume"
-          >
-            <span class="icon">▶</span> Resume
-          </button>
-          
-          <button 
-            (click)="stepSimulation()" 
-            [disabled]="isRunning || !currentExample"
-            class="control-button step"
-          >
-            <span class="icon">⏭</span> Step
-          </button>
-        </div>
-
-        <div class="speed-controls">
-          <h3>Simulation Speed</h3>
-          <div class="speed-buttons">
-            <button 
-              *ngFor="let s of [1, 2, 4, 8]" 
-              (click)="changeSpeed(s)" 
-              [class.active]="speed === s"
-              class="speed-button"
-            >
-              x{{ s }}
-            </button>
-          </div>
-        </div>
-        
-        <!-- Add cell details panel when component is selected -->
-        <div class="cell-details" *ngIf="showCellDetails && selectedCellDetails">
-          <h3>Component Details</h3>
-          <div class="details-content">
-            <p><strong>Name:</strong> {{ selectedCellDetails.name }}</p>
-            <p><strong>Type:</strong> {{ selectedCellDetails.type }}</p>
-            <p><strong>State:</strong> {{ selectedCellDetails.state }}</p>
-            
-            <!-- Display connections if available -->
-            <div *ngIf="selectedCellDetails.connections">
-              <p><strong>Connections:</strong></p>
-              <ul>
-                <li *ngFor="let conn of selectedCellDetails.connections | keyvalue">
-                  {{ conn.key }}: {{ conn.value }}
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Add timing legend section -->
-        <div class="timing-legend" *ngIf="currentExample">
-          <h3>Timing Legend</h3>
-          <div class="legend-items">
-            <div class="legend-item">
-              <span class="legend-color" style="background-color: #e74c3c;"></span>
-              <span class="legend-text">High delay (≥ 2ns)</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-color" style="background-color: #f39c12;"></span>
-              <span class="legend-text">Medium delay (1-2ns)</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-color" style="background-color: #7f8c8d;"></span>
-              <span class="legend-text">Low delay (< 1ns)</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Updated Controls Component -->
+      <app-controls
+        [isRunning]="isRunning"
+        [isPaused]="isPaused"
+        [speed]="speed"
+        [clockFrequency]="clockFrequency"
+        [hasSelection]="!!currentDesign"
+        (play)="playSimulation()"
+        (pause)="pauseSimulation()"
+        (resume)="resumeSimulation()"
+        (reset)="resetSimulation()"
+        (speedChange)="changeSpeed($event)"
+        (clockFrequencyChange)="changeClockFrequency($event)"
+      ></app-controls>
     </div>
 
     <div class="visualization">
-      <div class="fpga-view">
-        <!-- Canvas for FPGA visualization -->
-        <div class="fpga-header">
-          <h3>{{ selectedDesign?.name }}</h3>
-          <div class="fpga-status">
-            <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
-            <span class="status-text" *ngIf="isRunning">Running</span>
-            <span class="status-text" *ngIf="isPaused">Paused</span>
-            <span class="status-text" *ngIf="!isRunning && !isPaused">Ready</span>
-            <span class="speed-indicator" *ngIf="isRunning || isPaused">Speed: x{{ speed }}</span>
-            <span class="clock-indicator" *ngIf="currentExample">Clock: {{ clockState }}</span>
-            
-            <!-- Add full screen toggle button -->
-            <button class="fullscreen-toggle" (click)="toggleFullScreen()" title="Toggle full screen">
-              <span *ngIf="!isFullScreen">⛶</span>
-              <span *ngIf="isFullScreen">⮌</span>
-            </button>
-          </div>
+      <!-- No selection state -->
+      <div *ngIf="!currentDesign" class="no-selection">
+        <div class="cnes-satellite-placeholder">
+          <img src="/assets/3000px_Bleu.jpg" alt="CNES Blue Logo" class="cnes-blue-logo">
         </div>
+        <p>Please select a design from the sidebar to start</p>
+      </div>
 
-        <div class="canvas-container" #canvasContainer>
-          <canvas #visualCanvas class="fpga-canvas"></canvas>
-          <!-- Add overlay div for timing labels -->
-          <div #labelsOverlay class="canvas-overlay"></div>
-        </div>
-        
-        <div class="fpga-status" *ngIf="currentExample">
-          <span class="status-indicator" [ngClass]="{'running': isRunning, 'paused': isPaused, 'ready': !isRunning && !isPaused}"></span>
-          <span class="status-text">Status: {{ isRunning ? 'Running' : (isPaused ? 'Paused' : 'Ready') }}</span>
-          <span class="speed-indicator">Speed: x{{ speed }}</span>
-          <span class="clock-indicator">Clock: {{ clockState === '1' ? 'HIGH' : 'LOW' }}</span>
-        </div>
-        
-        <div class="fpga-instructions" *ngIf="currentExample">
-          <p><strong>Instructions:</strong></p>
-          <ul>
-            <li>Click and drag to pan around the design</li>
-            <li>Use the mouse wheel to zoom in/out</li>
-            <li>Click on components to view details</li>
-            <li>Click on input wires to toggle their state (0/1)</li>
-            <li class="signal-direction-note">Arrows on connections show signal flow direction</li>
-          </ul>
+      <!-- FPGA visualization when a design is selected -->
+      <div *ngIf="currentDesign" class="fpga-view">
+        <div class="fpga-placeholder">
+          <!-- FPGA Header Component -->
+          <app-fpga-header
+            [title]="getDesignName(currentDesign)"
+            [isRunning]="isRunning"
+            [isPaused]="isPaused" 
+            [speed]="speed"
+            [clockFrequency]="clockFrequency"
+          ></app-fpga-header>
+          
+          <!-- D3 Visualization Component instead of JSON Viewer -->
+          <app-d3-visualization 
+            [design]="getDesignObject(currentDesign)"
+            [isRunning]="isRunning"
+            [isPaused]="isPaused"
+            [layoutType]="layoutType"
+            [darkMode]="darkMode"
+            [clockFrequency]="clockFrequency"
+            [simulationSpeed]="speed"
+          ></app-d3-visualization>
+          
+          <div class="fpga-footer">
+            <p>© CNES, 2024 - FPGA Visualization Platform</p>
+          </div>
         </div>
       </div>
     </div>

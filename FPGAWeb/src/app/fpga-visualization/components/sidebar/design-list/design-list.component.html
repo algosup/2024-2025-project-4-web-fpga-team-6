@@ -1,0 +1,41 @@
+<div class="design-selection">
+  <div class="section-header">
+    <h2>Available Designs</h2>
+    <a [routerLink]="['/teacher']" class="add-design" title="Add New Design">+</a>
+  </div>
+  
+  <div class="design-list">
+    <div class="design-items">
+      <div 
+        *ngFor="let design of designs" 
+        class="design-item"
+        [class.active]="design.id === currentDesignId"
+        (click)="onSelectDesign(design.id)"
+      >
+        <div class="design-header">
+          <div class="design-title">
+            {{ design.name }}
+          </div>
+          
+          <button 
+            class="toggle-description" 
+            (click)="onToggleDescription(design.id, $event)"
+            [attr.aria-expanded]="expandedDesignId === design.id"
+            title="Toggle Description"
+          >
+            <span class="icon">
+              {{ expandedDesignId === design.id ? '▼' : '►' }}
+            </span>
+          </button>
+        </div>
+        
+        <div 
+          class="design-description" 
+          *ngIf="expandedDesignId === design.id"
+          [innerHTML]="getSafeHtml(design.description)"
+        >
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,96 @@
+<div class="controls">
+  <h2>Simulation Controls</h2>
+  <div class="control-buttons">
+    <button 
+      (click)="onPlay()" 
+      [disabled]="isRunning || !hasSelection"
+      class="control-button play"
+    >
+      <span class="icon">▶</span> Play
+    </button>
+    
+    <button 
+      *ngIf="!isPaused"
+      (click)="onPause()" 
+      [disabled]="!isRunning"
+      class="control-button pause"
+    >
+      <span class="icon">⏸</span> Pause
+    </button>
+    
+    <button 
+      *ngIf="isPaused"
+      (click)="onResume()" 
+      class="control-button resume"
+    >
+      <span class="icon">▶</span> Resume
+    </button>
+    
+    <button 
+      (click)="onReset()" 
+      [disabled]="!hasSelection"
+      class="control-button reset"
+    >
+      <span class="icon">⟲</span> Reset
+    </button>
+  </div>
+  
+  <div class="speed-controls">
+    <h3>Signal Propagation Slow Factor</h3>
+    <div class="slider-container">
+      <input 
+        type="range" 
+        min="0" 
+        max="12" 
+        step="0.1" 
+        [value]="getSpeedSliderValue()"
+        (input)="onSpeedChange($event)" 
+        class="speed-slider"
+      >
+      <div class="input-with-label">
+        <input 
+          type="number" 
+          [(ngModel)]="speed" 
+          (change)="onSpeedChange($event)"
+          min="{{ minSpeed }}" 
+          max="{{ maxSpeed }}" 
+          step="1"
+          class="speed-input"
+        >
+        <span class="speed-label">×</span>
+      </div>
+    </div>
+    <div class="speed-display">{{ formatSpeedValue(speed) }}</div>
+    <div class="speed-explanation">Slows down signal propagation through interconnects</div>
+  </div>
+
+  <div class="frequency-controls">
+    <h3>Clock Frequency</h3>
+    <div class="frequency-center-mark"></div>
+    <div class="frequency-center-label">1 Hz</div>
+    <div class="slider-container">
+      <input 
+        type="range" 
+        min="-3" 
+        max="9" 
+        step="0.1" 
+        [value]="getFrequencySliderValue()"
+        (input)="onFrequencyChange($event)" 
+        class="frequency-slider"
+      >
+      <div class="input-with-label">
+        <input 
+          type="number" 
+          [(ngModel)]="clockFrequency" 
+          (change)="onFrequencyChange($event)"
+          min="{{ minFrequency }}" 
+          max="{{ maxFrequency }}" 
+          step="0.001"
+          class="frequency-input"
+        >
+        <span class="frequency-label">Hz</span>
+      </div>
+    </div>
+    <div class="frequency-display">{{ formatClockFrequency(clockFrequency) }}</div>
+  </div>
+</div>
