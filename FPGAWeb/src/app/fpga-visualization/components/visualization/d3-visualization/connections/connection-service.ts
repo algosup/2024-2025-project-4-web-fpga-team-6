@@ -352,8 +352,8 @@ export class ConnectionService implements OnDestroy {
     const source = this.getPinGlobalPosition(connection.source.component, connection.source.pin);
     const target = this.getPinGlobalPosition(connection.target.component, connection.target.pin);
     
-    // Draw connection using curved path
-    const path = this.createPath(source, target);
+    // Draw connection using curved path that avoids components
+    const path = this.createSmartPath(source, target, connection);
     
     // Get styling based on connection type
     const style = this.getConnectionStyle(connection.type);
@@ -363,9 +363,9 @@ export class ConnectionService implements OnDestroy {
       .attr('class', `connection ${connection.type}`)
       .attr('d', path)
       .attr('fill', 'none')
-      .attr('stroke', style.stroke)         // Set stroke directly as attribute
-      .attr('stroke-width', style.strokeWidth)  // Set width directly
-      .attr('stroke-opacity', 0.8);         // Set opacity directly
+      .attr('stroke', style.stroke)
+      .attr('stroke-width', style.strokeWidth)
+      .attr('stroke-opacity', 0.8);
       
     // Add dasharray only if needed
     if (style.strokeDasharray) {
@@ -397,20 +397,309 @@ export class ConnectionService implements OnDestroy {
     };
   }
   
-  private createPath(source: { x: number; y: number }, target: { x: number; y: number }): string {
-    // Always use orthogonal connections with right angles
-    // This ensures wires exit the component at 90 degrees
+  // Replace simple createPath with a smarter routing algorithm
+  private createSmartPath(
+    source: { x: number; y: number }, 
+    target: { x: number; y: number },
+    connection: ConnectionData
+  ): string {
+    // Get bounding boxes of source and target components
+    const sourceBBox = this.getComponentBBox(connection.source.component);
+    const targetBBox = this.getComponentBBox(connection.target.component);
     
-    // Determine the intermediate points for the orthogonal path
-    const midX = (source.x + target.x) / 2;
+    // Get all component bounding boxes for obstacle avoidance
+    const allComponents = this.currentComponents || [];
+    const obstacles = allComponents
+      .filter(comp => 
+        comp !== connection.source.component && 
+        comp !== connection.target.component)
+      .map(comp => this.getComponentBBox(comp));
     
-    // Create an orthogonal path with right angles
-    return `M ${source.x},${source.y} 
-            L ${source.x + 10 * Math.sign(target.x - source.x)},${source.y}
-            L ${midX},${source.y} 
-            L ${midX},${target.y}
-            L ${target.x - 10 * Math.sign(target.x - source.x)},${target.y}
-            L ${target.x},${target.y}`;
+    // Determine direction vectors based on pin positions on components
+    const sourceDirection = this.getPinDirection(connection.source.pin);
+    const targetDirection = this.getPinDirection(connection.target.pin);
+    
+    // Calculate initial exit and entry points with minimum clearance from component
+    const minClearance = 20; // Increased clearance from component in pixels
+    
+    // Calculate exit point from source component
+    const sourceExit = {
+      x: source.x + sourceDirection.x * minClearance,
+      y: source.y + sourceDirection.y * minClearance
+    };
+    
+    // Calculate entry point to target component
+    const targetEntry = {
+      x: target.x + targetDirection.x * minClearance,
+      y: target.y + targetDirection.y * minClearance
+    };
+
+    // Start building the path from the source pin
+    let path = `M ${source.x},${source.y} `;
+    path += `L ${sourceExit.x},${sourceExit.y} `;
+    
+    // Find a path from source exit to target entry that avoids all obstacles
+    const pathPoints = this.findPathAvoidingObstacles(
+      sourceExit, 
+      targetEntry, 
+      [sourceBBox, targetBBox], 
+      obstacles
+    );
+    
+    // Add all intermediate points to the path
+    pathPoints.forEach(point => {
+      path += `L ${point.x},${point.y} `;
+    });
+    
+    // Connect to the target entry point
+    path += `L ${targetEntry.x},${targetEntry.y} `;
+    
+    // Finally, connect to the exact target pin
+    path += `L ${target.x},${target.y}`;
+    
+    return path;
+  }
+
+  // Find a path that avoids obstacles
+  private findPathAvoidingObstacles(
+    start: { x: number, y: number },
+    end: { x: number, y: number },
+    ignoreObstacles: { x: number, y: number, width: number, height: number }[],
+    allObstacles: { x: number, y: number, width: number, height: number }[]
+  ): { x: number, y: number }[] {
+    // Padding around obstacles to ensure wires don't get too close
+    const padding = 10;
+    
+    // Expand obstacles by adding padding
+    const expandedObstacles = allObstacles.map(obs => ({
+      x: obs.x - padding,
+      y: obs.y - padding,
+      width: obs.width + 2 * padding,
+      height: obs.height + 2 * padding
+    }));
+    
+    // We'll use an orthogonal routing approach with waypoints
+    const waypoints: { x: number, y: number }[] = [];
+    
+    // Determine if going horizontally first or vertically first
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const preferHorizontal = Math.abs(dx) > Math.abs(dy);
+    
+    // Try the preferred direction first
+    if (preferHorizontal) {
+      // Try horizontal segment first, then vertical
+      const horizontalPath = this.tryHorizontalThenVertical(start, end, expandedObstacles, ignoreObstacles);
+      if (horizontalPath.length > 0) {
+        return horizontalPath;
+      }
+      
+      // If that doesn't work, try vertical then horizontal
+      const verticalPath = this.tryVerticalThenHorizontal(start, end, expandedObstacles, ignoreObstacles);
+      if (verticalPath.length > 0) {
+        return verticalPath;
+      }
+    } else {
+      // Try vertical segment first, then horizontal
+      const verticalPath = this.tryVerticalThenHorizontal(start, end, expandedObstacles, ignoreObstacles);
+      if (verticalPath.length > 0) {
+        return verticalPath;
+      }
+      
+      // If that doesn't work, try horizontal then vertical
+      const horizontalPath = this.tryHorizontalThenVertical(start, end, expandedObstacles, ignoreObstacles);
+      if (horizontalPath.length > 0) {
+        return horizontalPath;
+      }
+    }
+    
+    // If simple paths don't work, try a detour
+    return this.findDetourPath(start, end, expandedObstacles, ignoreObstacles);
+  }
+
+  // Try routing horizontally first, then vertically
+  private tryHorizontalThenVertical(
+    start: { x: number, y: number },
+    end: { x: number, y: number },
+    obstacles: { x: number, y: number, width: number, height: number }[],
+    ignoreObstacles: { x: number, y: number, width: number, height: number }[]
+  ): { x: number, y: number }[] {
+    const midpoint = { x: end.x, y: start.y };
+    
+    // Check if horizontal segment intersects any obstacle
+    if (this.segmentIntersectsObstacle(start, midpoint, obstacles, ignoreObstacles) ||
+        this.segmentIntersectsObstacle(midpoint, end, obstacles, ignoreObstacles)) {
+      return []; // Path not viable
+    }
+    
+    return [midpoint];
+  }
+
+  // Try routing vertically first, then horizontally
+  private tryVerticalThenHorizontal(
+    start: { x: number, y: number },
+    end: { x: number, y: number },
+    obstacles: { x: number, y: number, width: number, height: number }[],
+    ignoreObstacles: { x: number, y: number, width: number, height: number }[]
+  ): { x: number, y: number }[] {
+    const midpoint = { x: start.x, y: end.y };
+    
+    // Check if vertical segment intersects any obstacle
+    if (this.segmentIntersectsObstacle(start, midpoint, obstacles, ignoreObstacles) ||
+        this.segmentIntersectsObstacle(midpoint, end, obstacles, ignoreObstacles)) {
+      return []; // Path not viable
+    }
+    
+    return [midpoint];
+  }
+
+  // Find a detour path when simple paths don't work
+  private findDetourPath(
+    start: { x: number, y: number },
+    end: { x: number, y: number },
+    obstacles: { x: number, y: number, width: number, height: number }[],
+    ignoreObstacles: { x: number, y: number, width: number, height: number }[]
+  ): { x: number, y: number }[] {
+    // Create a grid of potential waypoints
+    const waypoints: { x: number, y: number }[] = [];
+    
+    // Try a three-segment path going upward
+    const upMid1 = { x: start.x, y: start.y - 50 };
+    const upMid2 = { x: end.x, y: start.y - 50 };
+    
+    if (!this.segmentIntersectsObstacle(start, upMid1, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(upMid1, upMid2, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(upMid2, end, obstacles, ignoreObstacles)) {
+      return [upMid1, upMid2];
+    }
+    
+    // Try a three-segment path going downward
+    const downMid1 = { x: start.x, y: start.y + 50 };
+    const downMid2 = { x: end.x, y: start.y + 50 };
+    
+    if (!this.segmentIntersectsObstacle(start, downMid1, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(downMid1, downMid2, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(downMid2, end, obstacles, ignoreObstacles)) {
+      return [downMid1, downMid2];
+    }
+    
+    // Try a three-segment path going leftward
+    const leftMid1 = { x: start.x - 50, y: start.y };
+    const leftMid2 = { x: start.x - 50, y: end.y };
+    
+    if (!this.segmentIntersectsObstacle(start, leftMid1, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(leftMid1, leftMid2, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(leftMid2, end, obstacles, ignoreObstacles)) {
+      return [leftMid1, leftMid2];
+    }
+    
+    // Try a three-segment path going rightward
+    const rightMid1 = { x: start.x + 50, y: start.y };
+    const rightMid2 = { x: start.x + 50, y: end.y };
+    
+    if (!this.segmentIntersectsObstacle(start, rightMid1, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(rightMid1, rightMid2, obstacles, ignoreObstacles) &&
+        !this.segmentIntersectsObstacle(rightMid2, end, obstacles, ignoreObstacles)) {
+      return [rightMid1, rightMid2];
+    }
+    
+    // If all else fails, route the wire through a very long detour
+    // (add even more waypoints to create a path far from all components)
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const distanceMultiplier = 150;
+    
+    // Create a rectangular path far outside normal component areas
+    return [
+      { x: start.x, y: start.y - distanceMultiplier },
+      { x: start.x + dx/2 + Math.sign(dx) * distanceMultiplier, y: start.y - distanceMultiplier },
+      { x: start.x + dx/2 + Math.sign(dx) * distanceMultiplier, y: end.y + distanceMultiplier },
+      { x: end.x, y: end.y + distanceMultiplier }
+    ];
+  }
+
+  // Check if a line segment intersects with a rectangle
+  private segmentIntersectsObstacle(
+    p1: { x: number, y: number },
+    p2: { x: number, y: number },
+    obstacles: { x: number, y: number, width: number, height: number }[],
+    ignoreObstacles: { x: number, y: number, width: number, height: number }[]
+  ): boolean {
+    // Skip checking obstacles in the ignore list (usually source and target components)
+    const obstaclesFiltered = obstacles.filter(obs => 
+      !ignoreObstacles.some(ignore => 
+        obs.x === ignore.x && obs.y === ignore.y && obs.width === ignore.width && obs.height === ignore.height
+      )
+    );
+    
+    return obstaclesFiltered.some(obstacle => {
+      // Fast check: if segment is completely outside the obstacle's bounding box
+      const minX = Math.min(p1.x, p2.x);
+      const maxX = Math.max(p1.x, p2.x);
+      const minY = Math.min(p1.y, p2.y);
+      const maxY = Math.max(p1.y, p2.y);
+      
+      if (maxX < obstacle.x || minX > obstacle.x + obstacle.width ||
+          maxY < obstacle.y || minY > obstacle.y + obstacle.height) {
+        return false;
+      }
+      
+      // For horizontal or vertical segments, check if they pass through the obstacle
+      const isHorizontal = p1.y === p2.y;
+      const isVertical = p1.x === p2.x;
+      
+      if (isHorizontal) {
+        return p1.y >= obstacle.y && p1.y <= obstacle.y + obstacle.height &&
+               Math.max(p1.x, p2.x) >= obstacle.x && Math.min(p1.x, p2.x) <= obstacle.x + obstacle.width;
+      }
+      
+      if (isVertical) {
+        return p1.x >= obstacle.x && p1.x <= obstacle.x + obstacle.width &&
+               Math.max(p1.y, p2.y) >= obstacle.y && Math.min(p1.y, p2.y) <= obstacle.y + obstacle.height;
+      }
+      
+      // For diagonal segments, check all four edges of the obstacle
+      const edges = [
+        { p1: { x: obstacle.x, y: obstacle.y }, p2: { x: obstacle.x + obstacle.width, y: obstacle.y } },
+        { p1: { x: obstacle.x + obstacle.width, y: obstacle.y }, p2: { x: obstacle.x + obstacle.width, y: obstacle.y + obstacle.height } },
+        { p1: { x: obstacle.x + obstacle.width, y: obstacle.y + obstacle.height }, p2: { x: obstacle.x, y: obstacle.y + obstacle.height } },
+        { p1: { x: obstacle.x, y: obstacle.y + obstacle.height }, p2: { x: obstacle.x, y: obstacle.y } }
+      ];
+      
+      return edges.some(edge => this.lineSegmentsIntersect(p1, p2, edge.p1, edge.p2));
+    });
+  }
+
+  // Check if two line segments intersect
+  private lineSegmentsIntersect(
+    p1: { x: number, y: number },
+    p2: { x: number, y: number },
+    p3: { x: number, y: number },
+    p4: { x: number, y: number }
+  ): boolean {
+    // Calculate direction vectors
+    const d1x = p2.x - p1.x;
+    const d1y = p2.y - p1.y;
+    const d2x = p4.x - p3.x;
+    const d2y = p4.y - p3.y;
+    
+    // Calculate the cross product of the two direction vectors
+    const denominator = d1y * d2x - d1x * d2y;
+    
+    // If parallel, they don't intersect
+    if (Math.abs(denominator) < 0.0001) {
+      return false;
+    }
+    
+    // Calculate intersection parameters
+    const d3x = p1.x - p3.x;
+    const d3y = p1.y - p3.y;
+    
+    const t1 = (d2x * d3y - d2y * d3x) / denominator;
+    const t2 = (d1x * d3y - d1y * d3x) / denominator;
+    
+    // Check if intersection point is within both segments
+    return t1 >= 0 && t1 <= 1 && t2 >= 0 && t2 <= 1;
   }
   
   private handleComponentMoved(event: Event): void {
@@ -485,5 +774,76 @@ export class ConnectionService implements OnDestroy {
     });
     
     return connections;
+  }
+
+  // Add the missing helper methods to the ConnectionService class
+
+  // Helper function to get component bounding box
+  private getComponentBBox(component: ComponentData): { x: number, y: number, width: number, height: number } {
+    const position = component.position || { x: 0, y: 0 };
+    
+    // Get component dimensions from context if available, or use defaults
+    let width = 60;
+    let height = 40;
+    
+    if (this.currentContext?.config?.componentSize) {
+      width = this.currentContext.config.componentSize.width;
+      height = this.currentContext.config.componentSize.height;
+    }
+    
+    return {
+      x: position.x,
+      y: position.y,
+      width,
+      height
+    };
+  }
+
+  // Helper to determine the orientation of a pin relative to its component
+  private getPinDirection(pin: Pin): { x: number, y: number } {
+    // Default to pointing right
+    const direction = { x: 1, y: 0 };
+    
+    // Adjust based on pin.position relative to component center
+    // These thresholds determine when a pin is considered on an edge
+    const edgeThreshold = 0.2;
+    
+    // Get component dimensions from context if available, or use defaults
+    let width = 60;
+    let height = 40;
+    
+    if (this.currentContext?.config?.componentSize) {
+      width = this.currentContext.config.componentSize.width;
+      height = this.currentContext.config.componentSize.height;
+    }
+    
+    // Convert pin position to normalized coordinates (0-1)
+    const normalizedX = pin.position.x / width;
+    const normalizedY = pin.position.y / height;
+    
+    // Determine which edge the pin is closest to
+    const leftDist = normalizedX;
+    const rightDist = 1 - normalizedX;
+    const topDist = normalizedY;
+    const bottomDist = 1 - normalizedY;
+    
+    // Find minimum distance to determine which edge the pin is on
+    const minDist = Math.min(leftDist, rightDist, topDist, bottomDist);
+    
+    if (minDist === leftDist) {
+      direction.x = -1;
+      direction.y = 0;
+    } else if (minDist === rightDist) {
+      direction.x = 1;
+      direction.y = 0;
+    } else if (minDist === topDist) {
+      direction.x = 0;
+      direction.y = -1;
+    } else {
+      direction.x = 0;
+      direction.y = 1;
+    }
+    
+    return direction;
   }
 }
