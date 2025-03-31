@@ -112,9 +112,23 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    console.log('D3Visualization ngOnChanges:', changes);
+    
     // Check if isRunning or isPaused has changed
     if (changes['isRunning'] || changes['isPaused']) {
+      console.log('Simulation state changed:', { 
+        isRunning: this.isRunning, 
+        isPaused: this.isPaused
+      });
       this.handleSimulationStateChange();
+    }
+    
+    // Add specific handling for changes to speed or frequency
+    if (changes['clockFrequency']) {
+      console.log('Clock frequency changed:', this.clockFrequency);
+      if (this.isRunning && !this.isPaused) {
+        this.updateClockFrequency();
+      }
     }
     
     // Check if clockFrequency or simulationSpeed has changed
@@ -371,23 +385,39 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   
   // New methods for handling clock animation
   private findClockComponent() {
-    // Look for components with type 'WIRE_INPUT' and names containing 'clock' or 'clk'
-    if (!this.svg) return;
-    
+    console.log('Finding clock component...');
+  
+    if (!this.svg) {
+      console.warn('No SVG element found for finding clock');
+      return;
+    }
+  
+    // Try to find a component with name or ID containing 'clock' or 'clk'
     const clockComponents = this.svg.selectAll('.component')
       .filter((d: any) => {
-        return (d.type && d.type.toLowerCase().includes('wire_input')) && 
-               ((d.name && (d.name.toLowerCase().includes('clock') || d.name.toLowerCase().includes('clk'))) ||
-                (d.id && (d.id.toLowerCase().includes('clock') || d.id.toLowerCase().includes('clk'))));
+        const isClockType = d.type && d.type.toLowerCase().includes('wire_input');
+        const hasClockName = d.name && (d.name.toLowerCase().includes('clock') || d.name.toLowerCase().includes('clk'));
+        const hasClockId = d.id && (d.id.toLowerCase().includes('clock') || d.id.toLowerCase().includes('clk'));
+        
+        const isClockComponent = isClockType && (hasClockName || hasClockId);
+        if (isClockComponent) {
+          console.log('Found potential clock component:', d);
+        }
+        return isClockComponent;
       });
+    
+    console.log('Clock component search results:', clockComponents.size());
     
     if (!clockComponents.empty()) {
       this.clockComponent = clockComponents;
       console.log('Found clock component:', clockComponents.data());
     } else {
       // Try any external input if no specific clock is found
+      console.log('No clock-named component found, looking for any input component...');
       const inputComponents = this.svg.selectAll('.component')
         .filter((d: any) => d.type && d.type.toLowerCase().includes('wire_input'));
+      
+      console.log('Input components found:', inputComponents.size());
       
       if (!inputComponents.empty()) {
         this.clockComponent = inputComponents;
@@ -397,19 +427,33 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         this.clockComponent = null;
       }
     }
+    
+    // If we found a clock component, mark it visually
+    if (this.clockComponent) {
+      this.clockComponent.classed('clock-component', true);
+      console.log('Clock component marked in visualization');
+    }
   }
   
   private startClockAnimation() {
+    console.log('Starting clock animation...');
+    
     // Stop any existing animation
     this.stopClockAnimation();
+    
+    if (!this.clockComponent) {
+      console.warn('No clock component found for animation');
+      return;
+    }
     
     // Calculate clock interval based on frequency directly in Hz
     const intervalMs = 1000 / this.clockFrequency;
     
     console.log(`Starting clock animation with frequency ${this.clockFrequency} Hz (interval: ${intervalMs} ms)`);
     
-    // Create and start the timer
+    // Create and start the timer - ensure IntervalTimer is working properly
     this.clockTimer = new IntervalTimer(() => {
+      console.log('Clock tick');
       this.toggleClockState();
     }, intervalMs);
   }
@@ -423,11 +467,12 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   
   private toggleClockState() {
     this.clockState = !this.clockState;
+    console.log('Clock state toggled:', this.clockState);
     
-    // Update only the visual appearance
+    // Update visual appearance
     this.updateClockAppearance();
     this.updateClockPins();
-    this.updateClockConnections(); // Also update connections visually
+    this.updateClockConnections();
     
     // Don't update connections here
     // Instead, trigger DFF updates on clock transitions

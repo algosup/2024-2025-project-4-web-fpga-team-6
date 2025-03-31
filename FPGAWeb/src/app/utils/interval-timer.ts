@@ -2,68 +2,62 @@
  * A pausable interval timer
  */
 export class IntervalTimer {
-  private intervalId: number | null = null;
-  private lastTime: number = 0;
-  private remaining: number;
+  private timerId: number | null = null;
+  private startTime: number = 0;
+  private remaining: number = 0;
   private isPaused: boolean = false;
   private callback: () => void;
+  private intervalTime: number;
   
-  constructor(callback: () => void, interval: number) {
+  constructor(callback: () => void, intervalMs: number) {
     this.callback = callback;
-    this.remaining = interval;
+    this.intervalTime = intervalMs;
+    this.start();
   }
-
-  startTimer(): void {
+  
+  start(): void {
+    console.log(`Starting IntervalTimer with interval: ${this.intervalTime}ms`);
     this.isPaused = false;
-    this.lastTime = Date.now();
-    
-    this.clearTimer();
-    this.intervalId = window.setInterval(() => {
-      this.callback();
-    }, this.remaining);
+    this.startTime = Date.now();
+    this.timerId = window.setInterval(this.callback, this.intervalTime);
   }
   
   pause(): void {
-    if (!this.isPaused && this.intervalId !== null) {
-      this.isPaused = true;
-      this.clearTimer();
-      this.remaining -= Date.now() - this.lastTime;
-    }
+    if (this.timerId === null || this.isPaused) return;
+    
+    window.clearInterval(this.timerId);
+    this.timerId = null;
+    this.remaining = this.intervalTime - (Date.now() - this.startTime) % this.intervalTime;
+    this.isPaused = true;
   }
   
   resume(): void {
-    if (this.isPaused) {
-      this.isPaused = false;
-      this.lastTime = Date.now();
-      
-      this.clearTimer();
-      this.intervalId = window.setInterval(() => {
-        this.callback();
-      }, this.remaining);
-    }
+    if (this.timerId !== null || !this.isPaused) return;
+    
+    this.isPaused = false;
+    this.startTime = Date.now() - (this.intervalTime - this.remaining);
+    this.timerId = window.setInterval(this.callback, this.intervalTime);
   }
   
   stop(): void {
-    this.clearTimer();
-    this.remaining = 0;
+    if (this.timerId === null) return;
+    
+    window.clearInterval(this.timerId);
+    this.timerId = null;
     this.isPaused = false;
   }
   
-  setInterval(interval: number): void {
-    const wasRunning = this.intervalId !== null && !this.isPaused;
-    
-    this.clearTimer();
-    this.remaining = interval;
+  setInterval(newIntervalMs: number): void {
+    const wasRunning = this.timerId !== null && !this.isPaused;
     
     if (wasRunning) {
-      this.startTimer();
+      this.stop();
     }
-  }
-  
-  private clearTimer(): void {
-    if (this.intervalId !== null) {
-      window.clearInterval(this.intervalId);
-      this.intervalId = null;
+    
+    this.intervalTime = newIntervalMs;
+    
+    if (wasRunning) {
+      this.start();
     }
   }
 }

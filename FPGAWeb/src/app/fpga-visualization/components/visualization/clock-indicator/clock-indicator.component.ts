@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="clock-indicator" [class.active]="active">
+    <div class="clock-indicator">
       <div class="clock-status">
         <div class="clock-dot" [class.active]="active"></div>
         <div class="clock-label">CLOCK</div>
@@ -27,12 +27,7 @@ import { CommonModule } from '@angular/common';
       align-items: center;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
       z-index: 100;
-      transition: background-color 0.3s ease;
       pointer-events: none;
-    }
-    
-    .clock-indicator.active {
-      background-color: rgba(33, 150, 243, 0.8);
     }
     
     .clock-status {
@@ -46,7 +41,7 @@ import { CommonModule } from '@angular/common';
       height: 12px;
       border-radius: 50%;
       background-color: #e0e0e0;
-      transition: all 0.15s ease;
+      /* Remove transition to make it change immediately */
     }
     
     .clock-dot.active {
