@@ -23,12 +23,14 @@ export class InteractionHandlerService {
   // Track position history for undo
   private positionHistory: {components: ComponentData[], positions: {id: string, x: number, y: number}[]}[] = [];
   private readonly MAX_HISTORY = 20; // Maximum number of history states to keep
-  // Add this property to the class
+  // Store original styles for later restoration
   private originalStyles = new Map<string, {stroke: string, strokeWidth: string, filter: string}>();
-  // Add this property to track whether selection is enabled
+  // Track whether selection is enabled
   private selectionEnabled: boolean = true;
+  // Fix tooltip type to match d3.select('#component-tooltip') return type
+  private tooltip: d3.Selection<HTMLDivElement, unknown, HTMLElement, any> | null = null;
   
-  // Add this method to enable/disable selection
+  // Enable or disable selection functionality
   setSelectionEnabled(enabled: boolean): void {
     this.selectionEnabled = enabled;
     
@@ -43,18 +45,102 @@ export class InteractionHandlerService {
       .style('cursor', enabled ? 'grab' : 'default');
   }
 
+  // Main setup method for component interactions
   setupInteractions(selection: d3.Selection<any, ComponentData, any, any>): void {
     this.initializeTooltip();
     this.setupSelectionBehavior(selection);
     this.setupKeyboardShortcuts();
   }
   
+  // Initialize tooltip element for component information
+  private initializeTooltip(): void {
+    try {
+      // Add tooltip div if it doesn't exist
+      if (d3.select('#component-tooltip').empty()) {
+        this.tooltip = d3.select('body').append('div')
+          .attr('id', 'component-tooltip')
+          .attr('class', 'tooltip')
+          .style('position', 'absolute')
+          .style('visibility', 'hidden')
+          .style('background-color', 'white')
+          .style('border', '1px solid #ddd')
+          .style('border-radius', '4px')
+          .style('padding', '8px')
+          .style('box-shadow', '0 2px 5px rgba(0,0,0,0.15)')
+          .style('pointer-events', 'none')
+          .style('z-index', '1000')
+          .style('opacity', '0');
+      } else {
+        // No need for type assertion now since the types match
+        this.tooltip = d3.select('#component-tooltip');
+      }
+    } catch (error) {
+      console.error('Error initializing component tooltip:', error);
+      this.tooltip = null;
+    }
+  }
+
+  // Setup hover tooltip behavior
+  private setupTooltipHandlers(selection: d3.Selection<any, ComponentData, any, any>): void {
+    if (!this.tooltip) return;
+    
+    selection
+      .on('mouseover', (event, d) => {
+        // Skip tooltip during drag operations
+        if (document.body.classList.contains('dragging-active')) return;
+        
+        try {
+          // Show component info in tooltip
+          this.tooltip
+            ?.style('visibility', 'visible')
+            ?.style('opacity', '1')
+            ?.html(`
+              <div>
+                <strong>${d.name || d.id}</strong>
+                <div>Type: ${d.type}</div>
+                ${d.connections ? `<div>Connections: ${Object.keys(d.connections).length}</div>` : ''}
+              </div>
+            `);
+        } catch (error) {
+          console.error('Error updating tooltip content:', error);
+        }
+      })
+      .on('mousemove', (event) => {
+        try {
+          // Position tooltip near cursor
+          this.tooltip
+            ?.style('top', `${event.pageY + 10}px`)
+            ?.style('left', `${event.pageX + 10}px`);
+        } catch (error) {
+          console.error('Error updating tooltip position:', error);
+        }
+      })
+      .on('mouseout', () => {
+        try {
+          // Hide tooltip
+          this.tooltip
+            ?.style('visibility', 'hidden')
+            ?.style('opacity', '0');
+        } catch (error) {
+          console.error('Error hiding tooltip:', error);
+        }
+      });
+  }
+
+  // Setup selection behavior for components
   private setupSelectionBehavior(selection: d3.Selection<any, ComponentData, any, any>): void {
     // Setup selection rectangle
     const svg = selection.node()?.ownerSVGElement;
-    if (!svg) return;
+    if (!svg) {
+      console.error('No SVG element found for selection behavior');
+      return;
+    }
     
     const svgContainer = d3.select(svg.parentNode as Element);
+    if (!svgContainer) {
+      console.error('No SVG container found for selection behavior');
+      return;
+    }
     
     let selectionRect: d3.Selection<SVGRectElement, unknown, null, undefined> | null = null;
     let startPos: [number, number] | null = null;
@@ -91,11 +177,10 @@ export class InteractionHandlerService {
           .attr('x', mouseX)
           .attr('y', mouseY)
           .attr('width', 0)
-          .attr('height', 0)
-          .attr('stroke', '#007bff')
-          .attr('stroke-width', 1)
-          .attr('fill', '#007bff20')
-          .attr('stroke-dasharray', '4,4');
+          .attr('height', 0);
+          
+        // Add selecting class to document body for styling
+        document.body.classList.add('selecting');
       }
     });
     
@@ -111,6 +196,7 @@ export class InteractionHandlerService {
         const [startX, startY] = startPos;
         const width = Math.abs(mouseX - startX);
         const height = Math.abs(mouseY - startY);
+        
         const x = Math.min(startX, mouseX);
         const y = Math.min(startY, mouseY);
         
@@ -126,26 +212,35 @@ export class InteractionHandlerService {
     // Finalize selection on mouse up
     svgContainer.on('mouseup', (event) => {
       if (startPos && selectionRect) {
-        // Get selection rectangle bounds
-        const rect = selectionRect.node()?.getBoundingClientRect();
-        
-        if (rect) {
-          // Select components that intersect with the rectangle
-          selection.each((d, i, nodes) => {
-            const componentEl = nodes[i] as SVGGElement;
-            const componentRect = componentEl.getBoundingClientRect();
-            
-            // Check if component intersects with selection rectangle
-            if (this.rectanglesIntersect(rect, componentRect)) {
-              this.selectComponent(d3.select(componentEl), d);
-            }
-          });
+        try {
+          // Get selection rectangle bounds
+          const rect = selectionRect.node()?.getBoundingClientRect();
+          
+          if (rect) {
+            // Select components that intersect with the rectangle
+            selection.each((d, i, nodes) => {
+              const componentEl = nodes[i] as SVGGElement;
+              const componentRect = componentEl.getBoundingClientRect();
+              
+              // Check if component intersects with selection rectangle
+              if (this.rectanglesIntersect(rect, componentRect)) {
+                this.selectComponent(d3.select(componentEl), d);
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error during selection completion:', error);
+        } finally {
+          // Remove selection rectangle
+          if (selectionRect) {
+            selectionRect.remove();
+            selectionRect = null;
+            startPos = null;
+          }
+          
+          // Remove selecting class from document body
+          document.body.classList.remove('selecting');
         }
-        
-        // Remove selection rectangle
-        selectionRect.remove();
-        selectionRect = null;
-        startPos = null;
       }
     });
 
@@ -183,8 +278,12 @@ export class InteractionHandlerService {
         this.clearSelection(selection);
       }
     });
+    
+    // Setup tooltip handlers
+    this.setupTooltipHandlers(selection);
   }
 
+  // Setup dragging behavior for groups of selected components
   private setupGroupDragging(selection: d3.Selection<any, ComponentData, any, any>): void {
     const dragBehavior = d3.drag<any, ComponentData>()
       .on('start', (event, d) => {
@@ -236,8 +335,7 @@ export class InteractionHandlerService {
         const dx = event.x - this.lastMousePosition.x;
         const dy = event.y - this.lastMousePosition.y;
         
-        // Move all selected components together (simpler behavior)
-        // When any selected component is dragged, move all selected components
+        // Move all selected components together
         this.selectedComponents.forEach(id => {
           const component = this.findComponentById(selection, id);
           if (component) {
@@ -273,20 +371,28 @@ export class InteractionHandlerService {
     selection.call(dragBehavior);
   }
 
+  // Setup keyboard shortcuts for common operations
   private setupKeyboardShortcuts(): void {
     document.addEventListener('keydown', (event) => {
       // Undo with Ctrl+Z
       if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
         this.undoLastPositionChange();
+        event.preventDefault();
       }
       // Escape to clear selection
       if (event.key === 'Escape') {
         const allComponents = d3.selectAll('.component');
         this.clearSelection(allComponents);
       }
+      // Delete/Backspace to remove selected components (if implemented)
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        // This would be implemented if component deletion is supported
+        console.log('Delete key pressed - component deletion not implemented');
+      }
     });
   }
 
+  // Add a position change to the undo history
   private addToPositionHistory(components: ComponentData[], positions: {id: string, x: number, y: number}[]): void {
     this.positionHistory.push({ components, positions });
     
@@ -296,6 +402,7 @@ export class InteractionHandlerService {
     }
   }
 
+  // Undo the last position change
   private undoLastPositionChange(): void {
     const lastState = this.positionHistory.pop();
     if (!lastState) return;
@@ -324,6 +431,7 @@ export class InteractionHandlerService {
     document.dispatchEvent(event);
   }
 
+  // Select a component and apply visual highlighting
   private selectComponent(componentElement: d3.Selection<any, any, any, any>, component: ComponentData): void {
     this.selectedComponents.add(component.id);
     componentElement
@@ -347,6 +455,7 @@ export class InteractionHandlerService {
       .style('filter', 'drop-shadow(0 0 5px rgba(33, 150, 243, 0.7))');
   }
 
+  // Deselect a component and restore original visual style
   private deselectComponent(componentElement: d3.Selection<any, any, any, any>, component: ComponentData): void {
     this.selectedComponents.delete(component.id);
     componentElement.classed('selected', false);
@@ -358,6 +467,7 @@ export class InteractionHandlerService {
       .style('filter', 'none');
   }
 
+  // Clear all current selections
   private clearSelection(selection: d3.Selection<any, any, any, any>): void {
     // Reset styles on all selected elements
     selection.filter('.selected')
@@ -371,6 +481,7 @@ export class InteractionHandlerService {
     selection.classed('selected', false);
   }
 
+  // Find a component by its ID
   private findComponentById(selection: d3.Selection<any, ComponentData, any, any>, id: string): ComponentData | null {
     let result: ComponentData | null = null;
     selection.each((d: ComponentData) => {
@@ -381,6 +492,7 @@ export class InteractionHandlerService {
     return result;
   }
 
+  // Check if two rectangles intersect
   private rectanglesIntersect(rect1: DOMRect, rect2: DOMRect): boolean {
     return !(
       rect1.right < rect2.left || 
@@ -390,6 +502,7 @@ export class InteractionHandlerService {
     );
   }
 
+  // Notify other services of component position changes
   private notifyComponentsMoved(): void {
     // Collect all selected components
     const components: ComponentData[] = [];
@@ -412,12 +525,21 @@ export class InteractionHandlerService {
     }
   }
 
-  private initializeTooltip(): void {
-    // Add tooltip div if it doesn't exist
-    if (d3.select('#tooltip').empty()) {
-      d3.select('body').append('div')
-        .attr('id', 'tooltip')
-        .attr('class', 'tooltip');
+  // Get currently selected component IDs
+  getSelectedComponentIds(): string[] {
+    return Array.from(this.selectedComponents);
+  }
+  
+  // Check if a specific component is selected
+  isComponentSelected(id: string): boolean {
+    return this.selectedComponents.has(id);
+  }
+  
+  // Force select a specific component by ID
+  selectComponentById(id: string): void {
+    const component = d3.select(`[data-component-id="${id}"]`);
+    if (!component.empty()) {
+      this.selectComponent(component, component.datum() as ComponentData);
     }
   }
 }
