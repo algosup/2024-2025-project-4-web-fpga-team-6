@@ -1,0 +1,1056 @@
+/* Base Styles */
+:root {
+    --primary-color: #4a6fa5;
+    --secondary-color: #6f9ceb;
+    --accent-color: #ff7c5c;
+    --background-color: #ffffff;
+    --text-color: #333333;
+    --light-gray: #f5f7fa;
+    --mid-gray: #e1e5ee;
+    --dark-gray: #8a94a6;
+    --border-radius: 8px;
+    --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    font-weight: 300;
+}
+
+/* Container */
+.manual-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: white;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    line-height: 1.2;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+h1 {
+    font-size: 2.5rem;
+    text-align: center;
+    margin-top: 0;
+}
+
+h2 {
+    font-size: 2rem;
+    border-bottom: 1px solid var(--mid-gray);
+    padding-bottom: 0.3em;
+}
+
+h3 {
+    font-size: 1.5rem;
+}
+
+h4 {
+    font-size: 1.2rem;
+}
+
+p {
+    margin-bottom: 1.5em;
+}
+
+a {
+    color: var(--secondary-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Cover Page */
+.cover-page {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 3rem;
+    text-align: center;
+}
+
+.logo-container {
+    margin-bottom: 2rem;
+}
+
+.logo {
+    font-size: 3rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    letter-spacing: 2px;
+}
+
+.cover-page h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.cover-page h2 {
+    font-size: 2rem;
+    color: var(--dark-gray);
+    border-bottom: none;
+}
+
+.version {
+    margin-top: 2rem;
+    color: var(--dark-gray);
+}
+
+/* Table of Contents */
+.toc-section {
+    margin: 3rem 0;
+    padding: 1.5rem;
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+}
+
+.toc ul {
+    list-style: none;
+    margin: 0.5rem 0;
+}
+
+.toc ul ul {
+    margin-left: 1.5rem;
+}
+
+.toc a {
+    display: inline-block;
+    padding: 0.2rem 0;
+}
+
+/* Sections */
+.manual-section {
+    margin-bottom: 4rem;
+}
+
+.subsection {
+    margin: 2rem 0;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+}
+
+th, td {
+    border: 1px solid var(--mid-gray);
+    padding: 0.8rem;
+    text-align: left;
+}
+
+th {
+    background-color: var(--light-gray);
+    font-weight: 500;
+}
+
+tr:nth-child(even) {
+    background-color: var(--light-gray);
+}
+
+/* Info Boxes */
+.info-box {
+    background-color: var(--light-gray);
+    border-left: 4px solid var(--secondary-color);
+    padding: 1rem;
+    margin: 1.5rem 0;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.info-box h4 {
+    margin-top: 0;
+    color: var(--secondary-color);
+}
+
+/* Feature Grid */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.feature {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--box-shadow);
+}
+
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin: 0 auto 1rem auto;
+    position: relative;
+    background-color: var(--light-gray);
+}
+
+.feature-icon:before {
+    content: "";
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background-color: var(--primary-color);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+}
+
+.visualization-icon:before {
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M15.5 14l5 5-1.5 1.5-5-5v-.79l-.27-.28A6.47 6.47 0 0 1 9.5 16 6.5 6.5 0 1 1 16 9.5c0 1.61-.59 3.09-1.57 4.23l.28.27h.79zm-6 0C12 14 14 12 14 9.5S12 5 9.5 5 5 7 5 9.5 7 14 9.5 14z"/></svg>');
+}
+
+.simulation-icon:before {
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>');
+}
+
+.signal-icon:before {
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/><path d="M12 17l5-5-5-5v10z"/></svg>');
+}
+
+.layout-icon:before {
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 18h5v-6h-5v6zm-6 0h5V6H4v12zm12 0h5v-6h-5v6zM10 5v6h11V5H10z"/></svg>');
+}
+
+.feature h4 {
+    margin-top: 0.5rem;
+}
+
+/* Footer */
+.manual-footer {
+    margin-top: 4rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--mid-gray);
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Section placeholder - for demonstration only */
+.section-placeholder {
+    padding: 2rem;
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    text-align: center;
+    color: var(--dark-gray);
+    margin-bottom: 2rem;
+}
+
+/* Print styles */
+@media print {
+    body {
+        font-size: 12pt;
+    }
+    
+    .manual-container {
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    a {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+    
+    .cover-page {
+        height: auto;
+        page-break-after: always;
+    }
+    
+    .manual-section {
+        page-break-after: always;
+    }
+    
+    h2, h3 {
+        page-break-after: avoid;
+    }
+}
+
+/* Adding to the existing CSS file - these are the new styles for the Getting Started section */
+
+/* Steps Container */
+.steps-container {
+    margin: 2rem 0;
+}
+
+.step {
+    display: flex;
+    margin-bottom: 1.5rem;
+    align-items: flex-start;
+}
+
+.step-number {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    margin-right: 1rem;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-number span {
+    color: white;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+
+.step-content {
+    flex-grow: 1;
+}
+
+.step-content h4 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* UI Overview */
+.ui-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.ui-image {
+    text-align: center;
+}
+
+.image-placeholder {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    height: 350px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ui-mockup {
+    width: 90%;
+    height: 90%;
+    position: relative;
+    background-color: white;
+    box-shadow: var(--box-shadow);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.mockup-header {
+    height: 40px;
+    background-color: var(--primary-color);
+    width: 100%;
+}
+
+.mockup-sidebar {
+    position: absolute;
+    left: 0;
+    top: 40px;
+    bottom: 0;
+    width: 20%;
+    background-color: var(--light-gray);
+    border-right: 1px solid var(--mid-gray);
+}
+
+.mockup-main {
+    position: absolute;
+    left: 20%;
+    top: 40px;
+    right: 0;
+    bottom: 60px;
+    background-color: white;
+}
+
+.mockup-controls {
+    position: absolute;
+    left: 20%;
+    right: 0;
+    bottom: 0;
+    height: 60px;
+    background-color: var(--light-gray);
+    border-top: 1px solid var(--mid-gray);
+}
+
+.caption {
+    font-size: 0.9rem;
+    font-style: italic;
+    color: var(--dark-gray);
+    text-align: center;
+    margin-top: 0.5rem;
+}
+
+.interface-components-table {
+    width: 100%;
+}
+
+/* Interface Comparison */
+.interface-comparison {
+    display: flex;
+    gap: 2rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+}
+
+.interface-card {
+    flex: 1;
+    min-width: 280px;
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--box-shadow);
+    display: flex;
+    flex-direction: column;
+}
+
+.interface-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-bottom: 1rem;
+}
+
+.student-icon {
+    background-color: var(--secondary-color);
+    position: relative;
+}
+
+.student-icon:before {
+    content: "";
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background-color: white;
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>');
+    mask-size: cover;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.teacher-icon {
+    background-color: var(--accent-color);
+    position: relative;
+}
+
+.teacher-icon:before {
+    content: "";
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    background-color: white;
+    mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 17.17V4H4v12h4v4l4-4h8zM6 6h12v9h-6.5l-2 2v-2H6V6z"/></svg>');
+    mask-size: cover;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.interface-card h4 {
+    margin-top: 0;
+}
+
+.feature-list {
+    list-style-type: none;
+    margin: 1rem 0;
+    padding: 0;
+    flex-grow: 1;
+}
+
+.feature-list li {
+    padding-left: 1.5rem;
+    position: relative;
+    margin-bottom: 0.5rem;
+}
+
+.feature-list li:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+}
+
+.access-button {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.button {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.button:hover {
+    background-color: var(--secondary-color);
+    text-decoration: none;
+}
+
+/* Note Box - alternative to info box */
+.note-box {
+    background-color: var(--light-gray);
+    border-left: 4px solid var(--accent-color);
+    padding: 1rem;
+    margin: 1.5rem 0;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.note-box h4 {
+    margin-top: 0;
+    color: var(--accent-color);
+}
+
+/* Media queries for responsive design */
+@media (min-width: 768px) {
+    .ui-overview {
+        flex-direction: row;
+    }
+    
+    .ui-image {
+        flex: 1;
+    }
+    
+    .ui-description {
+        flex: 1;
+    }
+}
+
+/* Adding styles for the Student Interface section */
+
+/* Screenshot containers */
+.screenshot-container {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.screenshot-placeholder {
+    background-color: var(--mid-gray);
+    border: 1px dashed var(--dark-gray);
+    border-radius: var(--border-radius);
+    padding: 4rem 2rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--dark-gray);
+    font-style: italic;
+}
+
+.screenshot-placeholder.small {
+    padding: 2rem 1rem;
+    height: 150px;
+    margin-bottom: 0.5rem;
+}
+
+/* Control tables */
+.control-table-container {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+}
+
+/* Layout options */
+.layout-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.layout-option {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--box-shadow);
+}
+
+.layout-option h5 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Feature lists - using the existing styles from previous sections */
+
+/* Screenshot Gallery */
+.screenshot-gallery {
+    margin: 2rem 0;
+}
+
+.gallery-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.gallery-item {
+    flex: 1;
+    min-width: 250px;
+}
+
+.gallery-item .screenshot-placeholder {
+    height: 180px;
+    padding: 2rem;
+}
+
+.gallery-item .caption {
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+    .gallery-row {
+        flex-direction: column;
+    }
+    
+    .gallery-item {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Enhanced Screenshot Placeholder */
+.screenshot-placeholder {
+    background-color: var(--mid-gray);
+    border: 1px dashed var(--dark-gray);
+    border-radius: var(--border-radius);
+    padding: 4rem 2rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--dark-gray);
+    font-style: italic;
+    position: relative;
+    overflow: hidden;
+}
+
+.screenshot-placeholder:before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    opacity: 0.2;
+    background-color: var(--dark-gray);
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>');
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+.screenshot-placeholder p {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+}
+
+/* Adding styles for the Teacher Interface and Understanding Visualization sections */
+
+/* Code examples */
+.code-example {
+    margin: 1.5rem 0;
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.code-example h5 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
+}
+
+.code-example pre {
+    background-color: white;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    overflow-x: auto;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Warning box */
+.warning-box {
+    background-color: #fff5f5;
+    border-left: 4px solid #dc3545;
+    padding: 1rem;
+    margin: 1.5rem 0;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.warning-box h4 {
+    margin-top: 0;
+    color: #dc3545;
+}
+
+/* Analytics preview */
+.analytics-preview {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.screenshot-placeholder.analytics {
+    height: 240px;
+}
+
+/* Component visualization */
+.component-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.component-item {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    text-align: center;
+    box-shadow: var(--box-shadow);
+}
+
+.component-preview {
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.component-shape {
+    width: 80px;
+    height: 80px;
+    position: relative;
+}
+
+/* Specific component shapes */
+.component-preview.lut .component-shape {
+    background-color: #d0e0ff;
+    clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+    border: 2px solid #4a6fa5;
+}
+
+.component-preview.ff .component-shape {
+    background-color: #ffe0d0;
+    border-radius: var(--border-radius);
+    border: 2px solid #c25e00;
+}
+
+/* Add these new styles after the existing teacher interface styles */
+
+.interface-features {
+    margin: 2rem 0;
+}
+
+.features-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.5rem 0;
+}
+
+.features-table th,
+.features-table td {
+    padding: 1rem;
+    border: 1px solid var(--mid-gray);
+}
+
+.features-table th {
+    background-color: var(--light-gray);
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.features-table ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.features-table li {
+    margin-bottom: 0.5rem;
+}
+
+.workflow-section {
+    margin: 3rem 0;
+}
+
+.workflow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: flex-start;
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.workflow-step .step-number {
+    margin-right: 1.5rem;
+    width: 36px;
+    height: 36px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 500;
+}
+
+.workflow-step .step-content {
+    flex-grow: 1;
+}
+
+.workflow-step h5 {
+    margin: 0 0 0.5rem 0;
+    color: var(--primary-color);
+}
+
+.workflow-step p {
+    margin: 0;
+    color: var(--text-color);
+}
+
+@media (max-width: 768px) {
+    .features-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .workflow-step {
+        flex-direction: column;
+    }
+    
+    .workflow-step .step-number {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Add these new styles for consistency and A4 printing */
+
+/* Component and connection icons - adding consistent styles */
+.component-icon, .connection-icon, .status-icon {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--mid-gray);
+    border-radius: 4px;
+    background-color: var(--light-gray);
+    display: inline-block;
+    position: relative;
+}
+
+/* Styles for the resources section */
+.resources-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.resource-category {
+    background-color: var(--light-gray);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.resource-category h5 {
+    margin-top: 0;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.resource-category ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+.resource-category li {
+    margin-bottom: 0.75rem;
+    position: relative;
+    padding-left: 1.2rem;
+    line-height: 1.4;
+}
+
+.resource-category li:before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 6px;
+    height: 6px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+}
+
+/* Copyright notice */
+.copyright-notice {
+    margin-top: 3rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+}
+
+/* Enhanced print styles */
+@media print {
+    body {
+        font-size: 10pt;
+        line-height: 1.4;
+    }
+    
+    h1 { font-size: 18pt; }
+    h2 { font-size: 16pt; }
+    h3 { font-size: 14pt; }
+    h4 { font-size: 12pt; }
+    h5 { font-size: 11pt; }
+    
+    .manual-container {
+        max-width: 100%;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .screenshot-placeholder {
+        border: 1px solid var(--mid-gray);
+        background: white;
+        height: auto;
+        min-height: 100px;
+        padding: 1rem;
+    }
+    
+    .screenshot-placeholder.small {
+        min-height: 50px;
+    }
+    
+    .info-box, .note-box {
+        background-color: white;
+        border: 1px solid var(--mid-gray);
+    }
+    
+    /* Avoid tables breaking across pages */
+    table {
+        page-break-inside: avoid;
+    }
+    
+    /* Force page breaks at major sections */
+    .manual-section {
+        page-break-before: always;
+    }
+    
+    /* Avoid headings at bottom of page */
+    h2, h3 {
+        page-break-after: avoid;
+    }
+    
+    /* Keep related content together */
+    .step, .info-box, .note-box, .screenshot-container {
+        page-break-inside: avoid;
+    }
+    
+    /* Hide elements not needed for print */
+    .button, a:not([href]) {
+        color: var(--text-color);
+        text-decoration: none;
+    }
+    
+    a:after {
+        content: none !important;
+    }
+}
+
+/* Consistent data tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+}
+
+/* Component and connection visualization enhancements */
+.data-connection-icon {
+    background: linear-gradient(to right, transparent 49.5%, #4a6fa5 49.5%, #4a6fa5 50.5%, transparent 50.5%);
+}
+
+.clock-connection-icon {
+    background: repeating-linear-gradient(90deg, transparent, transparent 4px, #e67700 4px, #e67700 8px);
+}
+
+.control-connection-icon {
+    background: repeating-linear-gradient(90deg, transparent, transparent 2px, #9c27b0 2px, #9c27b0 4px);
+}
+
+/* Fix font size consistency */
+p, li, td {
+    font-size: 1rem;
+}
+
+.info-box p, .note-box p {
+    font-size: 0.95rem;
+}
+
+.caption {
+    font-size: 0.9rem;
+}
+
+/* Consistent spacing */
+section {
+    margin-bottom: 3rem;
+}
+
+.subsection {
+    margin: 2rem 0;
+}

@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPGA Visualization Platform - User Manual</title>
+    <link rel="stylesheet" href="manual-style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        @media print {
+            @page {
+                size: A4;
+                margin: 2cm;
+            }
+            
+            .manual-section {
+                page-break-before: always;
+            }
+            
+            h2, h3 {
+                page-break-after: avoid;
+            }
+            
+            .toc-section {
+                page-break-after: always;
+            }
+            
+            .cover-page {
+                page-break-after: always;
+            }
+            
+            table {
+                page-break-inside: avoid;
+            }
+            
+            .screenshot-container {
+                page-break-inside: avoid;
+            }
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2cm;
+        }
+
+        h1, h2, h3, h4 {
+            color: #4a6fa5;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        h1 { font-size: 24pt; }
+        h2 { font-size: 18pt; }
+        h3 { font-size: 14pt; }
+        h4 { font-size: 12pt; }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+
+        th, td {
+            border: 1px solid #e1e5ee;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .info-box, .note-box {
+            border-left: 4px solid #6f9ceb;
+            padding: 1em;
+            margin: 1em 0;
+            background: #f5f7fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="manual-container">
+        <!-- Cover Page -->
+        <section class="cover-page">
+            <div class="logo-container">
+                <!-- Replace with your actual logo -->
+                <div class="logo">FPGA VISION</div>
+            </div>
+            <h1>FPGA Visualization Platform</h1>
+            <h2>User Manual</h2>
+            <div class="version">Version 1.0.0</div>
+        </section>
+
+        <!-- Table of Contents -->
+        <section id="toc" class="toc-section">
+            <h2>Table of Contents</h2>
+            <nav class="toc">
+                <ul>
+                    <li><a href="#introduction">1. Introduction</a>
+                        <ul>
+                            <li><a href="#about">1.1 About the FPGA Visualization Platform</a></li>
+                            <li><a href="#key-features">1.2 Key Features</a></li>
+                            <li><a href="#system-requirements">1.3 System Requirements</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#getting-started">2. Getting Started</a>
+                        <ul>
+                            <li><a href="#accessing">2.1 Accessing the Platform</a></li>
+                            <li><a href="#ui-overview">2.2 User Interface Overview</a></li>
+                            <li><a href="#navigation">2.3 Navigating Between Interfaces</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#student-interface">3. Student Interface</a>
+                        <ul>
+                            <li><a href="#student-overview">3.1 Overview and Layout</a></li>
+                            <li><a href="#selecting-design">3.2 Selecting a Design</a></li>
+                            <li><a href="#visualization-controls">3.3 Visualization Controls</a></li>
+                            <li><a href="#simulation-controls">3.4 Simulation Controls</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#teacher-interface">4. Teacher Interface</a>
+                        <ul>
+                            <li><a href="#teacher-overview">4.1 Overview and Layout</a></li>
+                            <li><a href="#adding-designs">4.2 Adding New Designs</a></li>
+                            <li><a href="#managing-designs">4.3 Managing Existing Designs</a></li>
+                            <li><a href="#importing-designs">4.4 Importing Packaged Designs</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#understanding-visualization">5. Understanding the Visualization</a>
+                        <ul>
+                            <li><a href="#component-representation">5.1 Components Representation</a></li>
+                            <li><a href="#signal-flow">5.2 Signal Flow and Propagation</a></li>
+                            <li><a href="#connection-types">5.3 Connection Types</a></li>
+                            <li><a href="#status-indicators">5.4 Status Indicators</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#advanced-features">6. Advanced Features</a>
+                        <ul>
+                            <li><a href="#layout-options">6.1 Layout Options</a></li>
+                            <li><a href="#dark-mode">6.2 Dark Mode</a></li>
+                            <li><a href="#keyboard-shortcuts">6.3 Keyboard Shortcuts</a></li>
+                            <li><a href="#multi-component-selection">6.4 Multi-component Selection</a></li>
+                            <li><a href="#connection-visualization">6.5 Connection Visualization</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#troubleshooting">7. Troubleshooting</a>
+                        <ul>
+                            <li><a href="#common-issues">7.1 Common Issues</a></li>
+                            <li><a href="#error-messages">7.2 Error Messages</a></li>
+                            <li><a href="#support">7.3 Support Contact</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#appendix">8. Appendix</a>
+                        <ul>
+                            <li><a href="#file-formats">8.1 File Format Specifications</a></li>
+                            <li><a href="#glossary">8.2 Glossary of Terms</a></li>
+                            <li><a href="#resources">8.3 Additional Resources</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+        </section>
+
+        <!-- Main Content Sections -->
+        <!-- Introduction -->
+        <section id="introduction" class="manual-section">
+            <h2>1. Introduction</h2>
+            
+            <section id="about" class="subsection">
+                <h3>1.1 About the Platform</h3>
+                <p>The FPGA Visualization Platform is an educational web application designed to help students learn about FPGA (Field-Programmable Gate Array) operations through interactive visualization. This platform provides a simulated environment for exploring digital designs without requiring physical FPGA hardware.</p>
+                
+                <!-- Screenshot of the main platform interface -->
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/overview of the student interface.png" alt="Main Platform Screen" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 1.1: Main Platform Screen</p>
+                </div>
+                
+                <div class="info-box">
+                    <h4>What's an FPGA?</h4>
+                    <p>An FPGA is a programmable integrated circuit that contains an array of configurable logic blocks (CLBs) connected through programmable interconnects. FPGAs can be reprogrammed to implement different digital circuits, making them flexible platforms for hardware design education and prototyping.</p>
+                </div>
+            </section>
+            
+            <section id="key-features" class="subsection">
+                <h3>1.2 Main Features</h3>
+                
+                <div class="feature-grid">
+                    <div class="feature">
+                        <div class="feature-icon visualization-icon"></div>
+                        <h4>Interactive Design Visualization</h4>
+                        <p>See 2D visualization of BELs (Basic Elements of Logic) inside the FPGA</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon simulation-icon"></div>
+                        <h4>Run Simulations</h4>
+                        <p>Test designs with adjustable clock frequency and signal propagation speeds</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon signal-icon"></div>
+                        <h4>Track Signal Flow</h4>
+                        <p>Observe how signals propagate through the circuit with visual indicators</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon layout-icon"></div>
+                        <h4>Multiple Layout Views</h4>
+                        <p>Toggle between grid, hierarchical, or force-directed layouts</p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>Dual Interface Design</h4>
+                    <p>The platform provides separate interfaces for students (focused on visualization and learning) and teachers (providing design upload and management tools).</p>
+                </div>
+            </section>
+            
+            <section id="system-requirements" class="subsection">
+                <h3>1.3 System Requirements</h3>
+                <p>To use the FPGA Visualization Platform effectively, ensure your system meets the following requirements:</p>
+                
+                <table class="requirements-table">
+                    <tr>
+                        <th>Item</th>
+                        <th>Minimum</th>
+                        <th>Recommended</th>
+                    </tr>
+                    <tr>
+                        <td>Browser</td>
+                        <td>Recent Chrome, Firefox, or Safari</td>
+                        <td>Latest Chrome or Firefox</td>
+                    </tr>
+                    <tr>
+                        <td>Screen Size</td>
+                        <td>1280 × 720</td>
+                        <td>1920 × 1080 or larger</td>
+                    </tr>
+                    <tr>
+                        <td>Internet</td>
+                        <td>1 Mbps</td>
+                        <td>5+ Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>RAM</td>
+                        <td>4 GB</td>
+                        <td>8+ GB</td>
+                    </tr>
+                    <tr>
+                        <td>Processor</td>
+                        <td>Dual-core 2 GHz</td>
+                        <td>Quad-core 2.5+ GHz</td>
+                    </tr>
+                </table>
+                
+                <div class="note-box">
+                    <h4>Mobile Device Compatibility</h4>
+                    <p>While the platform is responsive, a desktop or laptop computer is strongly recommended for the best experience due to the complexity of the visualizations and the detailed interface controls.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- Getting Started Section -->
+        <section id="getting-started" class="manual-section">
+            <h2>2. Getting Started</h2>
+            
+            <section id="accessing" class="subsection">
+                <h3>2.1 Accessing the Platform</h3>
+                <p>The FPGA Visualization Platform is a web application that runs directly in your browser without requiring installation or login.</p>
+                
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number"><span>1</span></div>
+                        <div class="step-content">
+                            <h4>Open the Platform</h4>
+                            <p>Navigate to the platform's URL in a modern web browser like Chrome, Firefox, or Safari.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>2</span></div>
+                        <div class="step-content">
+                            <h4>View the Home Screen</h4>
+                            <p>The home screen presents two main options: Student Interface and Teacher Interface.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>3</span></div>
+                        <div class="step-content">
+                            <h4>Choose Your Interface</h4>
+                            <p>Select either "Enter Student Interface" or "Enter Teacher Interface" based on your role.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h4>No Installation or Registration Required</h4>
+                    <p>The platform operates entirely in your web browser - no downloads, installations, or account creation is needed to get started.</p>
+                </div>
+            </section>
+            
+            <section id="ui-overview" class="subsection">
+                <h3>2.2 User Interface Overview</h3>
+                <p>The platform features a clean, intuitive interface designed to help you focus on learning FPGA concepts.</p>
+                
+                <div class="ui-overview">
+                    <div class="ui-image">
+                        <div class="image-placeholder">
+                            <div class="ui-mockup">
+                                <div class="mockup-header"></div>
+                                <div class="mockup-sidebar"></div>
+                                <div class="mockup-main"></div>
+                                <div class="mockup-controls"></div>
+                            </div>
+                        </div>
+                        <p class="caption">Figure 2.1: Main Interface Layout</p>
+                    </div>
+                    
+                    <div class="ui-description">
+                        <h4>Main Interface Components</h4>
+                        <table class="interface-components-table">
+                            <tr>
+                                <th>Component</th>
+                                <th>Function</th>
+                            </tr>
+                            <tr>
+                                <td>Header Bar</td>
+                                <td>Contains the application logo, title, and navigation links between interfaces</td>
+                            </tr>
+                            <tr>
+                                <td>Sidebar Panel</td>
+                                <td>Lists available designs and provides simulation controls</td>
+                            </tr>
+                            <tr>
+                                <td>Main Visualization Area</td>
+                                <td>Displays the active FPGA design with interactive components</td>
+                            </tr>
+                            <tr>
+                                <td>Controls Panel</td>
+                                <td>Provides tools for simulation speed, layout options, and other settings</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="navigation" class="subsection">
+                <h3>2.3 Navigating Between Interfaces</h3>
+                <p>The platform provides two specialized interfaces, each designed for different user needs.</p>
+                
+                <div class="interface-comparison">
+                    <div class="interface-card student">
+                        <div class="interface-icon student-icon"></div>
+                        <h4>Student Interface</h4>
+                        <ul>
+                            <li>Browse available FPGA designs</li>
+                            <li>View interactive circuit visualizations</li>
+                            <li>Run simulations with adjustable speeds</li>
+                            <li>Switch between different circuit layouts</li>
+                        </ul>
+                        <div class="access-button">
+                            <a href="#student-interface" class="button">Learn More</a>
+                        </div>
+                    </div>
+                    
+                    <div class="interface-card teacher">
+                        <div class="interface-icon teacher-icon"></div>
+                        <h4>Teacher Interface</h4>
+                        <ul>
+                            <li>Upload Verilog (.v) and SDF (.sdf) files</li>
+                            <li>Add descriptions with Markdown support</li>
+                            <li>Export and import designs as packages</li>
+                            <li>Manage the design library</li>
+                        </ul>
+                        <div class="access-button">
+                            <a href="#teacher-interface" class="button">Learn More</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="note-box">
+                    <h4>Switching Between Interfaces</h4>
+                    <p>You can easily switch between the Student and Teacher interfaces at any time using the navigation buttons in the header bar.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- Student Interface Section -->
+        <section id="student-interface" class="manual-section">
+            <h2>3. Student Interface</h2>
+            
+            <section id="student-overview" class="subsection">
+                <h3>3.1 Overview and Layout</h3>
+                <p>The Student Interface provides a simplified environment focused on visualization and simulation of FPGA designs. This interface is optimized for learning and exploring existing designs.</p>
+                
+                <!-- Screenshot placeholder -->
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/overview of student interface with controls preview.png" alt="Student Interface Overview" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 3.1: Student Interface Main View</p>
+                </div>
+                
+                <p>The Student Interface is divided into three main areas:</p>
+                <table class="interface-components-table">
+                    <tr>
+                        <th>Area</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td>Design Selection Panel</td>
+                        <td>Browse and select available FPGA designs from the library</td>
+                    </tr>
+                    <tr>
+                        <td>Visualization Canvas</td>
+                        <td>Interactive area displaying the FPGA components and connections</td>
+                    </tr>
+                    <tr>
+                        <td>Control Panel</td>
+                        <td>Tools for simulation control, speed adjustment, and clock frequency settings</td>
+                    </tr>
+                </table>
+            </section>
+            
+            <section id="selecting-design" class="subsection">
+                <h3>3.2 Selecting a Design</h3>
+                <p>The platform allows you to explore FPGA designs that have been added to the design library. Follow these steps to select and load a design:</p>
+                
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number"><span>1</span></div>
+                        <div class="step-content">
+                            <h4>Browse Available Designs</h4>
+                            <p>Review the list of designs in the left sidebar. Each entry shows a name and can be expanded to view its description.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>2</span></div>
+                        <div class="step-content">
+                            <h4>View Design Details</h4>
+                            <p>Click the arrow icon next to a design to expand and read its description.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>3</span></div>
+                        <div class="step-content">
+                            <h4>Select a Design</h4>
+                            <p>Click on the design name to load it into the visualization canvas.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Screenshot placeholder -->
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/available designs list in sstudent interface.png" alt="Design Selection Panel" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 3.2: Design Selection Panel with Available Designs</p>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Design Information</h4>
+                    <p>Each design includes a description that helps you understand its purpose and functionality. These descriptions may contain markdown-formatted text with educational objectives and explanations.</p>
+                </div>
+            </section>
+            
+            <section id="visualization-controls" class="subsection">
+                <h3>3.3 Visualization Controls</h3>
+                <p>The platform provides various controls to navigate and interact with the FPGA visualization.</p>
+                
+                <h4>Zooming and Panning</h4>
+                <div class="control-table-container">
+                    <table>
+                        <tr>
+                            <th>Action</th>
+                            <th>Mouse Control</th>
+                            <th>Touch Control</th>
+                        </tr>
+                        <tr>
+                            <td>Zoom In/Out</td>
+                            <td>Mouse wheel scroll</td>
+                            <td>Pinch gesture</td>
+                        </tr>
+                        <tr>
+                            <td>Pan View</td>
+                            <td>Click and drag empty space</td>
+                            <td>Touch and drag with one finger</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <h4>Component Inspection</h4>
+                <p>To inspect individual components in the visualization:</p>
+                <ul class="feature-list">
+                    <li>Hover over components to see tooltips with component details</li>
+                    <li>Click on a component to focus on it</li>
+                    <li>Observe signals as they flow through the design during simulation</li>
+                </ul>
+                
+                <h4>Layout Options</h4>
+                <p>The visualization offers multiple layout options to help you understand the design from different perspectives. You can select different layouts from the visualization controls:</p>
+                
+                <div class="layout-options">
+                    <div class="layout-option">
+                        <h5>Grid Layout</h5>
+                        <div class="screenshot-placeholder small">
+                            <img src="screenshots/basic design schematic simulation preview.png" alt="Grid Layout" style="width: 100%;">
+                        </div>
+                        <p>Organizes components in a neat grid pattern. Best for getting an overview of all components.</p>
+                    </div>
+                    
+                    <div class="layout-option">
+                        <h5>Force-Directed Layout</h5>
+                        <div class="screenshot-placeholder small">
+                            <img src="screenshots/complex layout preview for grouped components of a fpga design.png" alt="Force-Directed Layout" style="width: 100%;">
+                        </div>
+                        <p>Positions components based on their connections, bringing related components closer together.</p>
+                    </div>
+                    
+                    <div class="layout-option">
+                        <h5>Hierarchical Layout</h5>
+                        <div class="screenshot-placeholder small">
+                            <img src="screenshots/moving several components an the complex design.png" alt="Hierarchical Layout" style="width: 100%;">
+                        </div>
+                        <p>Displays components in a top-down hierarchy based on signal flow, with control signals like clock and reset specially positioned.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="simulation-controls" class="subsection">
+                <h3>3.4 Simulation Controls</h3>
+                <p>The simulation controls allow you to observe the behavior of the FPGA design over time as signals propagate through the components.</p>
+                
+                <!-- Screenshot placeholder -->
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/controls of student interface.png" alt="Simulation Controls" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 3.3: Simulation Control Panel</p>
+                </div>
+                
+                <h4>Basic Simulation Controls</h4>
+                <table>
+                    <tr>
+                        <th>Control</th>
+                        <th>Function</th>
+                    </tr>
+                    <tr>
+                        <td>Play</td>
+                        <td>Start the simulation</td>
+                    </tr>
+                    <tr>
+                        <td>Pause</td>
+                        <td>Pause the running simulation</td>
+                    </tr>
+                    <tr>
+                        <td>Resume</td>
+                        <td>Continue a paused simulation</td>
+                    </tr>
+                    <tr>
+                        <td>Reset</td>
+                        <td>Reset the simulation to its initial state</td>
+                    </tr>
+                </table>
+                
+                <h4>Simulation Speed Controls</h4>
+                <p>The platform offers two main controls for adjusting simulation speed:</p>
+                <ul class="feature-list">
+                    <li><strong>Signal Propagation Slow Factor</strong>: Controls how much to slow down signal propagation through interconnects (higher values mean slower simulation)</li>
+                    <li><strong>Clock Frequency</strong>: Sets the clock frequency for the simulation (in Hz)</li>
+                </ul>
+                
+                <div class="info-box">
+                    <h4>Understanding Simulation Controls</h4>
+                    <p>For learning purposes, the simulation intentionally slows down signal propagation so you can observe how signals move through the design. The propagation slow factor adjusts this behavior, while the clock frequency controls how fast clock signals are generated.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- Teacher Interface Section -->
+        <section id="teacher-interface" class="manual-section">
+            <h2>4. Teacher Interface</h2>
+            
+            <section id="teacher-overview" class="subsection">
+                <h3>4.1 Overview and Layout</h3>
+                <p>The Teacher Interface provides tools for creating and managing FPGA design libraries that students can access. Through this interface, educators can upload Verilog designs, add educational descriptions, and organize teaching materials.</p>
+                
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/teacher interface design added.png" alt="Teacher Interface Dashboard" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 4.1: Teacher Interface Dashboard</p>
+                </div>
+
+                <div class="interface-features">
+                    <h4>Key Features of Teacher Interface</h4>
+                    <table class="features-table">
+                        <tr>
+                            <th>Feature Category</th>
+                            <th>Available Tools</th>
+                            <th>Purpose</th>
+                        </tr>
+                        <tr>
+                            <td>Design Management</td>
+                            <td>
+                                <ul>
+                                    <li>File Upload Interface</li>
+                                    <li>Design Description Editor</li>
+                                    <li>Design Preview</li>
+                                </ul>
+                            </td>
+                            <td>Create and maintain FPGA design collections</td>
+                        </tr>
+                        <tr>
+                            <td>File Handling</td>
+                            <td>
+                                <ul>
+                                    <li>Verilog (.v) Uploader</li>
+                                    <li>SDF (.sdf) Uploader</li>
+                                    <li>Drag-and-drop Support</li>
+                                </ul>
+                            </td>
+                            <td>Upload necessary design files</td>
+                        </tr>
+                        <tr>
+                            <td>Import/Export</td>
+                            <td>
+                                <ul>
+                                    <li>Design Package Exporter</li>
+                                    <li>ZIP Import Functionality</li>
+                                </ul>
+                            </td>
+                            <td>Share designs between installations</td>
+                        </tr>
+                    </table>
+                </div>
+            </section>
+            
+            <section id="adding-designs" class="subsection">
+                <h3>4.2 Adding New Designs</h3>
+                <p>Teachers can add new FPGA designs to the platform for students to explore and simulate. Follow these steps to add a new design:</p>
+                
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number"><span>1</span></div>
+                        <div class="step-content">
+                            <h4>Upload Design Files</h4>
+                            <p>In the "Add a new Design" section, upload both required files:</p>
+                            <ul>
+                                <li>Verilog File (.v): Contains the circuit design code</li>
+                                <li>SDF File (.sdf): Contains timing information for the design</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>2</span></div>
+                        <div class="step-content">
+                            <h4>Enter Design Details</h4>
+                            <p>Add a custom name (optional) and description for the design. The description supports Markdown formatting for rich text.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>3</span></div>
+                        <div class="step-content">
+                            <h4>Save the Design</h4>
+                            <p>Click the "Save Design" button to process the files and make the design available to students.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Screenshot placeholder -->
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/verilog and sdf files added, description added with markdown preview.png" alt="Add New Design Form" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 4.2: Form for Adding New Designs</p>
+                </div>
+                
+                <div class="info-box">
+                    <h4>File Requirements</h4>
+                    <p>Both Verilog (.v) and SDF (.sdf) files are required to create a complete design. The platform automatically processes these files to generate the visualization data.</p>
+                </div>
+
+                <div class="info-box">
+                    <h4>Markdown Support</h4>
+                    <p>The description field supports Markdown formatting for rich text, including headings, lists, code blocks, and more. A preview is shown as you type.</p>
+                </div>
+            </section>
+            
+            <section id="managing-designs" class="subsection">
+                <h3>4.3 Managing Existing Designs</h3>
+                <p>The Teacher Interface includes tools for managing existing FPGA designs. Teachers can view, edit, and delete designs as needed.</p>
+                
+                <h4>Viewing Design Details</h4>
+                <p>All designs are displayed in cards in the "Manage Designs" section. Each card shows:</p>
+                <ul class="feature-list">
+                    <li>Design Name</li>
+                    <li>Description (in HTML format)</li>
+                    <li>List of associated files</li>
+                </ul>
+                
+                <h4>Design Actions</h4>
+                <p>For each design, you can perform the following actions:</p>
+                <ul class="feature-list">
+                    <li><strong>Edit</strong>: Update the design name and description</li>
+                    <li><strong>Export</strong>: Create a portable design package</li>
+                    <li><strong>Delete</strong>: Remove the design from the platform</li>
+                    <li><strong>View Files</strong>: See the uploaded files associated with the design</li>
+                </ul>
+                
+                <!-- Screenshot placeholder -->
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/the new design added in the manage design section of teacher interface.png" alt="Design Management Interface" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 4.3: Interface for Managing Existing Designs</p>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Editing Designs</h4>
+                    <p>When editing a design, you can update the name and description, but to change the Verilog or SDF files, you'll need to create a new design.</p>
+                </div>
+            </section>
+            
+            <section id="importing-designs" class="subsection">
+                <h3>4.4 Importing Packaged Designs</h3>
+                <p>The Teacher Interface supports importing and exporting designs, allowing for easy sharing between colleagues or different installations of the platform.</p>
+                
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number"><span>1</span></div>
+                        <div class="step-content">
+                            <h4>Exporting Designs</h4>
+                            <p>Click the "Export" button on any design card to download it as a ZIP package that includes all necessary files.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>2</span></div>
+                        <div class="step-content">
+                            <h4>Importing Designs</h4>
+                            <p>In the "Import Design" section, click "Choose File" and select the ZIP package you wish to import.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>3</span></div>
+                        <div class="step-content">
+                            <h4>Confirm Import</h4>
+                            <p>Review the details of the imported design and click "Import" to add it to your design library.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Screenshot placeholder -->
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/teacher interface design added.png" alt="Teacher Interface Dashboard" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 4.4: Interface for Importing and Exporting Designs</p>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Package Format</h4>
+                    <p>Exported design packages are ZIP files containing the Verilog (.v) and SDF (.sdf) files, along with a manifest file that stores the design name and description. These packages can be easily shared with colleagues or transferred between different installations.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- Understanding the Visualization Section -->
+        <section id="understanding-visualization" class="manual-section">
+            <h2>5. Understanding the Visualization</h2>
+            
+            <section id="component-representation" class="subsection">
+                <h3>5.1 Components Representation</h3>
+                <p>The FPGA Visualization Platform represents circuit components as simple geometric shapes with distinct colors to help you quickly identify different component types.</p>
+                
+                <div class="component-table-container">
+                    <table>
+                        <tr>
+                            <th>Component</th>
+                            <th>Visual Representation</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>Basic Logic Element (BEL)</td>
+                            <td>
+                                <div class="component-icon logic-gate-icon"></div>
+                            </td>
+                            <td>Rectangular shape representing the fundamental processing units in the FPGA</td>
+                        </tr>
+                        <tr>
+                            <td>Input Pin</td>
+                            <td>
+                                <div class="component-icon input-pin-icon"></div>
+                            </td>
+                            <td>Triangle pointing inward, representing entry points for signals into the design</td>
+                        </tr>
+                        <tr>
+                            <td>Output Pin</td>
+                            <td>
+                                <div class="component-icon output-pin-icon"></div>
+                            </td>
+                            <td>Triangle pointing outward, representing exit points for signals from the design</td>
+                        </tr>
+                        <tr>
+                            <td>Clock Generation</td>
+                            <td>
+                                <div class="component-icon clock-icon"></div>
+                            </td>
+                            <td>Special component that generates timing signals for synchronous operations</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Tooltips for Details</h4>
+                    <p>Hover your mouse over any component in the visualization to see a tooltip with additional information, including the component name, type, and current state.</p>
+                </div>
+            </section>
+            
+            <section id="signal-flow" class="subsection">
+                <h3>5.2 Signal Flow and Propagation</h3>
+                <p>The platform visually represents how signals travel through your FPGA design, helping you understand the behavior of your circuit over time.</p>
+                
+                <h4>Understanding Signal Paths</h4>
+                <p>Signals flow along the connections (lines) between components. The direction of signal flow is indicated by the design layout and simulation animation:</p>
+                
+                <ul class="feature-list">
+                    <li>Signals generally flow from inputs toward outputs</li>
+                    <li>During simulation, active signals are highlighted with animation effects</li>
+                    <li>Signal states (0 or 1) may be indicated by different colors</li>
+                </ul>
+                
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/simulationplayed design with highlighted clock.png" alt="Signal Animation Example" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 5.1: Animation showing signal propagation through components</p>
+                </div>
+                
+                <h4>Signal Propagation Timing</h4>
+                <p>The simulation intentionally slows down signal propagation to make it visually traceable:</p>
+                <ul class="feature-list">
+                    <li>Propagation delay is visualized through animated movement along connections</li>
+                    <li>Signals take time to travel from one component to another</li>
+                    <li>The propagation speed can be adjusted using the slow factor control</li>
+                </ul>
+                
+                <div class="info-box">
+                    <h4>Educational Focus</h4>
+                    <p>Real FPGA signals propagate nearly instantaneously (nanoseconds). The platform's slower visualization is designed specifically for educational purposes to help you see and understand signal flow.</p>
+                </div>
+            </section>
+            
+            <section id="connection-types" class="subsection">
+                <h3>5.3 Connection Types</h3>
+                <p>The visualization uses different line styles to represent various types of connections between components.</p>
+                
+                <div class="connection-table-container">
+                    <table>
+                        <tr>
+                            <th>Connection Type</th>
+                            <th>Visual Style</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>Standard Connection</td>
+                            <td>
+                                <div class="connection-icon standard-connection-icon"></div>
+                            </td>
+                            <td>Solid line representing a normal signal path between components</td>
+                        </tr>
+                        <tr>
+                            <td>Clock Network</td>
+                            <td>
+                                <div class="connection-icon clock-connection-icon"></div>
+                            </td>
+                            <td>Distinctively colored line showing clock signal distribution paths</td>
+                        </tr>
+                        <tr>
+                            <td>Multi-bit Bus</td>
+                            <td>
+                                <div class="connection-icon bus-connection-icon"></div>
+                            </td>
+                            <td>Thicker line indicating multiple signals grouped together</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Connection Direction</h4>
+                    <p>Even though connection lines may not always show arrows in the visualization, signal flow typically follows the design hierarchy from inputs to outputs.</p>
+                </div>
+            </section>
+            
+            <section id="status-indicators" class="subsection">
+                <h3>5.4 Status Indicators</h3>
+                <p>During simulation, various visual cues help you understand the current state of components and signals.</p>
+                
+                <div class="status-table-container">
+                    <table>
+                        <tr>
+                            <th>Indicator</th>
+                            <th>Appearance</th>
+                            <th>Meaning</th>
+                        </tr>
+                        <tr>
+                            <td>Active Component</td>
+                            <td>
+                                <div class="status-icon active-component-icon"></div>
+                            </td>
+                            <td>Highlighted component currently processing signals</td>
+                        </tr>
+                        <tr>
+                            <td>Active Signal</td>
+                            <td>
+                                <div class="status-icon active-signal-icon"></div>
+                            </td>
+                            <td>Animated line showing signal propagation in progress</td>
+                        </tr>
+                        <tr>
+                            <td>Logic High (1)</td>
+                            <td>
+                                <div class="status-icon logic-high-icon"></div>
+                            </td>
+                            <td>Indicates a connection carrying a logical "1" value</td>
+                        </tr>
+                        <tr>
+                            <td>Logic Low (0)</td>
+                            <td>
+                                <div class="status-icon logic-low-icon"></div>
+                            </td>
+                            <td>Indicates a connection carrying a logical "0" value</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <p>The combination of these visual indicators allows you to trace signal flow and understand the behavior of your design during simulation.</p>
+                
+                <div class="note-box">
+                    <h4>Performance Considerations</h4>
+                    <p>For complex designs with many components, the visualization may simplify some elements to maintain smooth performance. You can adjust the "Signal Propagation Slow Factor" to balance between visual detail and performance.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- Advanced Features Section -->
+        <section id="advanced-features" class="manual-section">
+            <h2>6. Advanced Features</h2>
+            
+            <section id="layout-options" class="subsection">
+                <h3>6.1 Layout Options</h3>
+                <p>The visualization platform offers multiple layout options to help you understand circuit designs from different perspectives.</p>
+                
+                <div class="layout-options">
+                    <div class="layout-option">
+                        <h5>Grid Layout</h5>
+                        <div class="screenshot-placeholder small">
+                            <img src="screenshots/basic design schematic simulation preview.png" alt="Grid Layout" style="width: 100%;">
+                        </div>
+                        <p>Arranges components in an organized grid pattern. This layout provides a clean, structured view that makes it easy to see all components.</p>
+                    </div>
+                    
+                    <div class="layout-option">
+                        <h5>Force-Directed Layout</h5>
+                        <div class="screenshot-placeholder small">
+                            <img src="screenshots/complex layout preview for grouped components of a fpga design.png" alt="Force-Directed Layout" style="width: 100%;">
+                        </div>
+                        <p>Positions components based on their connections, creating organic clusters of related components. Connected elements are pulled closer together.</p>
+                    </div>
+                    
+                    <div class="layout-option">
+                        <h5>Hierarchical Layout</h5>
+                        <div class="screenshot-placeholder small">
+                            <img src="screenshots/moving several components an the complex design.png" alt="Hierarchical Layout" style="width: 100%;">
+                        </div>
+                        <p>Organizes components in a top-down flow based on signal path directions, clearly showing the logical progression of signals through the design.</p>
+                    </div>
+                </div>
+                
+                <p>To change the layout:</p>
+                <ol>
+                    <li>Select a design in the Visualization Interface</li>
+                    <li>Locate the layout selection controls in the settings panel</li>
+                    <li>Choose your preferred layout type from the available options</li>
+                </ol>
+                
+                <div class="info-box">
+                    <h4>Layout Performance</h4>
+                    <p>For complex designs with many components, the hierarchical and force-directed layouts may take longer to render. The grid layout generally offers the best performance.</p>
+                </div>
+            </section>
+            
+            <section id="dark-mode" class="subsection">
+                <h3>6.2 Dark Mode</h3>
+                <p>The platform provides a dark mode option that can reduce eye strain during extended use, especially in low-light environments.</p>
+                
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <p>Dark Mode Interface</p>
+                    </div>
+                    <p class="caption">Figure 6.1: Visualization Interface in Dark Mode</p>
+                </div>
+                
+                <p>When dark mode is enabled:</p>
+                <ul class="feature-list">
+                    <li>The background changes to a darker color</li>
+                    <li>Component and connection colors are adjusted for better contrast</li>
+                    <li>Text and UI elements adapt to be visible against the darker background</li>
+                </ul>
+                
+                <p>The dark mode setting applies across the entire visualization interface, enhancing readability while reducing the brightness of the display.</p>
+                
+                <div class="info-box">
+                    <h4>Visualization in Dark Mode</h4>
+                    <p>In dark mode, signal colors and component highlighting are automatically adjusted to maintain clear visibility and differentiation.</p>
+                </div>
+            </section>
+            
+            <section id="keyboard-shortcuts" class="subsection">
+                <h3>6.3 Keyboard Shortcuts</h3>
+                <p>The platform includes several keyboard shortcuts to enhance efficiency when working with FPGA designs.</p>
+                
+                <div class="shortcut-table-container">
+                    <table>
+                        <tr>
+                            <th>Action</th>
+                            <th>Shortcut</th>
+                        </tr>
+                        <tr>
+                            <td>Undo Last Component Movement</td>
+                            <td>Ctrl + Z (or Cmd + Z on Mac)</td>
+                        </tr>
+                        <tr>
+                            <td>Clear Component Selection</td>
+                            <td>Esc</td>
+                        </tr>
+                        <tr>
+                            <td>Multi-select Components</td>
+                            <td>Shift + Click</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="note-box">
+                    <h4>Browser Integration</h4>
+                    <p>Some keyboard shortcuts may be intercepted by your web browser. If a shortcut doesn't work as expected, check if your browser has a conflicting shortcut assigned.</p>
+                </div>
+            </section>
+            
+            <section id="multi-component-selection" class="subsection">
+                <h3>6.4 Multi-component Selection</h3>
+                <p>The platform supports selecting multiple components simultaneously, allowing you to manipulate groups of components at once.</p>
+                
+                <div class="screenshot-container">
+                    <div class="screenshot-placeholder">
+                        <img src="screenshots/moving several components an the complex design.png" alt="Multi-component Selection" style="width: 100%;">
+                    </div>
+                    <p class="caption">Figure 6.2: Multiple Components Selected in the Visualization</p>
+                </div>
+                
+                <h4>Selection Methods</h4>
+                <p>There are several ways to select multiple components:</p>
+                
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number"><span>1</span></div>
+                        <div class="step-content">
+                            <h4>Rectangle Selection</h4>
+                            <p>Click and drag in an empty area of the visualization to create a selection rectangle. All components within or intersecting this rectangle will be selected.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>2</span></div>
+                        <div class="step-content">
+                            <h4>Shift + Click Selection</h4>
+                            <p>Hold the Shift key while clicking on individual components to add them to the current selection. Click a selected component while holding Shift to remove it from the selection.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>3</span></div>
+                        <div class="step-content">
+                            <h4>Working with Selected Components</h4>
+                            <p>Once multiple components are selected, you can move them as a group by dragging any of the selected components. The entire selection will move together, maintaining their relative positions.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Selection Visual Feedback</h4>
+                    <p>Selected components are visually highlighted with a blue border and drop shadow effect. This makes it easy to identify which components are currently selected.</p>
+                </div>
+                
+                <h4>Group Operations</h4>
+                <p>When multiple components are selected, the following operations apply to all selected components:</p>
+                <ul class="feature-list">
+                    <li><strong>Moving</strong>: Drag any selected component to move the entire group</li>
+                    <li><strong>Deselection</strong>: Click on an empty area or press Escape to deselect all components</li>
+                </ul>
+                
+                <div class="note-box">
+                    <h4>Selection during Simulation</h4>
+                    <p>Component selection and movement are disabled during active simulations. You need to stop the simulation before you can select and manipulate components.</p>
+                </div>
+            </section>
+            
+            <section id="connection-visualization" class="subsection">
+                <h3>6.5 Connection Visualization</h3>
+                <p>The platform provides enhanced visualization for different types of connections between components, helping you understand signal flow.</p>
+                
+                <h4>Connection Types</h4>
+                <div class="connection-table-container">
+                    <table>
+                        <tr>
+                            <th>Connection Type</th>
+                            <th>Visual Style</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>Data Connection</td>
+                            <td>
+                                <div class="connection-icon data-connection-icon"></div>
+                            </td>
+                            <td>Blue solid line representing standard data signal paths</td>
+                        </tr>
+                        <tr>
+                            <td>Clock Connection</td>
+                            <td>
+                                <div class="connection-icon clock-connection-icon"></div>
+                            </td>
+                            <td>Orange dashed line showing clock signal distribution</td>
+                        </tr>
+                        <tr>
+                            <td>Control Connection</td>
+                            <td>
+                                <div class="connection-icon control-connection-icon"></div>
+                            </td>
+                            <td>Purple dotted line indicating control signals like reset</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <h4>Connection State Visualization</h4>
+                <p>During simulation, connections change their appearance based on signal state:</p>
+                <ul class="feature-list">
+                    <li><strong>Inactive Connections</strong>: Normal opacity and thickness</li>
+                    <li><strong>Active Connections</strong>: Increased opacity, brightness, and glow effect</li>
+                    <li><strong>Animated Flow</strong>: Active connections show signal propagation with pulse animations</li>
+                </ul>
+                
+                <div class="info-box">
+                    <h4>Smart Connection Routing</h4>
+                    <p>The visualization uses an intelligent algorithm to route connections between components, avoiding overlaps with other components whenever possible. This creates a cleaner, more readable visualization.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- Troubleshooting Section -->
+        <section id="troubleshooting" class="manual-section">
+            <h2>7. Troubleshooting</h2>
+            
+            <section id="common-issues" class="subsection">
+                <h3>7.1 Common Issues</h3>
+                <p>This section covers specific issues you might encounter while using the FPGA Visualization Platform and provides practical solutions.</p>
+                
+                <div class="issue-table-container">
+                    <table>
+                        <tr>
+                            <th>Issue</th>
+                            <th>Possible Cause</th>
+                            <th>Solution</th>
+                        </tr>
+                        <tr>
+                            <td>Visualization not loading</td>
+                            <td>Large design file or browser resource limitations</td>
+                            <td>Try refreshing the page, closing other tabs, or switching to a different browser with better performance.</td>
+                        </tr>
+                        <tr>
+                            <td>Simulation running too fast/slow</td>
+                            <td>Clock frequency or propagation slow factor not set appropriately</td>
+                            <td>Adjust the clock frequency (Hz) or signal propagation slow factor in the controls panel. Lower frequencies and higher slow factors will make signal propagation more visible.</td>
+                        </tr>
+                        <tr>
+                            <td>Components don't respond to selection</td>
+                            <td>Simulation is currently running</td>
+                            <td>Stop the simulation before attempting to select or move components. Component selection is disabled during active simulations.</td>
+                        </tr>
+                        <tr>
+                            <td>File upload errors on teacher interface</td>
+                            <td>Missing required file or incorrect file format</td>
+                            <td>Ensure you are uploading both a Verilog (.v) and SDF (.sdf) file. Check that the files are valid and properly formatted.</td>
+                        </tr>
+                        <tr>
+                            <td>Connection lines not showing</td>
+                            <td>Design missing proper connection definitions</td>
+                            <td>Verify that your design files correctly define the interconnects between components. The platform needs proper connection data to visualize signal paths.</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Browser Performance</h4>
+                    <p>The visualization uses advanced web technologies that can be resource-intensive. For the best experience, use a modern browser like Chrome or Firefox on a computer with sufficient RAM (at least 8GB recommended for complex designs).</p>
+                </div>
+            </section>
+            
+            <section id="error-messages" class="subsection">
+                <h3>7.2 Error Messages</h3>
+                <p>Here are explanations and solutions for specific error messages you might see when using the platform:</p>
+                
+                <div class="error-table-container">
+                    <table>
+                        <tr>
+                            <th>Error Message</th>
+                            <th>Meaning</th>
+                            <th>Solution</th>
+                        </tr>
+                        <tr>
+                            <td>"Error processing files"</td>
+                            <td>The platform was unable to parse the uploaded Verilog or SDF files.</td>
+                            <td>Check that your files follow the correct syntax and format. Try validating them with an external tool before uploading.</td>
+                        </tr>
+                        <tr>
+                            <td>"Please select both Verilog and SDF files"</td>
+                            <td>One or both required files are missing during design upload.</td>
+                            <td>Make sure you've selected both a Verilog (.v) file and an SDF (.sdf) file before attempting to save a design.</td>
+                        </tr>
+                        <tr>
+                            <td>"No data to visualize"</td>
+                            <td>No design is currently selected or the design contains no visualizable data.</td>
+                            <td>Select a design from the design list, or if the issue persists, check that the design contains proper component and connection definitions.</td>
+                        </tr>
+                        <tr>
+                            <td>Connection-related errors in console</td>
+                            <td>The platform is having trouble finding connection points between components.</td>
+                            <td>This is likely due to issues in the design file. Ensure that interconnects are properly defined in your source files.</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="note-box">
+                    <h4>Checking Browser Console</h4>
+                    <p>If you encounter issues, checking the browser's developer console (press F12 or right-click and select "Inspect") can provide additional error information that may help diagnose problems.</p>
+                </div>
+            </section>
+            
+            <section id="support" class="subsection">
+                <h3>7.3 Getting Support</h3>
+                <p>If you can't resolve an issue using the troubleshooting guidance above, there are several ways to get additional help:</p>
+                
+                <div class="steps-container">
+                    <div class="step">
+                        <div class="step-number"><span>1</span></div>
+                        <div class="step-content">
+                            <h4>Check Documentation</h4>
+                            <p>Review this manual thoroughly, as many common issues and their solutions are covered in various sections.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>2</span></div>
+                        <div class="step-content">
+                            <h4>Gather Information</h4>
+                            <p>Before contacting support, collect relevant details about your issue, including:</p>
+                            <ul>
+                                <li>Browser type and version</li>
+                                <li>Exact steps to reproduce the issue</li>
+                                <li>Any error messages displayed</li>
+                                <li>Screenshots if applicable</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><span>3</span></div>
+                        <div class="step-content">
+                            <h4>Contact Support</h4>
+                            <p>Reach out to the support team with your collected information. Technical support can be provided by your instructor or the platform administrators at your institution.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>Browser Compatibility</h4>
+                    <p>The platform is optimized for Chrome and Firefox browsers. If you're experiencing issues, try switching browsers before contacting support.</p>
+                </div>
+            </section>
+        </section>
+
+        <!-- Appendix Section -->
+        <section id="appendix" class="manual-section">
+            <h2>8. Appendix</h2>
+            
+            <section id="file-formats" class="subsection">
+                <h3>8.1 File Format Specifications</h3>
+                <p>The FPGA Visualization Platform works with specific file formats. Understanding these formats is important for creating and managing designs.</p>
+                
+                <div class="file-format-table-container">
+                    <table>
+                        <tr>
+                            <th>File Type</th>
+                            <th>Extension</th>
+                            <th>Required</th>
+                            <th>Description</th>
+                        </tr>
+                        <tr>
+                            <td>Verilog</td>
+                            <td>.v</td>
+                            <td>Yes</td>
+                            <td>Contains the hardware description of the digital circuit in Verilog HDL format. Defines modules, ports, and logic.</td>
+                        </tr>
+                        <tr>
+                            <td>Standard Delay Format</td>
+                            <td>.sdf</td>
+                            <td>Yes</td>
+                            <td>Contains timing information for the digital design, including propagation delays between components.</td>
+                        </tr>
+                        <tr>
+                            <td>JSON Schematic</td>
+                            <td>.json</td>
+                            <td>Auto-generated</td>
+                            <td>Generated automatically when you upload Verilog and SDF files. Contains the visualization data used by the platform.</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <h4>Verilog (.v) File Requirements</h4>
+                <p>For best compatibility with the platform, your Verilog files should:</p>
+                <ul class="feature-list">
+                    <li>Define clear module boundaries with proper port declarations</li>
+                    <li>Use standard Verilog syntax (IEEE 1364-2001 or later)</li>
+                    <li>Include explicit connection definitions</li>
+                    <li>Avoid overly complex hierarchical structures</li>
+                </ul>
+                
+                <h4>SDF (.sdf) File Requirements</h4>
+                <p>Your SDF files should:</p>
+                <ul class="feature-list">
+                    <li>Correspond directly to the components in the Verilog file</li>
+                    <li>Include proper timing specifications for all relevant paths</li>
+                    <li>Use the standard SDF format</li>
+                </ul>
+                
+                <div class="info-box">
+                    <h4>Generated JSON Format</h4>
+                    <p>The platform automatically generates a JSON schematic from your Verilog and SDF files. This contains component position data, connection information, and state representation details needed for visualization.</p>
+                </div>
+            </section>
+            
+            <section id="glossary" class="subsection">
+                <h3>8.2 Glossary of Terms</h3>
+                <p>This section explains key terms and concepts used throughout the FPGA Visualization Platform.</p>
+                
+                <div class="glossary-table-container">
+                    <table>
+                        <tr>
+                            <th>Term</th>
+                            <th>Definition</th>
+                        </tr>
+                        <tr>
+                            <td>BEL</td>
+                            <td>Basic Element of Logic - the fundamental building blocks in an FPGA, such as look-up tables (LUTs) or flip-flops.</td>
+                        </tr>
+                        <tr>
+                            <td>Clock Frequency</td>
+                            <td>The rate at which clock signals cycle in the simulation, measured in Hertz (Hz). Controls the timing of synchronous elements.</td>
+                        </tr>
+                        <tr>
+                            <td>Component</td>
+                            <td>A visual representation of an FPGA element like a LUT, flip-flop, or I/O buffer in the visualization interface.</td>
+                        </tr>
+                        <tr>
+                            <td>Connection</td>
+                            <td>A visual representation of signal paths between components, showing how data flows through the design.</td>
+                        </tr>
+                        <tr>
+                            <td>DFF/FF</td>
+                            <td>D Flip-Flop - A storage element that holds state information in digital circuits and captures data on clock edges.</td>
+                        </tr>
+                        <tr>
+                            <td>Grid Layout</td>
+                            <td>A visualization arrangement that places components in an organized grid pattern for clarity.</td>
+                        </tr>
+                        <tr>
+                            <td>Hierarchical Layout</td>
+                            <td>A visualization arrangement that organizes components based on signal flow hierarchy, typically from inputs through logic to outputs.</td>
+                        </tr>
+                        <tr>
+                            <td>Interconnect</td>
+                            <td>The routing resources that connect different components in an FPGA design.</td>
+                        </tr>
+                        <tr>
+                            <td>LUT</td>
+                            <td>Look-Up Table - A configurable component that implements combinational logic functions in FPGAs.</td>
+                        </tr>
+                        <tr>
+                            <td>Propagation Delay</td>
+                            <td>The time taken for a signal to travel from one component to another through an interconnect.</td>
+                        </tr>
+                        <tr>
+                            <td>Propagation Slow Factor</td>
+                            <td>A simulation parameter that deliberately slows down signal propagation for educational visualization purposes.</td>
+                        </tr>
+                        <tr>
+                            <td>SDF</td>
+                            <td>Standard Delay Format - A file format that specifies timing information for digital designs.</td>
+                        </tr>
+                        <tr>
+                            <td>Signal State</td>
+                            <td>The logical value (high/1 or low/0) of a connection in the circuit.</td>
+                        </tr>
+                        <tr>
+                            <td>Visualization</td>
+                            <td>The interactive graphical representation of an FPGA design showing components and connections.</td>
+                        </tr>
+                    </table>
+                </div>
+            </section>
+            
+            <section id="resources" class="subsection">
+                <h3>8.3 Additional Resources</h3>
+                <p>Explore these resources to deepen your understanding of FPGAs and digital design concepts.</p>
+                
+                <h4>Learning Materials</h4>
+                <div class="resources-grid">
+                    <div class="resource-category">
+                        <h5>FPGA Fundamentals</h5>
+                        <ul>
+                            <li>Introduction to Digital Logic</li>
+                            <li>FPGA Architecture Basics</li>
+                            <li>Combinational vs. Sequential Logic</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="resource-category">
+                        <h5>Verilog HDL</h5>
+                        <ul>
+                            <li>Verilog Language Reference</li>
+                            <li>Common Verilog Patterns</li>
+                            <li>Writing Testbenches</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="resource-category">
+                        <h5>Digital Design</h5>
+                        <ul>
+                            <li>State Machine Design</li>
+                            <li>Clock Domain Crossing</li>
+                            <li>Timing Analysis Fundamentals</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <h4>Circuit Types and Concepts</h4>
+                <p>As you work with the FPGA Visualization Platform, you may encounter various types of digital circuits. Understanding these common circuit concepts will help you get more from your learning experience:</p>
+                
+                <ul class="feature-list">
+                    <li><strong>Counters</strong> - Sequential circuits that count through a series of states and store values</li>
+                    <li><strong>Shift Registers</strong> - Circuits that move data through a series of flip-flops</li>
+                    <li><strong>Combinational Logic</strong> - Circuits where outputs depend only on current inputs</li>
+                    <li><strong>State Machines</strong> - Circuits that transition between defined states based on inputs and current state</li>
+                </ul>
+                
+                <div class="info-box">
+                    <h4>Keeping Up to Date</h4>
+                    <p>The platform is regularly updated with new features and capabilities. Check with your instructor or system administrator for information about new platform releases and additional learning materials.</p>
+                </div>
+            </section>
+            
+            <section id="acknowledgments" class="subsection">
+                <h3>8.4 Acknowledgments</h3>
+                <p>The FPGA Visualization Platform was developed as an educational tool to make FPGA concepts more accessible to students. We would like to thank the following:</p>
+                
+                <ul class="feature-list">
+                    <li>The development team for their dedication to creating an intuitive visualization experience</li>
+                    <li>Academic partners who provided valuable feedback during the platform's development</li>
+                    <li>Students who participated in testing and helped refine the user experience</li>
+                </ul>
+                
+                <p class="copyright-notice">© 2024 FPGA Vision. All rights reserved.</p>
+            </section>
+        </section>
+    </div>
+</body>
+</html>
