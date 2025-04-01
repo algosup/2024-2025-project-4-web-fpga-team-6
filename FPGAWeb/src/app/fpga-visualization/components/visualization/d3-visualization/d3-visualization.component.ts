@@ -41,6 +41,7 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   @Input() design: Design | null = null;
   @Input() isRunning = false;
   @Input() isPaused = false;
+  // Always default to grid layout and ignore other options
   @Input() layoutType: 'grid' | 'force' | 'hierarchical' = 'grid';
   @Input() darkMode: boolean = false;
   
@@ -147,8 +148,8 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     if (changes['layoutType'] && this.svg && this.components.length > 0) {
-      // Update layout config
-      this.configService.updateLayoutConfig({ type: this.layoutType });
+      // Always enforce grid layout regardless of input
+      this.configService.updateLayoutConfig({ type: 'grid' });
       this.applyCurrentLayout();
     }
 
@@ -286,14 +287,13 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       config: this.configService.canvas
     };
     
-    // Get layout options from config service
+    // Get layout options from config service but force grid type
     const layoutConfig = this.configService.layout;
     
     this.layoutService.applyLayout(context, nodes || this.svg.selectAll('.component'), {
-      type: layoutConfig.type,
+      type: 'grid',  // Force grid layout type
       padding: layoutConfig.padding,
       enableDragging: layoutConfig.enableDragging,
-      // Additional layout-specific options can be passed here
     });
     
     // Update connections after layout change

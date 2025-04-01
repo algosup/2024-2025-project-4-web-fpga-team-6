@@ -1,0 +1,7 @@
+<!-- filepath: /Users/benoit/Documents/GitHub/2024-2025-project-4-web-fpga-team-6/FPGAWeb/src/assets/generic_component.svg -->
+<svg width="120" height="80" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="120" height="80" rx="10" fill="white" stroke="#0b3d91" stroke-width="2"/>
+  <rect x="0" y="0" width="120" height="20" rx="10" ry="0" fill="#0b3d91"/>
+  <text x="60" y="15" font-family="Arial" font-size="12" fill="white" text-anchor="middle">Component</text>
+  <text x="60" y="45" font-family="Arial" font-size="14" fill="#0b3d91" text-anchor="middle">Logic Gate</text>
+</svg>

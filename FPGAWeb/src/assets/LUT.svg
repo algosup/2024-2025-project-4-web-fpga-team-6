@@ -1,0 +1,26 @@
+<!-- filepath: /Users/benoit/Documents/GitHub/2024-2025-project-4-web-fpga-team-6/FPGAWeb/src/assets/LUT.svg -->
+<svg width="140" height="100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Trapezoid shape for LUT -->
+  <path d="M20,10 L120,10 L130,90 L10,90 Z" fill="white" stroke="#0b3d91" stroke-width="2"/>
+  <rect x="20" y="10" width="100" height="20" fill="#0b3d91"/>
+  <text x="70" y="25" font-family="Arial" font-size="12" fill="white" text-anchor="middle">LUT</text>
+  <text x="70" y="55" font-family="Arial" font-size="14" fill="#0b3d91" text-anchor="middle">Look-Up Table</text>
+  
+  <!-- Connection points -->
+  <circle cx="10" cy="30" r="3" fill="#333" stroke="none"/>
+  <circle cx="10" cy="40" r="3" fill="#333" stroke="none"/>
+  <circle cx="10" cy="50" r="3" fill="#333" stroke="none"/>
+  <circle cx="10" cy="60" r="3" fill="#333" stroke="none"/>
+  <circle cx="10" cy="70" r="3" fill="#333" stroke="none"/>
+  <circle cx="130" cy="50" r="3" fill="#333" stroke="none"/>
+  
+  <!-- Input labels -->
+  <text x="22" y="33" font-family="Arial" font-size="10" fill="#333" text-anchor="start">0</text>
+  <text x="22" y="43" font-family="Arial" font-size="10" fill="#333" text-anchor="start">1</text>
+  <text x="22" y="53" font-family="Arial" font-size="10" fill="#333" text-anchor="start">2</text>
+  <text x="22" y="63" font-family="Arial" font-size="10" fill="#333" text-anchor="start">3</text>
+  <text x="22" y="73" font-family="Arial" font-size="10" fill="#333" text-anchor="start">4</text>
+  
+  <!-- Output label -->
+  <text x="115" y="53" font-family="Arial" font-size="10" fill="#333" text-anchor="end">OUT</text>
+</svg>

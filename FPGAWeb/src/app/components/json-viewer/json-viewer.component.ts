@@ -2,6 +2,7 @@ import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgxJsonViewerModule } from 'ngx-json-viewer';
 
+
 @Component({
   selector: 'app-json-viewer',
   standalone: true,

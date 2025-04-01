@@ -158,9 +158,9 @@ svg {
   cursor: grabbing !important;
 }
 
-/* Selected component highlighting */
+/* Selected component highlighting - unified styles */
 .component.selected {
-  filter: drop-shadow(0 0 3px rgba(0, 123, 255, 0.7));
+  filter: drop-shadow(0 0 5px rgba(33, 150, 243, 0.7)) !important;
   z-index: 10;
 }
 
@@ -172,16 +172,45 @@ svg {
 }
 
 /* Add a highlight border around selected components */
-.component.selected::before {
+.component.selected::after {
   content: '';
   position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
   border: 2px dashed #2196F3;
   border-radius: 4px;
+  animation: selection-pulse 2s infinite;
   pointer-events: none;
+}
+
+@keyframes selection-pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* Selection rectangle styling - single definition */
+.selection-rect {
+  fill: rgba(33, 150, 243, 0.1);
+  stroke: #2196F3;
+  stroke-dasharray: 4,4;
+  pointer-events: none;
+  z-index: 1000;
+  stroke-dashoffset: 0;
+  animation: selection-dash 0.5s linear infinite;
+}
+
+@keyframes selection-dash {
+  to {
+    stroke-dashoffset: -8;
+  }
+}
+
+/* Dim non-selected components during multi-selection */
+body.selecting .component:not(.selected):not(:hover) {
+  opacity: 0.7;
 }
 
 /* Make currently dragged component more prominent */
@@ -189,17 +218,9 @@ svg {
   z-index: 1000;
 }
 
-/* Improve component interaction indicators */
-.component:hover {
+/* Improved hover effects */
+.component:hover:not(.dragging):not(.simulation-running *) {
   filter: brightness(1.1);
-}
-
-.component:hover:not(.selected) {
-  filter: brightness(1.1);
-}
-
-.component:not(.dragging) {
-  pointer-events: all;
 }
 
 /* While any component is being dragged, ignore pointer events on other components */
@@ -209,23 +230,6 @@ body.dragging-active .component:not(.dragging) {
 
 body.dragging-active .component:not(.dragging):not(.selected) {
   opacity: 0.6;
-}
-
-/* Selection styling */
-.component.selected rect,
-.component.selected path {
-  stroke: #2196F3;
-  stroke-width: 2px;
-  stroke-dasharray: 3,3;
-}
-
-.component.selected {
-  z-index: 10;
-}
-
-.selection-rect {
-  pointer-events: none;
-  z-index: 1000;
 }
 
 /* Ensure components have component IDs as attributes */
@@ -261,6 +265,12 @@ body.dragging-active .component:not(.dragging):not(.selected) {
 /* Allow clock component to still have visual feedback */
 .simulation-running .component[data-component-type="WIRE_INPUT"] {
   pointer-events: all;
+  cursor: pointer !important;
+  transition: filter 0.2s;
+}
+
+.simulation-running .component[data-component-type="WIRE_INPUT"]:hover {
+  filter: brightness(1.2);
 }
 
 /* Add pulse animation for active clock */
@@ -272,6 +282,27 @@ body.dragging-active .component:not(.dragging):not(.selected) {
 
 .simulation-running .component.active rect {
   animation: clock-pulse 0.5s infinite;
+}
+
+/* Component tooltip styling - consolidate styles */
+#component-tooltip {
+  position: absolute;
+  visibility: hidden;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  z-index: 1000;
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+
+#component-tooltip.visible {
+  visibility: visible;
+  opacity: 1;
 }
 
 /* Pin states styling */
