@@ -818,32 +818,37 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
     
-    console.log(`DFF ${dffId}: D input state is ${dState}, updating Q output`);
+    // Get the current state of Q
+    const currentQState = qOutput.attr('data-pin-state') || 'LOW';
     
-    // Short delay to make the cause-effect more visible in the UI
-    setTimeout(() => {
-      // Update Q output to match the D input
-      console.log(`DFF ${dffId} updating Q to ${dState} from D input`);
+    // Only update Q if its state needs to change
+    if (currentQState !== dState) {
+      console.log(`DFF ${dffId}: D input state ${dState} differs from Q state ${currentQState}, updating Q`);
       
-      // Update Q without triggering circular propagation
-      qOutput.attr('data-pin-state', dState)
-            .classed('high', dState === 'HIGH')
-            .classed('low', dState === 'LOW');
-      
-      // Update pin appearance
-      const fillColor = dState === 'HIGH' ? 
-        this.styleService.colors.activePin : 
-        this.styleService.getPinColor('output');
+      // Short delay to make the cause-effect more visible in the UI
+      setTimeout(() => {
+        // Update Q without triggering circular propagation
+        qOutput.attr('data-pin-state', dState)
+              .classed('high', dState === 'HIGH')
+              .classed('low', dState === 'LOW');
         
-      qOutput.selectAll('path, circle, rect')
-        .transition()
-        .duration(150)
-        .attr('fill', fillColor);
-      
-      // Now propagate from Q output - ensure proper type safety
-      const pinIdAttr = qOutput.attr('data-pin-id') || 'Q';
-      this.propagateSignalFromPin(dffId, pinIdAttr, dState);
-    }, 100); // Small delay for visual effect
+        // Update pin appearance
+        const fillColor = dState === 'HIGH' ? 
+          this.styleService.colors.activePin : 
+          this.styleService.getPinColor('output');
+          
+        qOutput.selectAll('path, circle, rect')
+          .transition()
+          .duration(150)
+          .attr('fill', fillColor);
+        
+        // Now propagate from Q output - ensure proper type safety
+        const pinIdAttr = qOutput.attr('data-pin-id') || 'Q';
+        this.propagateSignalFromPin(dffId, pinIdAttr, dState);
+      }, 100); // Small delay for visual effect
+    } else {
+      console.log(`DFF ${dffId}: D input state ${dState} same as current Q state, no update needed`);
+    }
   }
 
   /**
