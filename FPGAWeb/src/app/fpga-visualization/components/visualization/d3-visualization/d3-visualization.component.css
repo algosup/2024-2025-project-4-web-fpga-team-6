@@ -390,3 +390,19 @@ body.dragging-active .component:not(.dragging):not(.selected) {
 .pin.high rect {
   filter: drop-shadow(0 0 2px rgba(255, 82, 82, 0.7));
 }
+
+:root {
+  /* Default value will be overridden by JS */
+  --signal-propagation-ms-per-ps: 100ms;
+}
+
+/* Signal propagation animation */
+@keyframes signal-propagation {
+  0% { stroke-dashoffset: 100%; }
+  100% { stroke-dashoffset: 0%; }
+}
+
+.simulation-running .connection.active {
+  stroke-dasharray: 4 2;
+  animation: signal-propagation var(--animation-duration, 100ms) linear forwards;
+}

@@ -639,7 +639,15 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     clockDrivenComponents.forEach(component => {
       const delay = this.calculatePropagationDelay(component);
       setTimeout(() => {
-        this.updateComponentState(component);
+        // Replace this line:
+        // this.updatePinState(component);
+
+        // With something like this:
+        // Find the main pin for this component
+        const mainPinId = component.pins && component.pins.length > 0 ? component.pins[0].id : '';
+        if (mainPinId) {
+          this.updatePinState(component.id, mainPinId, component.state === 'HIGH' ? 'HIGH' : 'LOW');
+        }
       }, delay);
     });
   }
@@ -661,47 +669,45 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
 
   // Helper method to calculate propagation delay based on component distance and slow factor
   private calculatePropagationDelay(component: any): number {
-    // Example implementation - could be more sophisticated based on
-    // distance from clock, number of hops, etc.
-    const baseDelay = 50; // Base delay in ms
-    return baseDelay * this.simulationSpeed;
+    const baseDelayPs = 10; // Base delay in picoseconds
+    const msPerPs = this.getMsPerPs();
+    return baseDelayPs * msPerPs;
   }
 
-  // Helper method to update a component's visual state
-  private updateComponentState(component: any) {
-    // This is a placeholder implementation
-    // You should implement logic to update component states
-    // based on their inputs and the simulation model
-    const componentEl = d3.select(component);
+  /**
+   * Updates the simulation speed and recalculates propagation delays
+   * @param speed The new simulation speed (1-10)
+   */
+  public setSimulationSpeed(speed: number): void {
+    // Update the simulation speed
+    this._simulationSpeed = speed;
     
-    // Example: Toggle active state for demonstration
-    const isActive = componentEl.classed('active');
-    componentEl.classed('active', !isActive);
+    // Calculate ms per ps based on the new formula
+    const msPerPs = this.getMsPerPs();
     
-    // Example: Update output pins
-    componentEl.selectAll('.pin[data-pin-type="output"]')
-      .classed('active', !isActive);
+    console.log(`Simulation speed updated: ${speed}× (1ps = ${msPerPs.toFixed(1)}ms)`);
+    
+    // Update CSS custom property for animations
+    document.documentElement.style.setProperty('--signal-propagation-ms-per-ps', `${msPerPs}`);
+    
+    // Update clock timer if running
+    if (this.clockTimer && this.isRunning && !this.isPaused) {
+      // Calculate new interval based on frequency and simulation speed
+      const newInterval = 1000 / this.clockFrequency;
+      console.log(`Updating clock timer interval to ${newInterval}ms (${this.clockFrequency} Hz)`);
+      this.clockTimer.setInterval(newInterval);
+    }
+    
+    // Recalculate delays for all active connections
+    this.updateSignalPropagationDelays();
   }
 
-  // Add this method that's being referenced but missing
-  private updateSignalPropagationDelays(): void {
-    // Apply slow factor to all signal propagation animations
-    console.log(`Updating signal propagation delays with slow factor ${this.simulationSpeed}x`);
-    
-    // Example implementation:
-    const baseTransitionMs = 100; // Base transition time in ms
-    const adjustedTransitionMs = baseTransitionMs * this.simulationSpeed;
-    
-    // Update CSS variables or direct styles for signal animations
-    if (this.svg) { // Add null check here
-      this.svg.selectAll('.connection:not(.clock)')
-        .style('transition-duration', `${adjustedTransitionMs}ms`);
-    }
-      
-    // Schedule propagation of active signals
-    if (this.isRunning && !this.isPaused) {
-      this.propagateSignalsWithDelays();
-    }
+  // Add this helper method to centralize the conversion calculation
+  private getMsPerPs(): number {
+    // For position 1: returns 1 (1ms)
+    // For position 10: returns 1000 (1000ms)
+    // Exponential growth between these points
+    return Math.pow(10, (this.simulationSpeed - 1) / 3);
   }
 
   /**
@@ -989,64 +995,6 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         });
     }
   }
-  
-  /**
-   * Calculates realistic propagation delay based on physics and slowing factor
-   */
-  private calculateConnectionDelay(connection: ConnectionData): number {
-    // Physical constants
-    const SPEED_OF_LIGHT = 299792458; // meters per second
-    const VELOCITY_FACTOR = 0.6; // Signal velocity in FPGA wires (60% of c)
-    const PIXELS_PER_MM = 5; // Visual scale factor
-    
-    // Get or calculate connection length in pixels
-    let lengthInPixels = connection.length;
-    if (lengthInPixels === undefined) {
-      if (this.svg) {
-        const pathEl = this.svg.select(`.connection[data-connection-id="${connection.id}"]`);
-        if (!pathEl.empty()) {
-          const pathNode = pathEl.node();
-          lengthInPixels = pathNode ? (pathNode as SVGPathElement).getTotalLength() : 100;
-        } else {
-          lengthInPixels = 100; // Default
-        }
-      } else {
-        // Calculate Euclidean distance as fallback
-        const sourceX = connection.source.component.x ?? 
-                        connection.source.component.position?.x ?? 0;
-        const sourceY = connection.source.component.y ?? 
-                        connection.source.component.position?.y ?? 0;
-        const targetX = connection.target.component.x ?? 
-                        connection.target.component.position?.x ?? 0;
-        const targetY = connection.target.component.y ?? 
-                        connection.target.component.position?.y ?? 0;
-        const dx = targetX - sourceX;
-        const dy = targetY - sourceY;
-        lengthInPixels = Math.sqrt(dx*dx + dy*dy);
-      }
-    }
-    
-    // Convert pixels to millimeters then to meters
-    const lengthInMeters = (lengthInPixels / PIXELS_PER_MM) / 1000;
-    
-    // Calculate actual propagation time in picoseconds
-    // t = distance / (speed * velocity factor)
-    const propagationTimeSeconds = lengthInMeters / (SPEED_OF_LIGHT * VELOCITY_FACTOR);
-    const propagationTimePicoseconds = propagationTimeSeconds * 1e12;
-    
-    // Set minimum propagation time to 1ps for very short wires
-    const minPropagationTime = Math.max(propagationTimePicoseconds, 1);
-    
-    // Apply slowing factor to convert picoseconds to visible milliseconds
-    // Example: 5ps * 10^10 slowing factor = 50ms visible delay
-    const visibleDelayMs = minPropagationTime * this.simulationSpeed;
-    
-    console.log(`Wire ${connection.id}: ${lengthInPixels}px (~${(lengthInMeters*1000).toFixed(2)}mm), ` + 
-                `${propagationTimePicoseconds.toFixed(2)}ps → ${visibleDelayMs.toFixed(2)}ms visual delay`);
-    
-    // Ensure minimum visible delay
-    return Math.max(visibleDelayMs, 50);
-  }
 
   /**
    * Propagates a signal from an output pin through connected wires
@@ -1126,41 +1074,6 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
           .attr('stroke-dasharray', null)
           .attr('stroke-dashoffset', null);
       });
-  }
-
-  /**
-   * Updates the simulation speed and recalculates propagation delays
-   * @param speed The new simulation speed
-   */
-  public setSimulationSpeed(speed: number): void {
-    // Update the slowing factor
-    this.simulationSpeed = speed;
-    
-    console.log(`Simulation speed updated: ${speed}x slowing factor`);
-    
-    // Update CSS custom property for animations
-    document.documentElement.style.setProperty('--signal-propagation-base', `${50 * speed}ms`);
-    
-    // Update clock speed if running
-    if (this.clockTimer) {
-      // Calculate new interval based on frequency and simulation speed
-      const newInterval = 1000 / this.clockFrequency * this.simulationSpeed;
-      console.log(`Updating clock interval to ${newInterval.toFixed(2)}ms (${this.clockFrequency}Hz × ${this.simulationSpeed}x)`);
-      
-      if (this.clockTimer.isRunning) {
-        // Stop and restart with new interval
-        this.clockTimer.stop();
-        this.clockTimer = new IntervalTimer(() => {
-          this.toggleClockState();
-        }, newInterval);
-        this.clockTimer.start();
-      } else {
-        // Just update the interval without starting
-        this.clockTimer = new IntervalTimer(() => {
-          this.toggleClockState();
-        }, newInterval);
-      }
-    }
   }
 
   /**
@@ -1377,5 +1290,103 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       // Prevent event from bubbling up
       event.stopPropagation();
     });
+  }
+
+  /**
+   * Recalculates and updates all signal propagation delays based on current simulation speed
+   */
+  private updateSignalPropagationDelays(): void {
+    // Skip if SVG is not ready
+    if (!this.svg) return;
+    
+    // Find all active connections
+    const connections = this.svg.selectAll('.connection').data();
+    
+    // Recalculate delay for each connection based on new speed
+    for (let i = 0; i < connections.length; i++) {
+      const connection = connections[i] as ConnectionData;
+      if (connection && connection.id) {
+        const delay = this.calculateConnectionDelay(connection);
+        
+        // Store delay as data attribute on the connection element
+        this.svg.select(`#connection-${connection.id}`)
+          .attr('data-delay', delay.toString())
+          .style('--animation-duration', `${delay}ms`);
+        
+        console.log(`Connection ${connection.id}: delay = ${delay}ms`);
+      }
+    }
+    
+    console.log(`Recalculated propagation delays for ${connections.length} connections`);
+  }
+
+  /**
+   * Calculate the length of a connection in units
+   * @param connection The connection to calculate length for
+   * @returns Length in picoseconds (1 unit = 1ps)
+   */
+  private calculateConnectionLength(connection: ConnectionData): number {
+    // If we don't have positions, return a minimum value
+    if (!connection || !connection.source || !connection.target) {
+      return 1;
+    }
+
+    // Get component positions from the SVG elements
+    const sourceComponent = d3.select(`#component-${connection.source.component.id}`);
+    const targetComponent = d3.select(`#component-${connection.target.component.id}`);
+    
+    // Default positions
+    let sourcePos = {x: 0, y: 0};
+    let targetPos = {x: 0, y: 0};
+    
+    // Extract actual positions if elements exist
+    if (!sourceComponent.empty()) {
+      const sourceNode = sourceComponent.node() as any;
+      if (sourceNode && sourceNode.getBBox) {
+        const bbox = sourceNode.getBBox();
+        sourcePos = {x: bbox.x + bbox.width/2, y: bbox.y + bbox.height/2};
+      }
+    }
+    
+    if (!targetComponent.empty()) {
+      const targetNode = targetComponent.node() as any;
+      if (targetNode && targetNode.getBBox) {
+        const bbox = targetNode.getBBox();
+        targetPos = {x: bbox.x + bbox.width/2, y: bbox.y + bbox.height/2};
+      }
+    }
+    
+    // Calculate Manhattan distance (more realistic for PCB traces)
+    const dx = Math.abs(targetPos.x - sourcePos.x);
+    const dy = Math.abs(targetPos.y - sourcePos.y);
+    
+    // Convert to picoseconds - each pixel is ~1ps
+    const lengthInPixels = dx + dy;
+    
+    // Ensure minimum length
+    return Math.max(lengthInPixels, 1);
+  }
+
+  /**
+   * Calculates animation delay based on connection length and simulation speed
+   * @param connection The connection to calculate delay for
+   * @returns Delay in milliseconds for animation
+   */
+  private calculateConnectionDelay(connection: ConnectionData): number {
+    if (!connection) {
+      return this.getMsPerPs(); // Default 1ps = whatever ms based on current speed
+    }
+    
+    // Calculate the physics-based propagation delay in picoseconds
+    const length = this.calculateConnectionLength(connection);
+    const propagationTimePicoseconds = Math.max(length, 1); // Minimum 1ps
+    
+    // Convert picoseconds to animation milliseconds:
+    // slider=1 → 1ps = 1ms
+    // slider=10 → 1ps = 1000ms
+    const msPerPs = this.getMsPerPs();
+    
+    // Final animation delay in milliseconds
+    return propagationTimePicoseconds * msPerPs;
   }
 }
