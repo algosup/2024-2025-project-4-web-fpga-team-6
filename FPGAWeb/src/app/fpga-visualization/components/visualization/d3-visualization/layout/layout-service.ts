@@ -190,15 +190,33 @@ export class LayoutService {
     const controlLaneTopY = padding / 2;
     const controlLaneBottomY = height - padding / 2;
 
+    // Find DFF components to determine their positions
+    const dffComponents = nodes.data().filter(node => 
+      node.type && node.type.toLowerCase().includes('dff')
+    );
+    
+    // Calculate the position below DFFs
+    let maxDffY = 0;
+    if (dffComponents.length > 0) {
+      // Find the maximum Y coordinate of any DFF component
+      maxDffY = Math.max(...dffComponents.map(dff => (dff.position?.y || 0)));
+      // Add component height from config and spacing
+      maxDffY += compHeight + padding * 2;
+    }
+    
+    // Position clock inputs below DFFs instead of at the top
+    const clockPositionY = dffComponents.length > 0 ? maxDffY : controlLaneBottomY;
+    
     clockInputs.forEach((wire, i) => {
       if (!wire.position) wire.position = { x: 0, y: 0 };
       wire.position.x = padding + i * (compWidth + padding);
-      wire.position.y = controlLaneTopY;
+      wire.position.y = clockPositionY; // Use new position below DFFs
       
       wire.isControlSignal = true;
       wire.controlType = 'clock';
     });
     
+    // Keep reset inputs at top or place them alongside clock inputs
     resetInputs.forEach((wire, i) => {
       if (!wire.position) wire.position = { x: 0, y: 0 };
       wire.position.x = padding + i * (compWidth + padding);
