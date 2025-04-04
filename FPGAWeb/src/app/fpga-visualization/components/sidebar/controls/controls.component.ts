@@ -12,7 +12,7 @@ import { FormsModule } from '@angular/forms';
 export class ControlsComponent {
   @Input() isRunning = false;
   @Input() isPaused = false;
-  @Input() speed = 1; // Slow factor for signal propagation
+  @Input() speed = 1; // Linear scale from 1-10
   @Input() clockFrequency = 1; // Hz (not MHz)
   @Input() hasSelection = false;
 
@@ -23,9 +23,9 @@ export class ControlsComponent {
   @Output() speedChange = new EventEmitter<number>();
   @Output() clockFrequencyChange = new EventEmitter<number>();
   
-  // For slow factor (powers of 10)
+  // For speed factor (linear scale 1-10)
   minSpeed = 1;
-  maxSpeed = 1e12;
+  maxSpeed = 10;
   
   // For clock frequency - logarithmic scale from 0.001 Hz to 1000 MHz
   minFrequency = 0.001; // 0.001 Hz
@@ -42,9 +42,9 @@ export class ControlsComponent {
     this.clockFrequencyChange.emit(this.clockFrequency);
   }
 
-  // Log scale conversion functions for speed slider
+  // Remove or simplify these methods if they exist
   getSpeedSliderValue(): number {
-    return Math.log10(this.speed);
+    return this.speed;
   }
   
   setSpeedFromSlider(logValue: number): void {
@@ -69,25 +69,20 @@ export class ControlsComponent {
   }
 
   onSpeedChange(event: Event | number): void {
-    if (event instanceof Event && (event.target as HTMLInputElement).type === 'range') {
-      const logValue = +(event.target as HTMLInputElement).value;
-      this.setSpeedFromSlider(logValue);
+    let newSpeed: number;
+    
+    if (typeof event === 'number') {
+      newSpeed = event;
     } else {
-      let newSpeed: number;
-      
-      if (typeof event === 'number') {
-        newSpeed = event;
-      } else {
-        newSpeed = +(event.target as HTMLInputElement).value;
-      }
-      
-      // Keep speed within bounds
-      if (newSpeed < this.minSpeed) newSpeed = this.minSpeed;
-      if (newSpeed > this.maxSpeed) newSpeed = this.maxSpeed;
-      
-      this.speed = newSpeed;
-      this.speedChange.emit(newSpeed);
+      newSpeed = +(event.target as HTMLInputElement).value;
     }
+    
+    // Keep speed within bounds
+    if (newSpeed < this.minSpeed) newSpeed = this.minSpeed;
+    if (newSpeed > this.maxSpeed) newSpeed = this.maxSpeed;
+    
+    this.speed = newSpeed;
+    this.speedChange.emit(newSpeed);
   }
   
   onFrequencyChange(event: Event | number): void {
@@ -121,10 +116,14 @@ export class ControlsComponent {
     return `${(value/1000000000).toFixed(1)} GHz`;
   }
   
-  formatSpeedValue(value: number): string {
-    if (value >= 1e9) return `${(value / 1e9).toFixed(0)}B×`;
-    if (value >= 1e6) return `${(value / 1e6).toFixed(0)}M×`;
-    if (value >= 1e3) return `${(value / 1e3).toFixed(0)}k×`;
-    return `${value.toFixed(0)}×`;
+  formatSpeedValue(speed: number): string {
+    return `${speed}× (1ps = ${speed * 100}ms)`;
+  }
+
+  // Helper method to calculate and format ms per ps display based on speed
+  formatMsPerPs(speed: number): string {
+    // Using the same formula as in D3VisualizationComponent
+    const msPerPs = Math.pow(10, (speed - 1) / 3);
+    return msPerPs.toFixed(1);
   }
 }
