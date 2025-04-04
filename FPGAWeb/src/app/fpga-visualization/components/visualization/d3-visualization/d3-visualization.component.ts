@@ -19,6 +19,9 @@ import { VisualizationConfigService, LayoutConfig } from './config/visualization
 import { IntervalTimer } from '../../../../utils/interval-timer';
 import { ClockIndicatorComponent } from '../clock-indicator/clock-indicator.component';
 
+// Add this import at the top of the file
+import { ComponentTemplates, Pin } from './models/component-templates.model';
+
 @Component({
   selector: 'app-d3-visualization',
   standalone: true,
@@ -336,6 +339,9 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     
     // Start clock animation
     this.startClockAnimation();
+    
+    // Setup click handlers for input GPIOs during simulation
+    this.setupInputGpioClickHandlers();
   }
   
   private pauseSimulation(): void {
@@ -779,8 +785,10 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
   
-    // Check if this is a clock connection
+    // Check what type of connection this is
     const isClockConnection = connection.classed('clock');
+    const isDataConnection = connection.classed('data');
+    const isControlConnection = connection.classed('control');
     
     // Update connection state attribute
     connection.attr('data-connection-state', state);
@@ -789,13 +797,23 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     const connectionData = this.connections.find(conn => conn.id === connectionId);
     if (!connectionData) return;
   
-    // Get base styling color
+    // Get base styling color based on connection type
     const baseColor = this.styleService.getConnectionColor(
-      isClockConnection ? 'clock' : 'data'
+      isClockConnection ? 'clock' : 
+      isControlConnection ? 'reset' : 'data'
     );
     
-    // Get active styling color
-    const activeColor = this.styleService.colors.activeConnection || '#FF5252';
+    // Get active styling color - use different colors for different connection types
+    let activeColor = this.styleService.colors.activeConnection || '#FF5252';
+    
+    // Use different active colors based on connection type
+    if (isControlConnection) {
+      activeColor = '#F44336'; // Red for reset/control
+    } else if (isDataConnection) {
+      activeColor = '#2196F3'; // Blue for data
+    } else if (isClockConnection) {
+      activeColor = '#FF5252'; // Classic red for clock
+    }
     
     // Get path length for animation
     const pathLength = (connection.node() as SVGPathElement)?.getTotalLength() || 100;
@@ -803,80 +821,92 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     // Calculate animation duration based on propagation physics and slowing factor
     const delay = this.calculateConnectionDelay(connectionData);
   
-    // Special handling for clock connections
-    if (isClockConnection) {
-      if (state === 'HIGH') {
-        // HIGH clock - Show progressive animation from source to target
-        connection.classed('active', true)
-          .attr('stroke', activeColor)
-          .attr('stroke-width', 3)
-          .attr('stroke-opacity', 1)
-          .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
-          .attr('stroke-dashoffset', pathLength)
-          .style('transition', 'none')
-          .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
-        
-        // Force browser reflow
-        (connection.node() as SVGPathElement)?.getBoundingClientRect();
-        
-        // Animate the wire filling with signal
-        connection.transition()
-          .duration(delay)
-          .ease(d3.easeLinear)
-          .attr('stroke-dashoffset', 0)
-          .on('end', () => {
-            // When animation completes, update the target pin
-            this.updatePinState(
-              connectionData.target.component.id,
-              connectionData.target.pin.id,
-              state,
-              true
-            );
-          });
-      } else {
-        // LOW clock - Also animate but in reverse (signal retreating)
-        // First ensure the wire is fully visible and active
-        connection.classed('active', true)
-          .attr('stroke', activeColor)
-          .attr('stroke-width', 3)
-          .attr('stroke-opacity', 1)
-          .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
-          .attr('stroke-dashoffset', 0)
-          .style('transition', 'none')
-          .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
-        
-        // Force browser reflow
-        (connection.node() as SVGPathElement)?.getBoundingClientRect();
-        
-        // Animate the signal retreating back to source
-        connection.transition()
-          .duration(delay)
-          .ease(d3.easeLinear)
-          .attr('stroke-dashoffset', -pathLength) // Negative makes it retreat from source to target
-          .on('end', () => {
-            // When animation completes, reset to orange dashed line and update target pin
-            connection.classed('active', false)
-              .attr('stroke', '#FF9800') // Orange color for inactive clock path
+    // Handle HIGH state for all connection types with progressive animation
+    if (state === 'HIGH') {
+      // Show progressive animation from source to target
+      connection.classed('active', true)
+        .attr('stroke', activeColor)
+        .attr('stroke-width', 3)
+        .attr('stroke-opacity', 1)
+        .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
+        .attr('stroke-dashoffset', pathLength)
+        .style('transition', 'none')
+        .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
+      
+      // Force browser reflow
+      (connection.node() as SVGPathElement)?.getBoundingClientRect();
+      
+      // Animate the wire filling with signal
+      connection.transition()
+        .duration(delay)
+        .ease(d3.easeLinear)
+        .attr('stroke-dashoffset', 0)
+        .on('end', () => {
+          // When animation completes, update the target pin
+          this.updatePinState(
+            connectionData.target.component.id,
+            connectionData.target.pin.id,
+            state,
+            true // Keep propagating to downstream components
+          );
+        });
+    } else {
+      // LOW state - Also animate but in reverse (signal retreating)
+      // First ensure the wire is fully visible and active
+      connection.classed('active', true)
+        .attr('stroke', activeColor)
+        .attr('stroke-width', 3)
+        .attr('stroke-opacity', 1)
+        .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
+        .attr('stroke-dashoffset', 0)
+        .style('transition', 'none')
+        .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
+      
+      // Force browser reflow
+      (connection.node() as SVGPathElement)?.getBoundingClientRect();
+      
+      // Animate the signal retreating back to source
+      connection.transition()
+        .duration(delay)
+        .ease(d3.easeLinear)
+        .attr('stroke-dashoffset', -pathLength) // Negative makes it retreat from source to target
+        .on('end', () => {
+          // When animation completes, reset to appropriate style for this connection type
+          connection.classed('active', false);
+          
+          // Choose appropriate styling based on connection type
+          if (isClockConnection) {
+            connection
+              .attr('stroke', '#FF9800') // Orange for inactive clock path
               .attr('stroke-width', 2)
               .attr('stroke-opacity', 0.5)
-              .attr('stroke-dasharray', '5, 5') // Dashed appearance
-              .attr('stroke-dashoffset', 0)
-              .style('filter', 'none');
-              
-            // Update target pin
-            this.updatePinState(
-              connectionData.target.component.id,
-              connectionData.target.pin.id,
-              state,
-              true
-            );
-          });
-      }
-      return; // Exit early after handling clock connection
+              .attr('stroke-dasharray', '5, 5'); // Dashed appearance
+          } else if (isControlConnection) {
+            connection
+              .attr('stroke', '#9C27B0') // Purple for control connections
+              .attr('stroke-width', 2)
+              .attr('stroke-opacity', 0.5)
+              .attr('stroke-dasharray', '2, 2'); // Dotted appearance
+          } else {
+            connection
+              .attr('stroke', '#555555') // Gray for data connections
+              .attr('stroke-width', 2)
+              .attr('stroke-opacity', 0.5)
+              .attr('stroke-dasharray', null); // Solid line
+          }
+          
+          connection.attr('stroke-dashoffset', 0)
+            .style('filter', 'none');
+          
+          // Update target pin
+          this.updatePinState(
+            connectionData.target.component.id,
+            connectionData.target.pin.id,
+            state,
+            true
+          );
+        });
     }
-  
-    // Handle non-clock connections as before
-    // ... rest of the existing code for other connection types
   }
   
   /**
@@ -1193,5 +1223,78 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         this.updatePinState(component.id, outputPinId, newState, true);
       }
     }
+  }
+
+  // New method to handle input GPIO clicks during simulation
+  private setupInputGpioClickHandlers(): void {
+    if (!this.svg) return;
+    
+    // Store component instance reference
+    const componentInstance = this;
+    
+    // Find all input GPIOs that are not clock components
+    const inputGpios = this.svg.selectAll<SVGElement, ComponentData>('.component')
+      .filter(function(d: ComponentData): boolean {
+        // Early return if missing required properties
+        if (!d || !d.type || !d.id) return false;
+        
+        // Filter for GPIO input components that are not clock
+        const isGpio = d.type.toLowerCase().includes('gpio') || 
+                      d.type.toLowerCase().includes('wire_input');
+        
+        const isClock = d.id.toLowerCase().includes('clock') || 
+                       d.id.toLowerCase().includes('clk');
+        
+        // Get template for component to check for output pins
+        const template = ComponentTemplates.getTemplateForComponent(d);
+        if (!template || !template.pins) return false;
+        
+        // Check if it has output pins
+        const hasOutputPin = template.pins.some(function(pin) {
+          return pin.type === 'output';
+        });
+        
+        // Return final combined condition
+        return Boolean(isGpio && hasOutputPin && !isClock);
+      });
+    
+    // Enable pointer events for these components
+    inputGpios
+      .style('pointer-events', 'all')
+      .style('cursor', 'pointer');
+    
+    // Add click handler to toggle their state - explicitly type 'this' as SVGElement
+    inputGpios.on('click', function(this: SVGElement, event: MouseEvent, d: ComponentData) {
+      // Get component template
+      const template = ComponentTemplates.getTemplateForComponent(d);
+      if (!template || !template.pins) return;
+      
+      // Find the output pin
+      const outputPin = template.pins.find(function(pin) {
+        return pin.type === 'output';
+      });
+      
+      const outputPinId = outputPin ? outputPin.id : 'out';
+      
+      // Use d3.select(this) to select the current element
+      const component = d3.select(this);
+      
+      // Find the pin element
+      const pin = component.select<SVGElement>(`.pin[data-pin-id="${outputPinId}"]`);
+      if (pin.empty()) return;
+      
+      // Get current state and toggle
+      const currentState = pin.attr('data-pin-state') || 'LOW';
+      const newState = currentState === 'HIGH' ? 'LOW' : 'HIGH';
+      
+      // Use the componentInstance from outer scope to call methods
+      componentInstance.updatePinState(d.id, outputPinId, newState, true);
+      
+      // Update visual state
+      component.classed('active', newState === 'HIGH');
+      
+      // Prevent event from bubbling up
+      event.stopPropagation();
+    });
   }
 }

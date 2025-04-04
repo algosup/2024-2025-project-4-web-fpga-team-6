@@ -273,6 +273,18 @@ body.dragging-active .component:not(.dragging):not(.selected) {
   filter: brightness(1.2);
 }
 
+/* Allow input GPIO components to receive clicks during simulation */
+.simulation-running .component[data-component-type="GPIO"],
+.simulation-running .component[data-component-type="WIRE_INPUT"]:not([data-component-id*="clock"]):not([data-component-id*="clk"]) {
+  pointer-events: all !important;
+  cursor: pointer !important;
+}
+
+.simulation-running .component[data-component-type="GPIO"]:hover,
+.simulation-running .component[data-component-type="WIRE_INPUT"]:not([data-component-id*="clock"]):not([data-component-id*="clk"]):hover {
+  filter: brightness(1.2);
+}
+
 /* Add pulse animation for active clock */
 @keyframes clock-pulse {
   0% { fill-opacity: 0.7; }
