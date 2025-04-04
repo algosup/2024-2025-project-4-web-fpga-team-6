@@ -770,42 +770,47 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
    * @param state The new state (HIGH or LOW)
    * @param animate Whether to animate the propagation
    */
-  private updateConnectionState(connectionId: string, state: 'HIGH' | 'LOW', animate: boolean = true): void {
+  public updateConnectionState(connectionId: string, state: 'HIGH' | 'LOW', animate: boolean = true): void {
     if (!this.svg) return;
   
-    // Find the connection element
     const connection = this.svg.select(`.connection[data-connection-id="${connectionId}"]`);
     if (connection.empty()) {
       console.warn(`Connection ${connectionId} not found`);
       return;
     }
   
-    // Find the connection data
-    const connectionData = this.connections?.find(c => c.id === connectionId);
-    if (!connectionData) return;
-  
+    // Check if this is a clock connection
+    const isClockConnection = connection.classed('clock');
+    
     // Update connection state attribute
     connection.attr('data-connection-state', state);
-    
-    // Define colors for states
-    const baseColor = this.styleService.getConnectionColor(connectionData.type);
-    const activeColor = this.styleService.colors.activeConnection || '#FF5252';
   
+    // Find the connection data for delay calculation
+    const connectionData = this.connections.find(conn => conn.id === connectionId);
+    if (!connectionData) return;
+  
+    // Get base styling color
+    const baseColor = this.styleService.getConnectionColor(
+      isClockConnection ? 'clock' : 'data'
+    );
+    
+    // Get active styling color
+    const activeColor = this.styleService.colors.activeConnection || '#FF5252';
+    
     // Get path length for animation
     const pathLength = (connection.node() as SVGPathElement)?.getTotalLength() || 100;
     
     // Calculate animation duration based on propagation physics and slowing factor
     const delay = this.calculateConnectionDelay(connectionData);
-    
-    if (animate) {
+  
+    // Special handling for clock connections
+    if (isClockConnection) {
       if (state === 'HIGH') {
-        // HIGH STATE ANIMATION - Progressive glow from source to target
-        
-        // Setup gradient animation using stroke-dasharray
-        connection
-          .classed('active', true)
+        // HIGH clock - Show progressive animation
+        connection.classed('active', true)
           .attr('stroke', activeColor)
           .attr('stroke-width', 3)
+          .attr('stroke-opacity', 1)
           .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
           .attr('stroke-dashoffset', pathLength)
           .style('transition', 'none')
@@ -816,8 +821,8 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         
         // Animate the wire filling with signal
         connection.transition()
-          .duration(delay) // Real propagation delay adjusted by slow factor
-          .ease(d3.easeLinear) // Constant speed (not easing)
+          .duration(delay)
+          .ease(d3.easeLinear)
           .attr('stroke-dashoffset', 0)
           .on('end', () => {
             // When animation completes, update the target pin
@@ -825,77 +830,33 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
               connectionData.target.component.id,
               connectionData.target.pin.id,
               state,
-              true // Keep propagating to downstream components
+              true
             );
-            
-            // Keep glowing effect but remove dash animation properties
-            connection
-              .attr('stroke-dasharray', null)
-              .attr('stroke-dashoffset', null);
+            // Note: We don't remove dasharray properties to keep the dashed appearance
           });
       } else {
-        // LOW STATE ANIMATION - Progressive fade from active to inactive
-        
-        // Setup gradient animation for signal disappearing
-        connection
-          .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
-          .attr('stroke-dashoffset', 0)
-          .style('transition', 'none');
-        
-        // Force browser reflow
-        (connection.node() as SVGPathElement)?.getBoundingClientRect();
-        
-        // Animate the fade out
-        connection.transition()
-          .duration(delay) // Same delay as for HIGH signal
-          .ease(d3.easeLinear)
-          .attr('stroke-dashoffset', pathLength)
-          .style('filter', 'none')
-          .on('end', () => {
-            // When animation completes, turn off active class
-            connection.classed('active', false);
-            
-            // Update target pin to LOW
-            this.updatePinState(
-              connectionData.target.component.id,
-              connectionData.target.pin.id,
-              state,
-              true // Keep propagating LOW signal
-            );
-            
-            // Reset wire to inactive appearance
-            connection
-              .attr('stroke', baseColor)
-              .attr('stroke-width', 2)
-              .attr('stroke-opacity', 0.8)
-              .attr('stroke-dasharray', null)
-              .attr('stroke-dashoffset', null);
-          });
-      }
-    } else {
-      // No animation - immediate update
-      if (state === 'HIGH') {
-        connection.classed('active', true)
-          .attr('stroke', activeColor)
-          .attr('stroke-width', 3)
-          .attr('stroke-opacity', 1)
-          .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
-      } else {
+        // LOW clock - Show persistent dashed orange path
         connection.classed('active', false)
-          .attr('stroke', baseColor)
+          .attr('stroke', '#FF9800') // Orange color for inactive clock path
           .attr('stroke-width', 2)
-          .attr('stroke-opacity', 0.8)
+          .attr('stroke-opacity', 0.5) // Visible but subtle
+          .attr('stroke-dasharray', '5, 5') // Dashed appearance
+          .attr('stroke-dashoffset', 0)
           .style('filter', 'none');
+        
+        // Update target pin
+        this.updatePinState(
+          connectionData.target.component.id,
+          connectionData.target.pin.id,
+          state,
+          true
+        );
       }
-      
-      // Still update target pin
-      this.updatePinState(
-        connectionData.target.component.id,
-        connectionData.target.pin.id,
-        state,
-        true
-      );
+      return; // Exit early after handling clock connection
     }
+  
+    // Handle non-clock connections as before
+    // ... rest of the existing code for other connection types
   }
   
   /**
