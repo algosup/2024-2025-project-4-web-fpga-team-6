@@ -5,13 +5,19 @@ export interface ComponentData {
   id: string;
   type: string;
   name?: string;
-  x?: number;  // Make sure this exists in your interface
-  y?: number;  // Make sure this exists in your interface
-  position?: { x: number; y: number }; // Some places use this format
-  data: any;
-  // Add these properties for control signal handling
+  position?: { x: number; y: number };
+  // Add these properties for D3.js compatibility
+  x?: number;
+  y?: number;
+  data?: any; // Original component-specific data
   isControlSignal?: boolean;
   controlType?: 'clock' | 'reset';
+  // Add these properties to make LUT mask access valid
+  configuration?: {
+    mask?: string | number;
+    [key: string]: any;
+  };
+  mask?: string | number;
   connections?: Record<string, any>;
   controlConnections?: {
     clock?: any;

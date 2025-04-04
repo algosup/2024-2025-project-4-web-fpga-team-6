@@ -1167,143 +1167,177 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
    * Updates a component's internal logic based on its input pins
    */
   private updateComponentInternalState(componentId: string): void {
-    // Get the component data
-    const component = this.components?.find(c => c.id === componentId);
-    if (!component) return;
+    if (!this.svg) return;
     
-    // Process based on component type
-    switch (component.type) {
-      case 'AND':
-        this.processAndGate(component);
-        break;
-      case 'OR':
-        this.processOrGate(component);
-        break;
-      case 'NOT':
-        this.processNotGate(component);
-        break;
-      case 'DFF':
-        // DFFs are updated on clock transitions, not immediately
-        break;
-      // Add more component types as needed
+    // Get the component
+    const component = this.svg.select<SVGElement>(`.component[data-component-id="${componentId}"]`);
+    if (component.empty()) return;
+    
+    // Check if this is a LUT by component type or ID
+    const isLut = componentId.toLowerCase().includes('lut') || 
+                  component.attr('data-component-type')?.toLowerCase().includes('lut');
+    
+    if (isLut) {
+      console.log(`Processing LUT component: ${componentId}`);
+      const lutMask = this.getLutMask(componentId);
+      console.log(`LUT ${componentId} mask: ${lutMask?.toString(16) || 'undefined'} (${typeof lutMask})`);
+      this.updateLutOutput(componentId);
     }
+    
+    // Additional logic for other component types can be added here
   }
 
   /**
-   * Process AND gate logic
-   * @param component The AND gate component
+   * Updates the output of a LUT based on its inputs and configuration.
+   * @param lutId The ID of the LUT component
    */
-  private processAndGate(component: ComponentData): void {
+  private updateLutOutput(lutId: string): void {
     if (!this.svg) return;
-
-    // Find the component element
-    const compElement = this.svg.select(`.component[data-component-id="${component.id}"]`);
-    if (compElement.empty()) return;
     
-    // Get all input pins
-    const inputPins = compElement.selectAll('.pin[data-pin-type="input"]');
-    let allHigh = true;
+    console.log(`Updating LUT ${lutId} output based on inputs`);
     
-    // Check if all inputs are HIGH
-    inputPins.each(function() {
+    // Get the LUT component
+    const lutComponent = this.svg.select<SVGElement>(`.component[data-component-id="${lutId}"]`);
+    if (lutComponent.empty()) {
+      console.warn(`LUT component ${lutId} not found`);
+      return;
+    }
+    
+    // Find all input pins
+    const inputPins = lutComponent.selectAll<SVGElement, unknown>(`.pin[data-pin-type="input"]`);
+    if (inputPins.empty() || inputPins.size() === 0) {
+      console.warn(`No input pins found on LUT ${lutId}`);
+      return;
+    }
+    
+    // Get the LUT mask (configuration)
+    const lutMask = this.getLutMask(lutId);
+    if (!lutMask) {
+      console.warn(`No LUT mask found for ${lutId}`);
+      return;
+    }
+    
+    // Calculate the input value (binary index)
+    let inputValue = 0;
+    const pinStates: { pinId: string, state: 'HIGH' | 'LOW' }[] = [];
+    
+    inputPins.each(function(d, i) {
       const pin = d3.select(this);
-      const state = pin.attr('data-pin-state') || 'LOW';
-      if (state !== 'HIGH') {
-        allHigh = false;
-      }
-    });
-    
-    // Find output pin
-    const outputPin = compElement.select('.pin[data-pin-type="output"]');
-    if (outputPin.empty()) return;
-    
-    // Set output state based on AND logic
-    const outputPinId = outputPin.attr('data-pin-id');
-    if (outputPinId) {
-      // Only update if the state is changing
-      const currentOutState = outputPin.attr('data-pin-state') || 'LOW';
-      const newState = allHigh ? 'HIGH' : 'LOW';
+      const pinId = pin.attr('data-pin-id');
+      const pinState = pin.attr('data-pin-state') || 'LOW';
+      // Use type assertion to ensure this is one of the two allowed literal values
+      const state = (pinState === 'HIGH' ? 'HIGH' : 'LOW') as 'HIGH' | 'LOW';
       
-      if (currentOutState !== newState) {
-        // Update the output pin using our global method, but avoid infinite recursion
-        // by not propagating from within the component logic
-        this.updatePinState(component.id, outputPinId, newState, true);
-      }
-    }
-  }
-
-  /**
-   * Process OR gate logic
-   * @param component The OR gate component
-   */
-  private processOrGate(component: ComponentData): void {
-    if (!this.svg) return;
-
-    // Find the component element
-    const compElement = this.svg.select(`.component[data-component-id="${component.id}"]`);
-    if (compElement.empty()) return;
-    
-    // Get all input pins
-    const inputPins = compElement.selectAll('.pin[data-pin-type="input"]');
-    let anyHigh = false;
-    
-    // Check if any input is HIGH
-    inputPins.each(function() {
-      const pin = d3.select(this);
-      const state = pin.attr('data-pin-state') || 'LOW';
+      pinStates.push({ pinId, state });
+      
+      // Set the corresponding bit in inputValue if this input is HIGH
       if (state === 'HIGH') {
-        anyHigh = true;
+        inputValue |= (1 << i);
       }
     });
     
-    // Find output pin
-    const outputPin = compElement.select('.pin[data-pin-type="output"]');
-    if (outputPin.empty()) return;
+    console.log(`LUT ${lutId} input value: ${inputValue} (binary: ${inputValue.toString(2).padStart(pinStates.length, '0')})`);
+    console.log(`LUT ${lutId} pin states:`, pinStates);
     
-    // Set output state based on OR logic
-    const outputPinId = outputPin.attr('data-pin-id');
-    if (outputPinId) {
-      const currentOutState = outputPin.attr('data-pin-state') || 'LOW';
-      const newState = anyHigh ? 'HIGH' : 'LOW';
+    // Look up the output value from the LUT mask - use correct bit extraction
+    const outputState = ((lutMask >> inputValue) & 1) ? 'HIGH' : 'LOW';
+    console.log(`LUT ${lutId} output should be: ${outputState}`);
+    
+    // Find the output pin
+    let outputPin = lutComponent.select<SVGElement>(`.pin[data-pin-id="O"]`);
+    if (outputPin.empty()) outputPin = lutComponent.select<SVGElement>(`.pin[data-pin-id="o"]`);
+    if (outputPin.empty()) outputPin = lutComponent.select<SVGElement>(`.pin[data-pin-type="output"]`);
+    
+    if (outputPin.empty()) {
+      console.warn(`No output pin found on LUT ${lutId}`);
+      return;
+    }
+    
+    // Get current output state
+    const currentOutputState = outputPin.attr('data-pin-state') || 'LOW';
+    
+    // Only update if the state changes
+    if (currentOutputState !== outputState) {
+      console.log(`Updating LUT ${lutId} output from ${currentOutputState} to ${outputState}`);
       
-      if (currentOutState !== newState) {
-        this.updatePinState(component.id, outputPinId, newState, true);
-      }
+      // Update the output pin
+      outputPin.attr('data-pin-state', outputState)
+             .classed('high', outputState === 'HIGH')
+             .classed('low', outputState === 'LOW');
+      
+      // Update pin appearance
+      const fillColor = outputState === 'HIGH' ? 
+        this.styleService.colors.activePin : 
+        this.styleService.getPinColor('output');
+        
+      outputPin.selectAll('path, circle, rect')
+        .transition()
+        .duration(150)
+        .attr('fill', fillColor);
+      
+      // Propagate the change
+      const pinIdAttr = outputPin.attr('data-pin-id') || 'O';
+      this.propagateSignalFromPin(lutId, pinIdAttr, outputState as 'HIGH' | 'LOW');
     }
   }
 
   /**
-   * Process NOT gate logic
-   * @param component The NOT gate component
+   * Gets the LUT mask/configuration from component data
+   * @param lutId The LUT component ID
+   * @returns A number representing the LUT's truth table
    */
-  private processNotGate(component: ComponentData): void {
-    if (!this.svg) return;
-
-    // Find the component element
-    const compElement = this.svg.select(`.component[data-component-id="${component.id}"]`);
-    if (compElement.empty()) return;
+  private getLutMask(lutId: string): number | null {
+    // Find the component data
+    const componentData = this.connections
+      .find(conn => conn.source?.component.id === lutId || conn.target?.component.id === lutId)
+      ?.source?.component || this.connections
+      .find(conn => conn.source?.component.id === lutId || conn.target?.component.id === lutId)
+      ?.target?.component;
     
-    // Get input pin (NOT gate typically has 1 input)
-    const inputPin = compElement.select('.pin[data-pin-type="input"]');
-    if (inputPin.empty()) return;
-    
-    // Get input state
-    const inputState = inputPin.attr('data-pin-state') || 'LOW';
-    
-    // Find output pin
-    const outputPin = compElement.select('.pin[data-pin-type="output"]');
-    if (outputPin.empty()) return;
-    
-    // Set output state based on NOT logic (invert input)
-    const outputPinId = outputPin.attr('data-pin-id');
-    if (outputPinId) {
-      const currentOutState = outputPin.attr('data-pin-state') || 'LOW';
-      const newState = inputState === 'HIGH' ? 'LOW' : 'HIGH';
-      
-      if (currentOutState !== newState) {
-        this.updatePinState(component.id, outputPinId, newState, true);
+    if (!componentData) {
+      // Try to get it from the component element's data
+      const component = this.svg?.select<SVGElement>(`.component[data-component-id="${lutId}"]`);
+      if (component && !component.empty()) {
+        const data = d3.select(component.node()).datum() as ComponentData;
+        
+        // Try to get mask from various possible locations
+        const maskFromConfig = data?.configuration?.mask;
+        const maskDirect = data?.mask;
+        const maskFromData = data?.data?.configuration?.mask || data?.data?.mask;
+        
+        const mask = maskFromConfig || maskDirect || maskFromData;
+        
+        if (mask !== undefined) {
+          console.log(`Found mask for LUT ${lutId}:`, mask);
+          // Parse hex string if needed
+          if (typeof mask === 'string') {
+            return parseInt(mask, 16);
+          }
+          return Number(mask);
+        }
       }
+      
+      console.warn(`No component data found for LUT ${lutId}`);
+      return null;
     }
+    
+    // Try multiple possible locations for the mask
+    const maskFromConfig = componentData?.configuration?.mask;
+    const maskDirect = componentData?.mask;
+    const maskFromData = componentData?.data?.configuration?.mask || componentData?.data?.mask;
+    
+    const mask = maskFromConfig || maskDirect || maskFromData;
+    
+    if (mask === undefined) {
+      console.warn(`No mask configuration found for LUT ${lutId}`);
+      return null;
+    }
+    
+    // Handle different data types
+    if (typeof mask === 'string') {
+      return parseInt(mask, 16);
+    }
+    return Number(mask);
   }
 
   // New method to handle input GPIO clicks during simulation
