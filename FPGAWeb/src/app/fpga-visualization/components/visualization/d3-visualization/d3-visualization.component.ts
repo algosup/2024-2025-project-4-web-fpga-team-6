@@ -806,7 +806,7 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
     // Special handling for clock connections
     if (isClockConnection) {
       if (state === 'HIGH') {
-        // HIGH clock - Show progressive animation
+        // HIGH clock - Show progressive animation from source to target
         connection.classed('active', true)
           .attr('stroke', activeColor)
           .attr('stroke-width', 3)
@@ -832,25 +832,45 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
               state,
               true
             );
-            // Note: We don't remove dasharray properties to keep the dashed appearance
           });
       } else {
-        // LOW clock - Show persistent dashed orange path
-        connection.classed('active', false)
-          .attr('stroke', '#FF9800') // Orange color for inactive clock path
-          .attr('stroke-width', 2)
-          .attr('stroke-opacity', 0.5) // Visible but subtle
-          .attr('stroke-dasharray', '5, 5') // Dashed appearance
+        // LOW clock - Also animate but in reverse (signal retreating)
+        // First ensure the wire is fully visible and active
+        connection.classed('active', true)
+          .attr('stroke', activeColor)
+          .attr('stroke-width', 3)
+          .attr('stroke-opacity', 1)
+          .attr('stroke-dasharray', `${pathLength} ${pathLength}`)
           .attr('stroke-dashoffset', 0)
-          .style('filter', 'none');
+          .style('transition', 'none')
+          .style('filter', 'drop-shadow(0 0 2px rgba(255, 82, 82, 0.5))');
         
-        // Update target pin
-        this.updatePinState(
-          connectionData.target.component.id,
-          connectionData.target.pin.id,
-          state,
-          true
-        );
+        // Force browser reflow
+        (connection.node() as SVGPathElement)?.getBoundingClientRect();
+        
+        // Animate the signal retreating back to source
+        connection.transition()
+          .duration(delay)
+          .ease(d3.easeLinear)
+          .attr('stroke-dashoffset', -pathLength) // Negative makes it retreat from source to target
+          .on('end', () => {
+            // When animation completes, reset to orange dashed line and update target pin
+            connection.classed('active', false)
+              .attr('stroke', '#FF9800') // Orange color for inactive clock path
+              .attr('stroke-width', 2)
+              .attr('stroke-opacity', 0.5)
+              .attr('stroke-dasharray', '5, 5') // Dashed appearance
+              .attr('stroke-dashoffset', 0)
+              .style('filter', 'none');
+              
+            // Update target pin
+            this.updatePinState(
+              connectionData.target.component.id,
+              connectionData.target.pin.id,
+              state,
+              true
+            );
+          });
       }
       return; // Exit early after handling clock connection
     }
