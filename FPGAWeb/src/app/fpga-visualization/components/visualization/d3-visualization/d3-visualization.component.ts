@@ -705,46 +705,42 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Updates the state of a specific pin and propagates the signal to connections
+   * Updates the state of a pin and propagates the signal.
    */
   public updatePinState(
     componentId: string, 
     pinId: string, 
-    state: 'HIGH' | 'LOW', 
+    state: 'HIGH' | 'LOW',
     propagate: boolean = true
   ): void {
     if (!this.svg) return;
     
     // Find the component
-    const component = this.svg.select(`.component[data-component-id="${componentId}"]`);
+    const component = this.svg.select<SVGElement>(`.component[data-component-id="${componentId}"]`);
     if (component.empty()) {
       console.warn(`Component ${componentId} not found`);
       return;
     }
     
     // Find the pin
-    const pin = component.select(`.pin[data-pin-id="${pinId}"]`);
+    const pin = component.select<SVGElement>(`.pin[data-pin-id="${pinId}"]`);
     if (pin.empty()) {
-      console.warn(`Pin ${pinId} not found in component ${componentId}`);
+      console.warn(`Pin ${pinId} not found on component ${componentId}`);
       return;
     }
     
-    // Get current state to check if it's actually changing
+    // Get the current state
     const currentState = pin.attr('data-pin-state') || 'LOW';
-    if (currentState === state) {
-      // No change, no need to update
-      return;
-    }
     
-    // Update pin state attribute
-    pin.attr('data-pin-state', state);
+    // If state hasn't changed, do nothing
+    if (currentState === state) return;
     
-    // Remove old state classes
-    pin.classed('high', false);
-    pin.classed('low', false);
+    console.log(`Updating pin ${componentId}.${pinId} from ${currentState} to ${state}`);
     
-    // Add new state class
-    pin.classed(state.toLowerCase(), true);
+    // Update the pin state
+    pin.attr('data-pin-state', state)
+       .classed('high', state === 'HIGH')
+       .classed('low', state === 'LOW');
     
     // Update pin appearance
     const pinType = pin.attr('data-pin-type');
@@ -758,16 +754,96 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       .duration(150)
       .attr('fill', fillColor);
     
+    // Handle DFF clock pin rising edge - be more flexible with component and pin detection
+    const isDff = componentId.toLowerCase().includes('dff') || 
+                  component.attr('data-component-type')?.toLowerCase().includes('dff');
+    
+    const isClockPin = pinId.toLowerCase() === 'clk' || 
+                       pinId.toLowerCase() === 'clock' ||
+                       pin.classed('clock');
+    
+    if (isDff && isClockPin && state === 'HIGH' && currentState === 'LOW') {
+      console.log(`🔄 Detected rising clock edge on DFF ${componentId}`);
+      this.handleDffRisingEdge(componentId);
+    }
+    
     // Only propagate signals if requested and from output pins
     if (propagate && (pinType === 'output' || pinType === 'clock')) {
       this.propagateSignalFromPin(componentId, pinId, state);
     }
     
     // If this is an input pin, we may need to update the component's internal state
-    // This would be specific to each component type (e.g., a gate would compute its output)
-    if (pinType === 'input') {
+    if (pinType === 'input' && propagate) {
       this.updateComponentInternalState(componentId);
     }
+  }
+
+  /**
+   * Handles the rising edge of a clock signal on a DFF
+   * @param dffId The ID of the DFF component
+   */
+  private handleDffRisingEdge(dffId: string): void {
+    if (!this.svg) return;
+    
+    console.log(`Processing DFF ${dffId} on clock rising edge`);
+    
+    // Get the component with more flexible selector
+    const dffComponent = this.svg.select<SVGElement>(`.component[data-component-id="${dffId}"]`);
+    if (dffComponent.empty()) {
+      console.warn(`DFF component ${dffId} not found`);
+      return;
+    }
+    
+    // Try several possible D input pin selectors
+    let dInput = dffComponent.select<SVGElement>(`.pin[data-pin-id="D"]`);
+    if (dInput.empty()) dInput = dffComponent.select<SVGElement>(`.pin[data-pin-id="d"]`);
+    if (dInput.empty()) dInput = dffComponent.select<SVGElement>(`.pin.input`);
+    
+    if (dInput.empty()) {
+      console.warn(`No D input pin found on DFF ${dffId}`);
+      return;
+    }
+    
+    // Get the current state of D with type assertion to ensure it's 'HIGH' or 'LOW'
+    const dInputState = dInput.attr('data-pin-state') || 'LOW';
+    const dState = (dInputState === 'HIGH' ? 'HIGH' : 'LOW') as 'HIGH' | 'LOW';
+    
+    // Try several possible Q output pin selectors
+    let qOutput = dffComponent.select<SVGElement>(`.pin[data-pin-id="Q"]`);
+    if (qOutput.empty()) qOutput = dffComponent.select<SVGElement>(`.pin[data-pin-id="q"]`);
+    if (qOutput.empty()) qOutput = dffComponent.select<SVGElement>(`.pin.output`);
+    
+    if (qOutput.empty()) {
+      console.warn(`No Q output pin found on DFF ${dffId}`);
+      return;
+    }
+    
+    console.log(`DFF ${dffId}: D input state is ${dState}, updating Q output`);
+    
+    // Short delay to make the cause-effect more visible in the UI
+    setTimeout(() => {
+      // Update Q output to match the D input
+      console.log(`DFF ${dffId} updating Q to ${dState} from D input`);
+      
+      // Update Q without triggering circular propagation
+      qOutput.attr('data-pin-state', dState)
+            .classed('high', dState === 'HIGH')
+            .classed('low', dState === 'LOW');
+      
+      // Update pin appearance
+      const fillColor = dState === 'HIGH' ? 
+        this.styleService.colors.activePin : 
+        this.styleService.getPinColor('output');
+        
+      qOutput.selectAll('path, circle, rect')
+        .transition()
+        .duration(150)
+        .attr('fill', fillColor);
+      
+      // Now propagate from Q output - ensure proper type safety
+      const pinIdAttr = qOutput.attr('data-pin-id') || 'Q';
+      this.propagateSignalFromPin(dffId, pinIdAttr, dState);
+    }, 100); // Small delay for visual effect
   }
 
   /**
