@@ -55,12 +55,6 @@ ng serve
 5. Access the interface  
    Open your browser and navigate to `http://localhost:4200`
 
-6. Parse post-synthesis data
-```bash
-npm run parse
-```
-A JSON file is generated from the .sdf and the .v file in the `public/` directory.
-
 ## Usage
 
 ### Student Interface
