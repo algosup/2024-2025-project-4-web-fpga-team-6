@@ -85,8 +85,8 @@ Each week will be resumed in weekly documents listed [here](https://github.com/a
 
 - [Weekly Report 4](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/weeklyReport4.md)
 
-- [Weekly Report 5](weeklyReport5.md)
+- [Weekly Report 5](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/weeklyReport5.md)
 
-- [Weekly Report 6](weeklyReport6.md)
+- [Weekly Report 6](https://github.com/algosup/2024-2025-project-4-web-fpga-team-6/blob/Management/Management/Weekly_Reports/weeklyReport6.md)
 
 
