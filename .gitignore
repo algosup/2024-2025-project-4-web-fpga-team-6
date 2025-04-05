@@ -1,3 +1,4 @@
 FPGAWeb/public/schematics/FF1_norst_schematics.json
 FPGAWeb/public/schematics/*.json
 *.log
+.DS_Store
