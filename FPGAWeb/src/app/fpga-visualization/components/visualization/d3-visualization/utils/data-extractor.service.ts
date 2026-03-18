@@ -44,6 +44,11 @@ export class DataExtractorService {
         let formattedName = wire.name || '';
         formattedName = formattedName.replace(/^ext_(input|output)_/, '').replace(/_/g, ' ');
         
+        // Custom replacement for demo purposes
+        if (formattedName.toLowerCase() === 'async reset') {
+          formattedName = 'Soft Reset';
+        }
+        
         // Capitalize first letter of each word for better readability
         formattedName = formattedName.split(' ')
           .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
