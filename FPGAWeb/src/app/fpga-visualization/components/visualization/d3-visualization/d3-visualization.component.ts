@@ -316,7 +316,7 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
         } else {
           this.startSimulation();
         }
-        this.showClock = true;
+        this.showClock = !!this.clockComponent;
       }
     } else {
       this.stopSimulation();
@@ -418,20 +418,8 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       this.clockComponent = clockComponents;
       console.log('Found clock component:', clockComponents.data());
     } else {
-      // Try any external input if no specific clock is found
-      console.log('No clock-named component found, looking for any input component...');
-      const inputComponents = this.svg.selectAll('.component')
-        .filter((d: any) => d.type && d.type.toLowerCase().includes('wire_input'));
-      
-      console.log('Input components found:', inputComponents.size());
-      
-      if (!inputComponents.empty()) {
-        this.clockComponent = inputComponents;
-        console.log('Using input component as clock:', inputComponents.data());
-      } else {
-        console.warn('No clock component found for animation');
-        this.clockComponent = null;
-      }
+      console.warn('No clock-named component found in the design.');
+      this.clockComponent = null;
     }
     
     // If we found a clock component, mark it visually
@@ -1098,7 +1086,11 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       case 'DFF':
         // DFFs are updated on clock transitions, not immediately
         break;
-      // Add more component types as needed
+    }
+    
+    // Process LUT logic generic matching
+    if (component.type.startsWith('LUT')) {
+      this.processLut(component);
     }
   }
 
@@ -1216,6 +1208,86 @@ export class D3VisualizationComponent implements OnInit, OnChanges, OnDestroy {
       if (currentOutState !== newState) {
         this.updatePinState(component.id, outputPinId, newState, true);
       }
+    }
+  }
+
+  /**
+   * Process LUT (Look-Up Table) logic
+   * @param component The LUT component
+   */
+  private processLut(component: ComponentData): void {
+    if (!this.svg) return;
+
+    // Find the component element
+    const compElement = this.svg.select(`.component[data-component-id="${component.id}"]`);
+    if (compElement.empty()) return;
+    
+    // Get its template to find the number of inputs configured
+    const template = ComponentTemplates.getTemplateForComponent(component);
+    
+    // Find output pin
+    const outputPin = template.pins.find((pin: Pin) => pin.type === 'output');
+    const outputPinSelector = compElement.select(`.pin[data-pin-type="output"]`);
+    if (outputPinSelector.empty() || !outputPin) return;
+    
+    // Try to get mask string from component data
+    let maskStr = component.data.mask;
+    if (!maskStr) {
+      // Default to transparent logic (OR) if no mask provided
+      // Just check if any input is high
+      let anyHigh = false;
+      compElement.selectAll('.pin[data-pin-type="input"]').each(function() {
+        const state = d3.select(this).attr('data-pin-state') || 'LOW';
+        if (state === 'HIGH') anyHigh = true;
+      });
+      const currentOutState = outputPinSelector.attr('data-pin-state') || 'LOW';
+      const newState = anyHigh ? 'HIGH' : 'LOW';
+      if (currentOutState !== newState) {
+        this.updatePinState(component.id, outputPin.id, newState, true);
+      }
+      return;
+    }
+    
+    // Evaluate binary inputs to form an index
+    // Note: LUT parameters.INIT / mask is generally evaluated such that:
+    // in0 is LSB, in1 is the next bit, etc.
+    // e.g. for mask "00000000100000000000000000000000", which is 32 bits long.
+    // Index mapping: we gather all input states, build a number.
+    let index = 0;
+    
+    // Determine number of inputs K (usually from K property or template pins)
+    const k = component.data.K ? parseInt(component.data.K, 10) : template.pins.filter((p: Pin) => p.type === 'input').length;
+    
+    for (let i = 0; i < k; i++) {
+      // Pin ID is typically `in${i}`
+      const pinId = `in${i}`;
+      const pinEl = compElement.select(`.pin[data-pin-id="${pinId}"]`);
+      if (!pinEl.empty()) {
+        const state = pinEl.attr('data-pin-state') || 'LOW';
+        if (state === 'HIGH') {
+          index |= (1 << i);
+        }
+      }
+    }
+    
+    // Find the bit in the mask.
+    // Standard Verilog/SDF behavior usually reads `mask` binary string from MSB to LSB.
+    // Example: index 0 is the LAST character of the string, index 31 is the FIRST character.
+    // Let's protect against out-of-bounds just in case.
+    let bit = '0';
+    if (maskStr.length > 0 && index < maskStr.length) {
+      // Using LSB as index 0 means the bit is at length - 1 - index
+      const charIndex = maskStr.length - 1 - index;
+      if (charIndex >= 0 && charIndex < maskStr.length) {
+        bit = maskStr.charAt(charIndex);
+      }
+    }
+    
+    const newState = bit === '1' ? 'HIGH' : 'LOW';
+    const currentOutState = outputPinSelector.attr('data-pin-state') || 'LOW';
+    
+    if (currentOutState !== newState) {
+      this.updatePinState(component.id, outputPin.id, newState, true);
     }
   }
 

@@ -22,13 +22,13 @@ interface FileMapping {
 export class ExamplesLoaderService {
   private readonly basePath = '/public/verilog_post_synthesis_examples';
   private readonly knownDirectories = [
-    '1ff_no_rst_VTR',
-    '1ff_VTR',
-    '2ffs_no_rst_VTR',
-    '2ffs_VTR',
-    '5ffs_VTR',
-    'FULLLUT_VTR',
-    'LUT_VTR'
+    { dir: '1ff_no_rst_VTR', name: 'Flip-Flop without Reset' },
+    { dir: '1ff_VTR', name: 'Flip-Flop with Reset' },
+    { dir: '2ffs_no_rst_VTR', name: '2 Flip-Flops without Reset' },
+    { dir: '2ffs_VTR', name: '2 Flip-Flops with Reset' },
+    { dir: '5ffs_VTR', name: '5 Flip-Flops Register' },
+    { dir: 'FULLLUT_VTR', name: 'Full LUT Example' },
+    { dir: 'LUT_VTR', name: '4 Inputs AND Gate' }
   ];
 
   constructor(
@@ -56,17 +56,17 @@ export class ExamplesLoaderService {
     const loadedDesignIds = new Set<string>();
     
     // Process directories in reverse order so they end up in correct order
-    const designObservables = [...this.knownDirectories].reverse().map(dir => {
-      console.log(`Creating observable for directory: ${dir}`);
-      return this.loadDesign(dir).pipe(
+    const designObservables = [...this.knownDirectories].reverse().map(item => {
+      console.log(`Creating observable for directory: ${item.dir}`);
+      return this.loadDesign(item.dir, item.name).pipe(
         tap(design => {
           if (design && !loadedDesignIds.has(design.id)) {
             loadedDesignIds.add(design.id);
             // Add to end to maintain order of knownDirectories
             this.designService.addDesign(design, false);
-            console.log(`Successfully loaded design from ${dir}`);
+            console.log(`Successfully loaded design from ${item.dir}`);
           } else {
-            console.warn(`Skipped duplicate or failed design from ${dir}`);
+            console.warn(`Skipped duplicate or failed design from ${item.dir}`);
           }
         })
       );
@@ -79,7 +79,7 @@ export class ExamplesLoaderService {
     );
   }
 
-  private loadDesign(dir: string): Observable<Design | null> {
+  private loadDesign(dir: string, customName: string): Observable<Design | null> {
     console.log(`Loading design from directory: ${dir}`);
     
     const fileMapping: FileMapping = {
@@ -173,7 +173,7 @@ export class ExamplesLoaderService {
         
         // Create metadata object
         const metadata: DesignMetadata = {
-          name: this.formatName(dir),
+          name: customName || this.formatName(dir),
           description: readme as string,
           visualizationState: {
             clockFrequency: 1000000
